@@ -1,0 +1,26 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "PersonalIA (AVD Medium Phone)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "deviceId": "Medium_Phone",
+            "args": [
+                "--dart-define=API_BASE_URL=http://10.0.2.2:3000"
+            ]
+        },
+        {
+            "name": "PersonalIA (AVD Medium Phone, profile)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "flutterMode": "profile",
+            "deviceId": "Medium_Phone",
+            "args": [
+                "--dart-define=API_BASE_URL=http://10.0.2.2:3000"
+            ]
+        }
+    ]
+}
