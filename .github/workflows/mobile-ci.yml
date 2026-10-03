@@ -1,0 +1,57 @@
+name: Mobile CI
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  ci:
+    name: Analyze, Test & Tag
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.4'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Compute build metadata
+        id: meta
+        run: |
+          BUILD=$(git rev-list --count HEAD)
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
+          echo "build=$BUILD" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=mobile/v${VERSION}+${BUILD}" >> $GITHUB_OUTPUT
+
+      - name: Bump pubspec build number
+        run: |
+          sed -i "s/^version: .*/version: ${{ steps.meta.outputs.version }}+${{ steps.meta.outputs.build }}/" pubspec.yaml
+
+      - name: Commit bump and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          git commit -m "chore: bump build number to ${{ steps.meta.outputs.build }} [skip ci]"
+          git tag "${{ steps.meta.outputs.tag }}"
+          git push origin master --follow-tags
