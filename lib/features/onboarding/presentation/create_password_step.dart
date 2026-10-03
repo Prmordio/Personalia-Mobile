@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/password_text_field.dart';
 import '../state/onboarding_controller.dart';
 import 'widgets/step_scaffold.dart';
 
@@ -42,16 +43,14 @@ class _CreatePasswordStepState extends ConsumerState<CreatePasswordStep> {
       },
       child: Column(
         children: [
-          TextField(
+          PasswordTextField(
             controller: _passwordController,
-            obscureText: true,
-            decoration: const InputDecoration(hintText: 'Senha (mínimo 8 caracteres)'),
+            hintText: 'Senha (mínimo 8 caracteres)',
           ),
           const SizedBox(height: 12),
-          TextField(
+          PasswordTextField(
             controller: _confirmController,
-            obscureText: true,
-            decoration: const InputDecoration(hintText: 'Confirmar senha'),
+            hintText: 'Confirmar senha',
           ),
         ],
       ),

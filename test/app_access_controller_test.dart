@@ -10,12 +10,13 @@ class _FakeAuthApi extends AuthApi {
 
   final calls = <String>[];
   final nextSteps = <String>[];
+  String startNextStep = 'email_code';
   DioException? verifyError;
 
   @override
-  Future<String> startAppAccess(String phone, String email) async {
+  Future<({String sessionId, String nextStep})> startAppAccess(String phone, String email) async {
     calls.add('start:$phone:$email');
-    return 'session-1';
+    return (sessionId: 'session-1', nextStep: startNextStep);
   }
 
   @override
@@ -74,6 +75,13 @@ void main() {
     expect(api.calls, ['start:11987654321:joao@example.com']);
     expect(controller.state.step, AppAccessStep.emailCode);
     expect(controller.state.info, contains('Se houver cadastro'));
+  });
+
+  test('should_go_directly_to_phone_code_when_backend_returns_phone_code', () async {
+    api.startNextStep = 'phone_code';
+    await controller.start('11987654321', 'outro@example.com');
+
+    expect(controller.state.step, AppAccessStep.phoneCode);
   });
 
   test('should_follow_the_happy_path_email_then_whatsapp_then_password', () async {

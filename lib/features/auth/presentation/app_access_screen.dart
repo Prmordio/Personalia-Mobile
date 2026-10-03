@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/app_config.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/password_text_field.dart';
 import '../state/app_access_controller.dart';
 
 /// Primeiro acesso no app (e redefinição de senha) para quem já usa o PersonalIA no WhatsApp:
@@ -146,17 +147,15 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
         return [
           const Text('Tudo confirmado ✅ Agora é só criar a senha para entrar com email e senha.'),
           const SizedBox(height: 16),
-          TextField(
+          PasswordTextField(
             controller: _passwordController,
-            obscureText: true,
+            hintText: 'Nova senha (mínimo 8 caracteres)',
             autofillHints: const [AutofillHints.newPassword],
-            decoration: const InputDecoration(hintText: 'Nova senha (mínimo 8 caracteres)'),
           ),
           const SizedBox(height: 12),
-          TextField(
+          PasswordTextField(
             controller: _confirmationController,
-            obscureText: true,
-            decoration: const InputDecoration(hintText: 'Repita a senha'),
+            hintText: 'Repita a senha',
           ),
         ];
     }

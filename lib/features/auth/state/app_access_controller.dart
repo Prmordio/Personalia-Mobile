@@ -80,10 +80,11 @@ class AppAccessController extends StateNotifier<AppAccessState> {
       return;
     }
     await _run(() async {
-      final sessionId = await _authApi.startAppAccess(digits, email);
+      final result = await _authApi.startAppAccess(digits, email);
+      final step = result.nextStep == 'phone_code' ? AppAccessStep.phoneCode : AppAccessStep.emailCode;
       state = state.copyWith(
-        step: AppAccessStep.emailCode,
-        sessionId: sessionId,
+        step: step,
+        sessionId: result.sessionId,
         email: email,
         loading: false,
         // Mesma mensagem exista ou não o cadastro — o backend não confirma nem nega.
