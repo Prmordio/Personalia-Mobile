@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../../../home/data/app_api.dart';
 
@@ -111,6 +112,9 @@ class _YoutubePlayerPage extends StatefulWidget {
 
 class _YoutubePlayerPageState extends State<_YoutubePlayerPage> {
   late final YoutubePlayerController _controller;
+  bool _embedBlocked = false;
+
+  Uri get _youtubeUri => Uri.parse('https://www.youtube.com/watch?v=${widget.videoId}');
 
   @override
   void initState() {
@@ -122,8 +126,15 @@ class _YoutubePlayerPageState extends State<_YoutubePlayerPage> {
         showControls: true,
         showFullscreenButton: true,
         mute: false,
+        strictRelatedVideos: true,
       ),
     );
+    // Códigos 100/101/150/151/152 = vídeo não encontrado ou embed bloqueado pelo dono.
+    _controller.listen((value) {
+      if (value.error != YoutubeError.none && mounted && !_embedBlocked) {
+        setState(() => _embedBlocked = true);
+      }
+    });
   }
 
   @override
@@ -137,12 +148,40 @@ class _YoutubePlayerPageState extends State<_YoutubePlayerPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title ?? 'Vídeo', maxLines: 1, overflow: TextOverflow.ellipsis),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.open_in_new),
+            tooltip: 'Abrir no YouTube',
+            onPressed: () => launchUrl(_youtubeUri, mode: LaunchMode.externalApplication),
+          ),
+        ],
       ),
       body: YoutubePlayerScaffold(
         controller: _controller,
         builder: (context, player) => Column(
           children: [
             player,
+            if (_embedBlocked)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const Icon(Icons.block, size: 40, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Este vídeo não permite reprodução embutida.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Assistir no YouTube'),
+                      onPressed: () => launchUrl(_youtubeUri, mode: LaunchMode.externalApplication),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
