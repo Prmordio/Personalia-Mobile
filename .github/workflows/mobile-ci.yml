@@ -34,25 +34,28 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Compute build metadata
+      - name: Validate version bump
         id: meta
         run: |
-          BUILD=$(git rev-list --count HEAD)
-          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d'+' -f1)
-          echo "build=$BUILD" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=mobile/v${VERSION}+${BUILD}" >> $GITHUB_OUTPUT
+          CURR=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr -d '[:space:]')
+          PREV=$(git show HEAD^:pubspec.yaml 2>/dev/null | grep '^version:' | sed 's/version: //' | tr -d '[:space:]' || echo "")
 
-      - name: Bump pubspec build number
-        run: |
-          sed -i "s/^version: .*/version: ${{ steps.meta.outputs.version }}+${{ steps.meta.outputs.build }}/" pubspec.yaml
+          echo "current=$CURR"
+          echo "previous=$PREV"
 
-      - name: Commit bump and push tag
+          if [ "$CURR" = "$PREV" ]; then
+            echo "❌ Versão não foi alterada no pubspec.yaml (atual: $CURR)."
+            echo "Atualize 'version:' na sua branch antes de abrir o PR."
+            exit 1
+          fi
+
+          echo "version=$CURR" >> $GITHUB_OUTPUT
+          echo "tag=mobile/v${CURR}" >> $GITHUB_OUTPUT
+          echo "✅ Versão bump detectado: $PREV → $CURR"
+
+      - name: Create and push tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add pubspec.yaml
-          git commit -m "chore: bump build number to ${{ steps.meta.outputs.build }} [skip ci]"
           git tag -a "${{ steps.meta.outputs.tag }}" -m "Release ${{ steps.meta.outputs.tag }}"
-          git push origin master
           git push origin "${{ steps.meta.outputs.tag }}"

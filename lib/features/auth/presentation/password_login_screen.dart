@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/password_text_field.dart';
 import '../state/password_login_controller.dart';
 
 class PasswordLoginScreen extends ConsumerStatefulWidget {
@@ -50,10 +51,9 @@ class _PasswordLoginScreenState extends ConsumerState<PasswordLoginScreen> {
                 decoration: const InputDecoration(hintText: 'seuemail@exemplo.com'),
               ),
               const SizedBox(height: 12),
-              TextField(
+              PasswordTextField(
                 controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(hintText: 'Senha'),
+                hintText: 'Senha',
               ),
               if (state.error != null) ...[
                 const SizedBox(height: 16),

@@ -39,10 +39,13 @@ class AuthApi {
 
   // --- Primeiro acesso / redefinição de senha (conta do WhatsApp: valida email + telefone) ---
 
-  /// Responde igual exista ou não a conta; devolve o id da sessão de acesso.
-  Future<String> startAppAccess(String phone, String email) async {
+  /// Responde igual exista ou não a conta; devolve o id da sessão e qual tela mostrar primeiro.
+  Future<({String sessionId, String nextStep})> startAppAccess(String phone, String email) async {
     final response = await _dio.post('/auth/app-access/start', data: {'phone': phone, 'email': email});
-    return response.data['sessionId'] as String;
+    return (
+      sessionId: response.data['sessionId'] as String,
+      nextStep: (response.data['nextStep'] as String?) ?? 'email_code',
+    );
   }
 
   /// [factor] é 'email' ou 'phone'. Devolve o próximo passo:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/password_text_field.dart';
 import '../state/forgot_password_controller.dart';
 
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
@@ -73,11 +74,10 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   decoration: const InputDecoration(hintText: 'Código de 6 dígitos', counterText: ''),
                 ),
                 const SizedBox(height: 12),
-                TextField(
+                PasswordTextField(
                   controller: _passwordController,
-                  obscureText: true,
+                  hintText: 'Nova senha (mínimo 8 caracteres)',
                   autofillHints: const [AutofillHints.newPassword],
-                  decoration: const InputDecoration(hintText: 'Nova senha (mínimo 8 caracteres)'),
                 ),
               ],
               if (state.error != null) ...[
