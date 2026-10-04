@@ -32,15 +32,36 @@ class RestTimerArgs {
 }
 
 class RestTimerState {
-  const RestTimerState({required this.remaining, required this.completedSets, required this.running});
+  const RestTimerState({
+    required this.remaining,
+    required this.completedSets,
+    required this.running,
+    this.weight = '',
+    this.observation = '',
+    this.finished = false,
+  });
   final int remaining;
   final int completedSets;
   final bool running;
+  final String weight;
+  final String observation;
+  final bool finished;
 
-  RestTimerState copyWith({int? remaining, int? completedSets, bool? running}) => RestTimerState(
+  RestTimerState copyWith({
+    int? remaining,
+    int? completedSets,
+    bool? running,
+    String? weight,
+    String? observation,
+    bool? finished,
+  }) =>
+      RestTimerState(
         remaining: remaining ?? this.remaining,
         completedSets: completedSets ?? this.completedSets,
         running: running ?? this.running,
+        weight: weight ?? this.weight,
+        observation: observation ?? this.observation,
+        finished: finished ?? this.finished,
       );
 }
 
@@ -108,6 +129,14 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     alarm?.cancel(alarmId);
   }
 
+  void setWeight(String value) => state = state.copyWith(weight: value);
+  void setObservation(String value) => state = state.copyWith(observation: value);
+  void finish() {
+    _timer?.cancel();
+    alarm?.cancel(alarmId);
+    state = state.copyWith(running: false, finished: true);
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -129,10 +158,38 @@ final restTimerProvider =
   );
 });
 
-class RestTimerScreen extends ConsumerWidget {
+class RestTimerScreen extends ConsumerStatefulWidget {
   const RestTimerScreen({super.key, required this.args});
 
   final RestTimerArgs args;
+
+  @override
+  ConsumerState<RestTimerScreen> createState() => _RestTimerScreenState();
+}
+
+class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
+  late final TextEditingController _weightController;
+  late final TextEditingController _observationController;
+
+  (String, int, int) get _key {
+    final exercise = widget.args.exercise;
+    return (exercise.nome, parseRestSeconds(exercise.descanso), parseSetsCount(exercise.series));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final current = ref.read(restTimerProvider(_key));
+    _weightController = TextEditingController(text: current.weight);
+    _observationController = TextEditingController(text: current.observation);
+  }
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    _observationController.dispose();
+    super.dispose();
+  }
 
   String _format(int seconds) {
     final m = (seconds ~/ 60).toString().padLeft(2, '0');
@@ -141,11 +198,12 @@ class RestTimerScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final args = widget.args;
     final exercise = args.exercise;
-    final totalSeconds = parseRestSeconds(exercise.descanso);
-    final totalSets = parseSetsCount(exercise.series);
-    final key = (exercise.nome, totalSeconds, totalSets);
+    final key = _key;
+    final totalSeconds = key.$2;
+    final totalSets = key.$3;
     final state = ref.watch(restTimerProvider(key));
     final notifier = ref.read(restTimerProvider(key).notifier);
     final done = state.remaining <= 0;
@@ -162,7 +220,7 @@ class RestTimerScreen extends ConsumerWidget {
               if (exercise.series != null) _Stat('Séries', exercise.series!),
               if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
               if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
-              if (args.lastWeight != null) _Stat('Último peso', '${args.lastWeight} kg'),
+              if (args.lastWeight != null) _Stat('Último peso', args.lastWeight!),
             ],
           ),
           const SizedBox(height: 24),
@@ -206,7 +264,6 @@ class RestTimerScreen extends ConsumerWidget {
                     onPressed: done
                         ? notifier.reset
                         : () {
-                            // Primeira série do dia → a Home passa a mostrar "Continuar treino".
                             if (!state.running && args.dayName != null && ref.read(activeWorkoutSessionProvider) == null) {
                               ref.read(activeWorkoutSessionProvider.notifier).state =
                                   ActiveWorkoutSession(dayName: args.dayName!, startedAt: DateTime.now());
@@ -227,6 +284,53 @@ class RestTimerScreen extends ConsumerWidget {
               TextButton(onPressed: notifier.reset, child: const Text('Reiniciar')),
             ],
           ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: state.finished ? Colors.green.shade600 : Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              icon: Icon(state.finished ? Icons.check_circle : Icons.flag),
+              label: Text(
+                state.finished
+                    ? 'Exercício concluído!'
+                    : state.weight.trim().isEmpty
+                        ? 'Digite o peso para finalizar'
+                        : 'Finalizar exercício',
+              ),
+              onPressed: state.finished || state.weight.trim().isEmpty
+                  ? null
+                  : () {
+                      notifier.finish();
+                      Navigator.of(context).pop();
+                    },
+            ),
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _weightController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Peso utilizado (kg)',
+              prefixIcon: Icon(Icons.fitness_center),
+              border: OutlineInputBorder(),
+            ),
+            onChanged: notifier.setWeight,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _observationController,
+            decoration: const InputDecoration(
+              labelText: 'Observação (opcional)',
+              prefixIcon: Icon(Icons.notes),
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+            onChanged: notifier.setObservation,
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
