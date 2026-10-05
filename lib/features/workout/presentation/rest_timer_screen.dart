@@ -39,6 +39,7 @@ class RestTimerState {
     this.weight = '',
     this.observation = '',
     this.finished = false,
+    this.elapsed = 0,
   });
   final int remaining;
   final int completedSets;
@@ -46,6 +47,7 @@ class RestTimerState {
   final String weight;
   final String observation;
   final bool finished;
+  final int elapsed;
 
   RestTimerState copyWith({
     int? remaining,
@@ -54,6 +56,7 @@ class RestTimerState {
     String? weight,
     String? observation,
     bool? finished,
+    int? elapsed,
   }) =>
       RestTimerState(
         remaining: remaining ?? this.remaining,
@@ -62,6 +65,7 @@ class RestTimerState {
         weight: weight ?? this.weight,
         observation: observation ?? this.observation,
         finished: finished ?? this.finished,
+        elapsed: elapsed ?? this.elapsed,
       );
 }
 
@@ -131,6 +135,38 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 
   void setWeight(String value) => state = state.copyWith(weight: value);
   void setObservation(String value) => state = state.copyWith(observation: value);
+
+  void toggleCardio() {
+    if (state.running) {
+      _timer?.cancel();
+      state = state.copyWith(running: false);
+      return;
+    }
+    if (state.elapsed == 0) {
+      state = state.copyWith(running: true, completedSets: 1);
+      onSetStarted?.call();
+    } else {
+      state = state.copyWith(running: true);
+    }
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      state = state.copyWith(elapsed: state.elapsed + 1);
+    });
+  }
+
+  void stopCardio() {
+    _timer?.cancel();
+    final e = state.elapsed;
+    final m = (e ~/ 60).toString().padLeft(2, '0');
+    final s = (e % 60).toString().padLeft(2, '0');
+    state = state.copyWith(running: false, weight: '$m:$s', finished: true);
+  }
+
+  void resetForNewSession() {
+    _timer?.cancel();
+    alarm?.cancel(alarmId);
+    state = RestTimerState(remaining: totalSeconds, completedSets: 0, running: false, elapsed: 0);
+  }
+
   void finish() {
     _timer?.cancel();
     alarm?.cancel(alarmId);
@@ -197,6 +233,19 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     return '$m:$s';
   }
 
+  String _formatElapsed(int seconds) {
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  void _ensureSession(WidgetRef ref, String? dayName) {
+    if (dayName != null && ref.read(activeWorkoutSessionProvider) == null) {
+      ref.read(activeWorkoutSessionProvider.notifier).state =
+          ActiveWorkoutSession(dayName: dayName, startedAt: DateTime.now());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = widget.args;
@@ -206,6 +255,12 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     final totalSets = key.$3;
     final state = ref.watch(restTimerProvider(key));
     final notifier = ref.read(restTimerProvider(key).notifier);
+    final isCardio = exercise.modeloDeTreino?.toLowerCase() == 'cardio';
+
+    if (isCardio) {
+      return _buildCardioScreen(context, exercise, state, notifier);
+    }
+
     final done = state.remaining <= 0;
 
     return Scaffold(
@@ -264,10 +319,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
                     onPressed: done
                         ? notifier.reset
                         : () {
-                            if (!state.running && args.dayName != null && ref.read(activeWorkoutSessionProvider) == null) {
-                              ref.read(activeWorkoutSessionProvider.notifier).state =
-                                  ActiveWorkoutSession(dayName: args.dayName!, startedAt: DateTime.now());
-                            }
+                            _ensureSession(ref, args.dayName);
                             notifier.toggle();
                           },
                   ),
@@ -320,6 +372,111 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
             onChanged: notifier.setWeight,
           ),
           const SizedBox(height: 12),
+          TextField(
+            controller: _observationController,
+            decoration: const InputDecoration(
+              labelText: 'Observação (opcional)',
+              prefixIcon: Icon(Icons.notes),
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+            onChanged: notifier.setObservation,
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardioScreen(
+    BuildContext context,
+    WorkoutExercise exercise,
+    RestTimerState state,
+    RestTimerNotifier notifier,
+  ) {
+    return Scaffold(
+      appBar: AppBar(title: Text(exercise.nome)),
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          Wrap(
+            spacing: 24,
+            runSpacing: 8,
+            children: [
+              if (exercise.repeticoes != null) _Stat('Meta', exercise.repeticoes!),
+              if (widget.args.lastWeight != null) _Stat('Último tempo', widget.args.lastWeight!),
+            ],
+          ),
+          const SizedBox(height: 32),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 220,
+                height: 220,
+                child: CircularProgressIndicator(
+                  value: state.finished ? 1.0 : (state.running ? null : 0.0),
+                  strokeWidth: 10,
+                  color: state.finished ? Colors.green : AppColors.orange,
+                  backgroundColor: AppColors.background,
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _formatElapsed(state.elapsed),
+                    style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    state.finished ? 'Concluído!' : (state.running ? 'Em execução' : 'Pausado'),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  if (!state.finished)
+                    IconButton(
+                      iconSize: 56,
+                      color: AppColors.orange,
+                      icon: Icon(state.running ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                      onPressed: () {
+                        _ensureSession(ref, widget.args.dayName);
+                        notifier.toggleCardio();
+                      },
+                    ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          if (!state.finished)
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                icon: const Icon(Icons.stop_circle_outlined),
+                label: const Text('Parar e registrar', style: TextStyle(fontSize: 15)),
+                onPressed: state.elapsed == 0
+                    ? null
+                    : () {
+                        notifier.stopCardio();
+                        Navigator.of(context).pop();
+                      },
+              ),
+            )
+          else
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              icon: const Icon(Icons.check_circle),
+              label: const Text('Cardio concluído!', style: TextStyle(fontSize: 15)),
+              onPressed: null,
+            ),
+          const SizedBox(height: 24),
           TextField(
             controller: _observationController,
             decoration: const InputDecoration(

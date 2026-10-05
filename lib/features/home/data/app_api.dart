@@ -51,10 +51,22 @@ class LastWorkoutExercise {
 }
 
 class LastWorkout {
-  LastWorkout({required this.date, required this.dayName, required this.exercises});
+  LastWorkout({required this.date, this.startedAt, required this.dayName, required this.exercises});
   final DateTime? date;
+  final DateTime? startedAt;
   final String dayName;
   final List<LastWorkoutExercise> exercises;
+
+  Duration? get duration {
+    if (date == null || startedAt == null) return null;
+    return date!.difference(startedAt!);
+  }
+
+  bool get isToday {
+    if (date == null) return false;
+    final now = DateTime.now();
+    return date!.year == now.year && date!.month == now.month && date!.day == now.day;
+  }
 }
 
 class DailyTip {
@@ -145,11 +157,28 @@ class AppApi {
     if (data == null) return null;
     return LastWorkout(
       date: data['date'] != null ? DateTime.tryParse(data['date']) : null,
+      startedAt: data['startedAt'] != null ? DateTime.tryParse(data['startedAt']) : null,
       dayName: data['dayName'] ?? '',
       exercises: (data['exercises'] as List? ?? [])
           .map((e) => LastWorkoutExercise(name: e['name'] ?? '', weight: e['weight']?.toString(), observation: e['observation']))
           .toList(),
     );
+  }
+
+  Future<void> logWorkout({
+    required String dayName,
+    required DateTime startedAt,
+    required DateTime endedAt,
+    String? mood,
+    required List<Map<String, dynamic>> exercises,
+  }) async {
+    await _dio.post('/app/workout/log', data: {
+      'dayName': dayName,
+      'startedAt': startedAt.toIso8601String(),
+      'endedAt': endedAt.toIso8601String(),
+      'mood': mood,
+      'exercises': exercises,
+    });
   }
 
   /// false quando o backend recusa por falta de assinatura (`reason: subscription_required`) —
