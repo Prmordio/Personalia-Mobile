@@ -3,19 +3,64 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../home/data/app_api.dart';
 import '../../home/state/today_workout_override.dart';
+import '../data/workout_summary.dart';
 import '../state/active_workout_session.dart';
 import 'rest_timer_screen.dart';
 import 'widgets/exercise_video_sheet.dart';
+import 'workout_finish_screen.dart';
 
-class TodayWorkoutScreen extends ConsumerWidget {
+class TodayWorkoutScreen extends ConsumerStatefulWidget {
   const TodayWorkoutScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TodayWorkoutScreen> createState() => _TodayWorkoutScreenState();
+}
+
+class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
+  bool _showFinished = false;
+  bool _finishTriggered = false;
+
+  void _openFinishScreen(List<WorkoutExercise> exercises, String dayName) {
+    final session = ref.read(activeWorkoutSessionProvider);
+    final summary = WorkoutSummary.fromProviders(
+      dayName: dayName,
+      startedAt: session?.startedAt ?? DateTime.now(),
+      exercises: exercises
+          .map((e) => (nome: e.nome, series: e.series, repeticoes: e.repeticoes, descanso: e.descanso))
+          .toList(),
+      readState: (key) => ref.read(restTimerProvider(key)),
+    );
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => WorkoutFinishScreen(summary: summary)),
+    );
+  }
+
+  Future<void> _confirmFinish(List<WorkoutExercise> exercises, String dayName, bool allDone) async {
+    if (allDone) {
+      _openFinishScreen(exercises, dayName);
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Finalizar treino?'),
+        content: const Text('Ainda há exercícios não concluídos. Deseja finalizar assim mesmo?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sim, finalizar'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true && mounted) _openFinishScreen(exercises, dayName);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final todayAsync = ref.watch(effectiveTodayWorkoutProvider);
     final lastWorkoutAsync = ref.watch(lastWorkoutProvider);
-    final session = ref.watch(activeWorkoutSessionProvider);
-
     final lastWeights = <String, String>{};
     final lastWorkout = lastWorkoutAsync.asData?.value;
     if (lastWorkout != null) {
@@ -36,8 +81,29 @@ class TodayWorkoutScreen extends ConsumerWidget {
               ),
             );
           }
+
+          final exercises = today.exercises;
+
+          // Compute finished state for each exercise
+          final timerStates = {
+            for (final ex in exercises)
+              ex.nome: ref.watch(restTimerProvider((ex.nome, parseRestSeconds(ex.descanso), parseSetsCount(ex.series))))
+          };
+
+          final pending = exercises.where((e) => !timerStates[e.nome]!.finished).toList();
+          final finished = exercises.where((e) => timerStates[e.nome]!.finished).toList();
+          final allDone = exercises.isNotEmpty && pending.isEmpty;
+
+          // Auto-trigger finish screen when all exercises done
+          if (allDone && !_finishTriggered) {
+            _finishTriggered = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _openFinishScreen(exercises, today.dayName);
+            });
+          }
+
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
             children: [
               Text(today.dayName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
               if (today.focusLabel.isNotEmpty) ...[
@@ -45,51 +111,70 @@ class TodayWorkoutScreen extends ConsumerWidget {
                 Text(today.focusLabel, style: const TextStyle(color: Colors.grey)),
               ],
               const SizedBox(height: 16),
-              if (today.exercises.isEmpty) const Text('Nenhum exercício encontrado para hoje.'),
-              for (final ex in today.exercises)
-                _ExerciseCard(exercise: ex, lastWeight: lastWeights[ex.nome.trim().toLowerCase()], dayName: today.dayName),
-              if (session != null) ...[
+              if (exercises.isEmpty) const Text('Nenhum exercício encontrado para hoje.'),
+              // Pending exercises
+              for (final ex in pending)
+                _ExerciseCard(
+                  exercise: ex,
+                  lastWeight: lastWeights[ex.nome.trim().toLowerCase()],
+                  dayName: today.dayName,
+                ),
+              // Toggle for finished
+              if (finished.isNotEmpty) ...[
                 const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    icon: const Icon(Icons.emoji_events),
-                    label: const Text('Finalizar treino', style: TextStyle(fontSize: 16)),
-                    onPressed: () async {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Finalizar treino'),
-                          content: const Text('Tem certeza que deseja encerrar o treino de hoje?'),
-                          actions: [
-                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                            FilledButton(
-                              style: FilledButton.styleFrom(backgroundColor: Colors.green),
-                              onPressed: () => Navigator.pop(context, true),
-                              child: const Text('Finalizar'),
-                            ),
-                          ],
+                InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => setState(() => _showFinished = !_showFinished),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _showFinished ? Icons.expand_less : Icons.expand_more,
+                          color: Colors.green,
+                          size: 20,
                         ),
-                      );
-                      if (confirm == true && context.mounted) {
-                        ref.read(activeWorkoutSessionProvider.notifier).state = null;
-                        context.pop();
-                      }
-                    },
+                        const SizedBox(width: 6),
+                        Text(
+                          _showFinished
+                              ? 'Ocultar concluídos (${finished.length})'
+                              : 'Mostrar concluídos (${finished.length})',
+                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w500, fontSize: 13),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                if (_showFinished)
+                  for (final ex in finished)
+                    _ExerciseCard(
+                      exercise: ex,
+                      lastWeight: lastWeights[ex.nome.trim().toLowerCase()],
+                      dayName: today.dayName,
+                    ),
               ],
             ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => const Center(child: Text('Não foi possível carregar o treino de hoje.')),
+        error: (e, s) => const Center(child: Text('Não foi possível carregar o treino de hoje.')),
       ),
+      floatingActionButton: todayAsync.asData?.value != null && !todayAsync.value!.isRest && todayAsync.value!.exercises.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                final today = todayAsync.value!;
+                final timerStates = {
+                  for (final ex in today.exercises)
+                    ex.nome: ref.read(restTimerProvider((ex.nome, parseRestSeconds(ex.descanso), parseSetsCount(ex.series))))
+                };
+                final allDone = today.exercises.isNotEmpty && today.exercises.every((e) => timerStates[e.nome]!.finished);
+                _confirmFinish(today.exercises, today.dayName, allDone);
+              },
+              backgroundColor: Colors.green,
+              icon: const Icon(Icons.emoji_events),
+              label: const Text('Finalizar treino'),
+            )
+          : null,
     );
   }
 }
@@ -108,6 +193,7 @@ class _ExerciseCard extends ConsumerWidget {
     final timerState = ref.watch(restTimerProvider((exercise.nome, totalSeconds, totalSets)));
     final finished = timerState.finished;
     final inProgress = !finished && timerState.completedSets > 0;
+    final isCardio = exercise.modeloDeTreino?.toLowerCase() == 'cardio';
 
     Color? cardColor;
     if (finished) {
@@ -132,10 +218,7 @@ class _ExerciseCard extends ConsumerWidget {
                 if (finished)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -148,12 +231,9 @@ class _ExerciseCard extends ConsumerWidget {
                 else if (inProgress)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF6B35),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFFF6B35), borderRadius: BorderRadius.circular(12)),
                     child: Text(
-                      '${timerState.completedSets}/$totalSets séries',
+                      isCardio ? 'Em execução' : '${timerState.completedSets}/$totalSets séries',
                       style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -164,10 +244,16 @@ class _ExerciseCard extends ConsumerWidget {
               spacing: 16,
               runSpacing: 4,
               children: [
-                if (exercise.series != null) _Stat('Séries', exercise.series!),
-                if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
-                if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
-                if (lastWeight != null) _Stat('Último peso', lastWeight!),
+                if (isCardio) ...[
+                  if (exercise.repeticoes != null) _Stat('Meta', exercise.repeticoes!),
+                  if (finished) _Stat('Tempo', timerState.weight),
+                  if (lastWeight != null) _Stat('Último tempo', lastWeight!),
+                ] else ...[
+                  if (exercise.series != null) _Stat('Séries', exercise.series!),
+                  if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
+                  if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
+                  if (lastWeight != null) _Stat('Último peso', lastWeight!),
+                ],
               ],
             ),
             const SizedBox(height: 8),
@@ -175,11 +261,7 @@ class _ExerciseCard extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 _ActionButton(
-                  icon: finished
-                      ? Icons.check_circle
-                      : inProgress
-                          ? Icons.replay_circle_filled
-                          : Icons.play_circle_fill,
+                  icon: finished ? Icons.check_circle : inProgress ? Icons.replay_circle_filled : Icons.play_circle_fill,
                   label: finished ? 'Feito' : inProgress ? 'Continuar' : 'Iniciar',
                   color: finished ? Colors.green : const Color(0xFFFF6B35),
                   onPressed: () => context.push(
@@ -226,12 +308,7 @@ class _Stat extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onPressed,
-  });
+  const _ActionButton({required this.icon, required this.label, required this.color, required this.onPressed});
 
   final IconData icon;
   final String label;

@@ -6,7 +6,9 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/emoji_loader.dart';
 import '../data/app_api.dart';
 import '../../auth/presentation/biometric_offer_gate.dart';
+import '../../workout/presentation/rest_timer_screen.dart';
 import '../../workout/state/active_workout_session.dart';
+import '../../workout/state/completed_workout_session.dart';
 import '../state/today_workout_override.dart';
 import '../state/workout_generation_controller.dart';
 import 'subscription_checkout.dart';
@@ -309,6 +311,13 @@ class _StartWorkoutCard extends ConsumerWidget {
   final AsyncValue<TodayWorkout> todayAsync;
   final CurrentWorkout plan;
 
+  static String _formatDuration(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes % 60;
+    if (h > 0) return '${h}h ${m.toString().padLeft(2, '0')}min';
+    return '${m}min';
+  }
+
   /// "Trocar treino": escolher outro dia do plano para treinar hoje (igual ao bot).
   Future<void> _chooseDay(BuildContext context, WidgetRef ref) async {
     final current = todayAsync.asData?.value.dayName;
@@ -336,13 +345,43 @@ class _StartWorkoutCard extends ConsumerWidget {
     );
     if (chosen == null || chosen == current) return;
     ref.read(todayDayOverrideProvider.notifier).state = TodayDayOverride(dayName: chosen, date: DateTime.now());
+    if (context.mounted) context.push('/workout/today');
+  }
+
+  void _resetAndTrainAgain(BuildContext context, WidgetRef ref, TodayWorkout today) {
+    for (final ex in today.exercises) {
+      final key = (ex.nome, parseRestSeconds(ex.descanso), parseSetsCount(ex.series));
+      ref.read(restTimerProvider(key).notifier).resetForNewSession();
+    }
+
+    // Prioriza a sessão concluída em memória (mais recente que o cache do lastWorkoutProvider).
+    // Fallback: último treino do banco. Fallback final: o dia atual.
+    final completedSession = ref.read(completedWorkoutSessionProvider);
+    final lastWorkout = ref.read(lastWorkoutProvider).asData?.value;
+    final lastDayName = completedSession?.dayName ?? lastWorkout?.dayName ?? today.dayName;
+
+    final currentIndex = plan.days.indexWhere((d) => d.dayName == lastDayName);
+    final nextIndex = currentIndex >= 0 ? (currentIndex + 1) % plan.days.length : 0;
+    final nextDay = plan.days[nextIndex];
+
+    ref.read(todayDayOverrideProvider.notifier).state = TodayDayOverride(dayName: nextDay.dayName, date: DateTime.now());
+    ref.read(completedWorkoutSessionProvider.notifier).state = null;
+    ref.invalidate(lastWorkoutProvider);
+    context.push('/workout/today');
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final today = todayAsync.asData?.value;
     final session = ref.watch(activeWorkoutSessionProvider);
+    final completed = ref.watch(completedWorkoutSessionProvider);
+    final lastWorkout = ref.watch(lastWorkoutProvider).asData?.value;
+
     final inProgress = today != null && !today.isRest && session != null && session.isFor(today.dayName, DateTime.now());
+    final completedInSession = completed != null && completed.isToday() && today != null && completed.dayName == today.dayName;
+    final completedFromDB = lastWorkout != null && lastWorkout.isToday;
+    final isDoneToday = !inProgress && (completedInSession || completedFromDB);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -353,7 +392,7 @@ class _StartWorkoutCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    inProgress ? 'Treino em andamento' : 'Iniciar Treino',
+                    isDoneToday ? 'Treino concluído hoje! ✅' : inProgress ? 'Treino em andamento' : 'Iniciar Treino',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
@@ -366,44 +405,68 @@ class _StartWorkoutCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 8),
-            todayAsync.when(
-              data: (today) {
-                if (today.isRest) {
-                  return const Text('Hoje é dia de descanso. 😴');
-                }
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      today.dayName,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    if (today.focusLabel.isNotEmpty)
-                      Text(
-                        today.focusLabel,
-                        style: const TextStyle(color: Colors.grey),
-                      ),
-                  ],
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+            if (isDoneToday) ...[
+              Text(
+                completedInSession ? completed.dayName : (lastWorkout?.dayName ?? ''),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              error: (error, stackTrace) =>
-                  const Text('Não foi possível carregar o treino de hoje.'),
-            ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  if (completedInSession) ...[
+                    const Icon(Icons.timer_outlined, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(completed.durationFormatted, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                    const SizedBox(width: 16),
+                  ] else if (lastWorkout?.duration != null) ...[
+                    const Icon(Icons.timer_outlined, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(_formatDuration(lastWorkout!.duration!), style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                    const SizedBox(width: 16),
+                  ],
+                  const Icon(Icons.fitness_center, size: 14, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    completedInSession
+                        ? '${completed.completedCount}/${completed.totalCount} exercícios'
+                        : '${lastWorkout?.exercises.length ?? 0} exercícios',
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  ),
+                ],
+              ),
+            ] else
+              todayAsync.when(
+                data: (today) {
+                  if (today.isRest) return const Text('Hoje é dia de descanso. 😴');
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(today.dayName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      if (today.focusLabel.isNotEmpty)
+                        Text(today.focusLabel, style: const TextStyle(color: Colors.grey)),
+                    ],
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+                ),
+                error: (e, s) => const Text('Não foi possível carregar o treino de hoje.'),
+              ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: todayAsync.asData?.value.isRest == true
-                  ? null
-                  : () => context.push('/workout/today'),
-              child: Text(inProgress ? 'Continuar Treino' : 'Iniciar Treino'),
-            ),
+            if (isDoneToday)
+              OutlinedButton.icon(
+                onPressed: today == null ? null : () => _resetAndTrainAgain(context, ref, today),
+                icon: const Icon(Icons.replay),
+                label: const Text('Treinar novamente'),
+              )
+            else
+              ElevatedButton(
+                onPressed: todayAsync.asData?.value.isRest == true
+                    ? null
+                    : () => context.push('/workout/today'),
+                child: Text(inProgress ? 'Continuar Treino' : 'Iniciar Treino'),
+              ),
             if (plan.days.length > 1) ...[
               const SizedBox(height: 4),
               TextButton.icon(
