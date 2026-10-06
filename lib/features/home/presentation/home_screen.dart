@@ -360,9 +360,12 @@ class _StartWorkoutCard extends ConsumerWidget {
     final lastWorkout = ref.read(lastWorkoutProvider).asData?.value;
     final lastDayName = completedSession?.dayName ?? lastWorkout?.dayName ?? today.dayName;
 
-    final currentIndex = plan.days.indexWhere((d) => d.dayName == lastDayName);
-    final nextIndex = currentIndex >= 0 ? (currentIndex + 1) % plan.days.length : 0;
-    final nextDay = plan.days[nextIndex];
+    // Filtra dias de descanso para não entrar na rotação A → Descanso → B.
+    final nonRestDays = plan.days.where((d) => !d.dayName.toLowerCase().contains('descanso')).toList();
+    final days = nonRestDays.isNotEmpty ? nonRestDays : plan.days;
+    final currentIndex = days.indexWhere((d) => d.dayName == lastDayName);
+    final nextIndex = currentIndex >= 0 ? (currentIndex + 1) % days.length : 0;
+    final nextDay = days[nextIndex];
 
     ref.read(todayDayOverrideProvider.notifier).state = TodayDayOverride(dayName: nextDay.dayName, date: DateTime.now());
     ref.read(completedWorkoutSessionProvider.notifier).state = null;

@@ -51,21 +51,16 @@ class LastWorkoutExercise {
 }
 
 class LastWorkout {
-  LastWorkout({required this.date, this.startedAt, required this.dayName, required this.exercises});
+  LastWorkout({required this.date, this.startedAt, required this.dayName, required this.exercises, this.isToday = false});
   final DateTime? date;
   final DateTime? startedAt;
   final String dayName;
   final List<LastWorkoutExercise> exercises;
+  final bool isToday;
 
   Duration? get duration {
     if (date == null || startedAt == null) return null;
     return date!.difference(startedAt!);
-  }
-
-  bool get isToday {
-    if (date == null) return false;
-    final now = DateTime.now();
-    return date!.year == now.year && date!.month == now.month && date!.day == now.day;
   }
 }
 
@@ -158,6 +153,7 @@ class AppApi {
     return LastWorkout(
       date: data['date'] != null ? DateTime.tryParse(data['date']) : null,
       startedAt: data['startedAt'] != null ? DateTime.tryParse(data['startedAt']) : null,
+      isToday: data['isToday'] == true,
       dayName: data['dayName'] ?? '',
       exercises: (data['exercises'] as List? ?? [])
           .map((e) => LastWorkoutExercise(name: e['name'] ?? '', weight: e['weight']?.toString(), observation: e['observation']))

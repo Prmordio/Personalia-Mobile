@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/notifications/rest_alarm.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/data/app_api.dart';
 import '../state/active_workout_session.dart';
+import 'widgets/exercise_video_sheet.dart';
 
 int parseRestSeconds(String? descanso, {int fallback = 60}) {
   if (descanso == null || descanso.trim().isEmpty) return fallback;
@@ -218,6 +220,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     final current = ref.read(restTimerProvider(_key));
     _weightController = TextEditingController(text: current.weight);
     _observationController = TextEditingController(text: current.observation);
+
   }
 
   @override
@@ -262,6 +265,8 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     }
 
     final done = state.remaining <= 0;
+    // O último set não precisa de descanso: 4 séries = 3 plays (N-1 descansos).
+    final allSetsDone = totalSets <= 1 ? state.completedSets >= 1 : state.completedSets >= totalSets - 1;
 
     return Scaffold(
       appBar: AppBar(title: Text(exercise.nome)),
@@ -278,7 +283,25 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
               if (args.lastWeight != null) _Stat('Último peso', args.lastWeight!),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _ActionButton(
+                icon: Icons.search,
+                label: 'Vídeos',
+                color: const Color(0xFF2196F3),
+                onPressed: () => showExerciseVideoSheet(context, exerciseName: exercise.nome),
+              ),
+              _ActionButton(
+                icon: Icons.swap_horiz,
+                label: 'Trocar',
+                color: const Color(0xFF42A5F5),
+                onPressed: () => context.push('/coming-soon/trocar-exercicio'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -312,16 +335,27 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
                   const SizedBox(height: 12),
                   IconButton(
                     iconSize: 56,
-                    color: AppColors.orange,
+                    color: allSetsDone && done ? Colors.green : AppColors.orange,
                     icon: Icon(
-                      done ? Icons.replay_circle_filled : (state.running ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                      allSetsDone && done
+                          ? Icons.check_circle
+                          : done
+                              ? Icons.replay_circle_filled
+                              : (state.running ? Icons.pause_circle_filled : Icons.play_circle_fill),
                     ),
-                    onPressed: done
-                        ? notifier.reset
-                        : () {
-                            _ensureSession(ref, args.dayName);
-                            notifier.toggle();
-                          },
+                    onPressed: allSetsDone && done
+                        ? null
+                        : done
+                            ? () {
+                                // Reset + inicia próxima série em um único toque.
+                                notifier.reset();
+                                _ensureSession(ref, args.dayName);
+                                notifier.toggle();
+                              }
+                            : () {
+                                _ensureSession(ref, args.dayName);
+                                notifier.toggle();
+                              },
                   ),
                 ],
               ),
@@ -489,6 +523,34 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
           ),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({required this.icon, required this.label, required this.color, required this.onPressed});
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onPressed,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 2),
+            Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w500)),
+          ],
+        ),
       ),
     );
   }
