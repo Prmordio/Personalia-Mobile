@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../home/data/app_api.dart';
 import '../../home/state/today_workout_override.dart';
+import '../data/exercise_image_provider.dart';
 import '../data/workout_summary.dart';
 import '../state/active_workout_session.dart';
 import 'rest_timer_screen.dart';
@@ -60,11 +61,12 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     final todayAsync = ref.watch(effectiveTodayWorkoutProvider);
-    final lastWorkoutAsync = ref.watch(lastWorkoutProvider);
+    // Constrói mapa de último peso varrendo os 10 treinos mais recentes (mais antigo sobrescrito pelo mais novo).
+    final historyAsync = ref.watch(workoutHistoryProvider);
     final lastWeights = <String, String>{};
-    final lastWorkout = lastWorkoutAsync.asData?.value;
-    if (lastWorkout != null) {
-      for (final ex in lastWorkout.exercises) {
+    final history = historyAsync.asData?.value ?? [];
+    for (final workout in history.reversed) {
+      for (final ex in workout.exercises) {
         if (ex.weight != null) lastWeights[ex.name.trim().toLowerCase()] = ex.weight!;
       }
     }
@@ -194,6 +196,7 @@ class _ExerciseCard extends ConsumerWidget {
     final finished = timerState.finished;
     final inProgress = !finished && timerState.completedSets > 0;
     final isCardio = exercise.modeloDeTreino?.toLowerCase() == 'cardio';
+    final imageBytes = ref.watch(exerciseImageProvider(exercise.nome)).asData?.value;
 
     Color? cardColor;
     if (finished) {
@@ -211,48 +214,72 @@ class _ExerciseCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(exercise.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(exercise.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          ),
+                          if (finished)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.check, color: Colors.white, size: 11),
+                                  SizedBox(width: 3),
+                                  Text('Concluído', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            )
+                          else if (inProgress)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: const Color(0xFFFF6B35), borderRadius: BorderRadius.circular(12)),
+                              child: Text(
+                                isCardio ? 'Em execução' : '${timerState.completedSets}/$totalSets séries',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 4,
+                        children: [
+                          if (isCardio) ...[
+                            if (exercise.repeticoes != null) _Stat('Meta', exercise.repeticoes!),
+                            if (finished) _Stat('Tempo', timerState.weight),
+                            _Stat('Último tempo', lastWeight ?? '—'),
+                          ] else ...[
+                            if (exercise.series != null) _Stat('Séries', exercise.series!),
+                            if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
+                            if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
+                            _Stat('Último peso', lastWeight != null ? '$lastWeight kg' : '—'),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                if (finished)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.check, color: Colors.white, size: 11),
-                        SizedBox(width: 3),
-                        Text('Concluído', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  )
-                else if (inProgress)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: const Color(0xFFFF6B35), borderRadius: BorderRadius.circular(12)),
-                    child: Text(
-                      isCardio ? 'Em execução' : '${timerState.completedSets}/$totalSets séries',
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                if (imageBytes != null) ...[
+                  const SizedBox(width: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.memory(
+                      imageBytes,
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
                     ),
                   ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 16,
-              runSpacing: 4,
-              children: [
-                if (isCardio) ...[
-                  if (exercise.repeticoes != null) _Stat('Meta', exercise.repeticoes!),
-                  if (finished) _Stat('Tempo', timerState.weight),
-                  if (lastWeight != null) _Stat('Último tempo', lastWeight!),
-                ] else ...[
-                  if (exercise.series != null) _Stat('Séries', exercise.series!),
-                  if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
-                  if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
-                  if (lastWeight != null) _Stat('Último peso', lastWeight!),
                 ],
               ],
             ),

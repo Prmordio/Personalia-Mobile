@@ -64,6 +64,37 @@ class LastWorkout {
   }
 }
 
+class WorkoutHistoryEntry {
+  WorkoutHistoryEntry({
+    required this.id,
+    required this.dayName,
+    this.date,
+    this.startedAt,
+    this.isToday = false,
+    this.durationMinutes,
+    required this.exercises,
+  });
+  final String id;
+  final String dayName;
+  final DateTime? date;
+  final DateTime? startedAt;
+  final bool isToday;
+  final int? durationMinutes;
+  final List<LastWorkoutExercise> exercises;
+
+  factory WorkoutHistoryEntry.fromJson(Map<String, dynamic> data) => WorkoutHistoryEntry(
+        id: data['id'] ?? '',
+        dayName: data['dayName'] ?? '',
+        date: data['date'] != null ? DateTime.tryParse(data['date']) : null,
+        startedAt: data['startedAt'] != null ? DateTime.tryParse(data['startedAt']) : null,
+        isToday: data['isToday'] == true,
+        durationMinutes: data['durationMinutes'] as int?,
+        exercises: (data['exercises'] as List? ?? [])
+            .map((e) => LastWorkoutExercise(name: e['name'] ?? '', weight: e['weight']?.toString(), observation: e['observation']))
+            .toList(),
+      );
+}
+
 class DailyTip {
   DailyTip({required this.categoria, required this.texto});
   final String? categoria;
@@ -224,6 +255,18 @@ class AppApi {
     );
   }
 
+  Future<List<WorkoutHistoryEntry>> getWorkoutHistory() async {
+    final response = await _dio.get('/app/workout/history');
+    return (response.data as List? ?? []).map((e) => WorkoutHistoryEntry.fromJson(e)).toList();
+  }
+
+  Future<void> updateProgress({double? weight, double? height}) async {
+    await _dio.put('/app/progress', data: {
+      if (weight != null) 'weight': weight,
+      if (height != null) 'height': height,
+    });
+  }
+
   Future<SubscriptionInfo> getSubscription() async {
     final response = await _dio.get('/app/subscription');
     return SubscriptionInfo.fromJson(response.data);
@@ -233,6 +276,7 @@ class AppApi {
     final response = await _dio.get('/agent/exercise-video', queryParameters: {'name': name});
     return (response.data['videos'] as List? ?? []).map((v) => ExerciseVideo.fromJson(v)).toList();
   }
+
 }
 
 final appApiProvider = Provider<AppApi>((ref) => AppApi(ref.watch(apiClientProvider).dio));
@@ -267,4 +311,8 @@ final exerciseVideosProvider = FutureProvider.autoDispose.family<List<ExerciseVi
 
 final subscriptionProvider = FutureProvider.autoDispose<SubscriptionInfo>((ref) {
   return ref.watch(appApiProvider).getSubscription();
+});
+
+final workoutHistoryProvider = FutureProvider.autoDispose<List<WorkoutHistoryEntry>>((ref) {
+  return ref.watch(appApiProvider).getWorkoutHistory();
 });
