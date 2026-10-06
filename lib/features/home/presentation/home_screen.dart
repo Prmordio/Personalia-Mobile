@@ -516,70 +516,136 @@ class _ViewPlanCard extends StatelessWidget {
   }
 }
 
-class _ProgressCard extends StatelessWidget {
+class _ProgressCard extends ConsumerWidget {
   const _ProgressCard({required this.progressAsync});
   final AsyncValue<ProgressInfo> progressAsync;
 
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+  Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, ProgressInfo? current) async {
+    final weightController = TextEditingController(
+      text: current?.currentWeight != null ? '${current!.currentWeight}' : '',
+    );
+    final heightController = TextEditingController(
+      text: current?.currentHeight != null ? '${current!.currentHeight}' : '',
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Atualizar medidas'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              'Sua Evolução',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            TextField(
+              controller: weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Peso (kg)', hintText: 'ex: 85.5'),
             ),
             const SizedBox(height: 12),
-            progressAsync.when(
-              data: (progress) {
-                if (progress.currentWeight == null &&
-                    progress.currentHeight == null) {
-                  return const Text('Ainda não temos dados suficientes.');
-                }
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _ProgressStat(
-                      label: 'Peso',
-                      value: progress.currentWeight != null
-                          ? '${progress.currentWeight} kg'
-                          : '—',
-                    ),
-                    _ProgressStat(
-                      label: 'Altura',
-                      value: progress.currentHeight != null
-                          ? '${progress.currentHeight} cm'
-                          : '—',
-                    ),
-                    _ProgressStat(
-                      label: 'Últimos 90 dias',
-                      value: progress.weightLostPercent != null
-                          ? '${progress.weightLostPercent! > 0 ? '-' : '+'}${progress.weightLostPercent!.abs()}%'
-                          : '—',
-                      valueColor:
-                          progress.weightLostPercent != null &&
-                              progress.weightLostPercent! > 0
-                          ? Colors.green
-                          : null,
-                    ),
-                  ],
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: SizedBox(
-                  height: 16,
-                  width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-              error: (error, stackTrace) =>
-                  const Text('Não foi possível carregar sua evolução.'),
+            TextField(
+              controller: heightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(labelText: 'Altura (cm)', hintText: 'ex: 175'),
             ),
           ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancelar')),
+          ElevatedButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Salvar')),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final weight = double.tryParse(weightController.text.replaceAll(',', '.'));
+    final height = double.tryParse(heightController.text.replaceAll(',', '.'));
+
+    if (weight == null && height == null) return;
+
+    try {
+      await ref.read(appApiProvider).updateProgress(weight: weight, height: height);
+      ref.invalidate(progressProvider);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível salvar as medidas. Tente novamente.')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = progressAsync.asData?.value;
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _showUpdateDialog(context, ref, current),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Sua Evolução',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                  Icon(Icons.edit_outlined, size: 16, color: Colors.grey.shade400),
+                ],
+              ),
+              const SizedBox(height: 12),
+              progressAsync.when(
+                data: (progress) {
+                  if (progress.currentWeight == null &&
+                      progress.currentHeight == null) {
+                    return const Text('Toque para inserir seu peso e altura.');
+                  }
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _ProgressStat(
+                        label: 'Peso',
+                        value: progress.currentWeight != null
+                            ? '${progress.currentWeight} kg'
+                            : '—',
+                      ),
+                      _ProgressStat(
+                        label: 'Altura',
+                        value: progress.currentHeight != null
+                            ? '${progress.currentHeight} cm'
+                            : '—',
+                      ),
+                      _ProgressStat(
+                        label: 'Últimos 90 dias',
+                        value: progress.weightLostPercent != null
+                            ? '${progress.weightLostPercent! > 0 ? '-' : '+'}${progress.weightLostPercent!.abs()}%'
+                            : '—',
+                        valueColor:
+                            progress.weightLostPercent != null &&
+                                progress.weightLostPercent! > 0
+                            ? Colors.green
+                            : null,
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+                error: (error, stackTrace) =>
+                    const Text('Não foi possível carregar sua evolução.'),
+              ),
+            ],
+          ),
         ),
       ),
     );

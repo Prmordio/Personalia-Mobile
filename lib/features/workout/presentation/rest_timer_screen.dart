@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/notifications/rest_alarm.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/data/app_api.dart';
+import '../data/exercise_image_provider.dart';
 import '../state/active_workout_session.dart';
 import 'widgets/exercise_video_sheet.dart';
 
@@ -268,11 +269,25 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
     // O último set não precisa de descanso: 4 séries = 3 plays (N-1 descansos).
     final allSetsDone = totalSets <= 1 ? state.completedSets >= 1 : state.completedSets >= totalSets - 1;
 
+    final imageBytes = ref.watch(exerciseImageProvider(exercise.nome)).asData?.value;
+
     return Scaffold(
       appBar: AppBar(title: Text(exercise.nome)),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          if (imageBytes != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.memory(
+                imageBytes,
+                width: double.infinity,
+                height: 160,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           Wrap(
             spacing: 24,
             runSpacing: 8,
@@ -280,7 +295,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> {
               if (exercise.series != null) _Stat('Séries', exercise.series!),
               if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
               if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
-              if (args.lastWeight != null) _Stat('Último peso', args.lastWeight!),
+              _Stat('Último peso', args.lastWeight != null ? '${args.lastWeight} kg' : '—'),
             ],
           ),
           const SizedBox(height: 8),
