@@ -50,24 +50,30 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
               workoutAsync.when(
-                data: (workout) => workout == null
-                    ? const _NoWorkoutCard()
-                    : Column(
-                        children: [
-                          _StartWorkoutCard(todayAsync: todayWorkoutAsync, plan: workout),
-                          const SizedBox(height: 16),
-                          const _ViewPlanCard(),
-                          const SizedBox(height: 16),
-                          _ProgressCard(progressAsync: progressAsync),
-                          // Dica do dia já aberta, logo abaixo da evolução.
-                          ...tipAsync.maybeWhen(
-                            data: (tip) => tip.texto == null
-                                ? const <Widget>[]
-                                : [const SizedBox(height: 16), _TipCard(tip: tip)],
-                            orElse: () => const <Widget>[],
-                          ),
-                        ],
-                      ),
+                data: (workout) {
+                  final isActive = subscriptionAsync.maybeWhen(
+                    data: (s) => s.isValid,
+                    orElse: () => true,
+                  );
+                  return workout == null
+                      ? const _NoWorkoutCard()
+                      : Column(
+                          children: [
+                            _StartWorkoutCard(todayAsync: todayWorkoutAsync, plan: workout, isActive: isActive),
+                            const SizedBox(height: 16),
+                            _ViewPlanCard(isActive: isActive),
+                            const SizedBox(height: 16),
+                            _ProgressCard(progressAsync: progressAsync, isActive: isActive),
+                            // Dica do dia já aberta, logo abaixo da evolução.
+                            ...tipAsync.maybeWhen(
+                              data: (tip) => tip.texto == null
+                                  ? const <Widget>[]
+                                  : [const SizedBox(height: 16), _TipCard(tip: tip)],
+                              orElse: () => const <Widget>[],
+                            ),
+                          ],
+                        );
+                },
                 loading: () => const Center(
                   child: Padding(
                     padding: EdgeInsets.all(32),
@@ -307,9 +313,10 @@ class _NoWorkoutCard extends ConsumerWidget {
 }
 
 class _StartWorkoutCard extends ConsumerWidget {
-  const _StartWorkoutCard({required this.todayAsync, required this.plan});
+  const _StartWorkoutCard({required this.todayAsync, required this.plan, this.isActive = true});
   final AsyncValue<TodayWorkout> todayAsync;
   final CurrentWorkout plan;
+  final bool isActive;
 
   static String _formatDuration(Duration d) {
     final h = d.inHours;
@@ -459,13 +466,13 @@ class _StartWorkoutCard extends ConsumerWidget {
             const SizedBox(height: 16),
             if (isDoneToday)
               OutlinedButton.icon(
-                onPressed: today == null ? null : () => _resetAndTrainAgain(context, ref, today),
+                onPressed: !isActive || today == null ? null : () => _resetAndTrainAgain(context, ref, today),
                 icon: const Icon(Icons.replay),
                 label: const Text('Treinar novamente'),
               )
             else
               ElevatedButton(
-                onPressed: todayAsync.asData?.value.isRest == true
+                onPressed: !isActive || todayAsync.asData?.value.isRest == true
                     ? null
                     : () => context.push('/workout/today'),
                 child: Text(inProgress ? 'Continuar Treino' : 'Iniciar Treino'),
@@ -473,7 +480,7 @@ class _StartWorkoutCard extends ConsumerWidget {
             if (plan.days.length > 1) ...[
               const SizedBox(height: 4),
               TextButton.icon(
-                onPressed: () => _chooseDay(context, ref),
+                onPressed: isActive ? () => _chooseDay(context, ref) : null,
                 icon: const Icon(Icons.swap_horiz),
                 label: const Text('Trocar treino'),
               ),
@@ -486,7 +493,8 @@ class _StartWorkoutCard extends ConsumerWidget {
 }
 
 class _ViewPlanCard extends StatelessWidget {
-  const _ViewPlanCard();
+  const _ViewPlanCard({this.isActive = true});
+  final bool isActive;
 
   @override
   Widget build(BuildContext context) {
@@ -506,7 +514,7 @@ class _ViewPlanCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: () => context.push('/workout/current'),
+              onPressed: isActive ? () => context.push('/workout/current') : null,
               child: const Text('Visualizar plano'),
             ),
           ],
@@ -517,8 +525,9 @@ class _ViewPlanCard extends StatelessWidget {
 }
 
 class _ProgressCard extends ConsumerWidget {
-  const _ProgressCard({required this.progressAsync});
+  const _ProgressCard({required this.progressAsync, this.isActive = true});
   final AsyncValue<ProgressInfo> progressAsync;
+  final bool isActive;
 
   Future<void> _showUpdateDialog(BuildContext context, WidgetRef ref, ProgressInfo? current) async {
     final weightController = TextEditingController(
@@ -580,7 +589,7 @@ class _ProgressCard extends ConsumerWidget {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _showUpdateDialog(context, ref, current),
+        onTap: isActive ? () => _showUpdateDialog(context, ref, current) : null,
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
