@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/home/data/app_api.dart';
 
-class AppShell extends StatelessWidget {
+class AppShell extends ConsumerWidget {
   const AppShell({super.key, required this.child, required this.currentLocation});
 
   final Widget child;
@@ -20,21 +22,41 @@ class AppShell extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subscriptionAsync = ref.watch(subscriptionProvider);
+    // Considera ativa enquanto carrega (evita piscar de bloqueado para liberado).
+    final isActive = subscriptionAsync.maybeWhen(
+      data: (s) => s.isValid,
+      orElse: () => true,
+    );
+
     return Scaffold(
       body: child,
-      // Chat de dúvidas sempre à mão, em todas as abas.
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Tirar dúvidas',
-        onPressed: () => context.push('/assistant'),
-        child: const Icon(Icons.chat_bubble_outline),
-      ),
+      // Chat de dúvidas disponível somente para assinantes.
+      floatingActionButton: isActive
+          ? FloatingActionButton(
+              tooltip: 'Tirar dúvidas',
+              onPressed: () => context.push('/assistant'),
+              child: const Icon(Icons.chat_bubble_outline),
+            )
+          : null,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: _currentIndex,
-        onTap: (index) => context.go(_tabs[index].$1),
+        onTap: (index) {
+          // Sem assinatura, só a aba Início (índice 0) é permitida.
+          if (!isActive && index != 0) return;
+          context.go(_tabs[index].$1);
+        },
         items: [
-          for (final tab in _tabs) BottomNavigationBarItem(icon: Icon(tab.$2), label: tab.$3),
+          for (final (i, tab) in _tabs.indexed)
+            BottomNavigationBarItem(
+              icon: Icon(
+                tab.$2,
+                color: !isActive && i != 0 ? Colors.grey.shade300 : null,
+              ),
+              label: tab.$3,
+            ),
         ],
       ),
     );

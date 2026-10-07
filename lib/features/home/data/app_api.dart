@@ -162,6 +162,19 @@ class ExerciseVideo {
       );
 }
 
+class ExerciseAlternative {
+  ExerciseAlternative({required this.nome, this.series, this.repeticoes});
+  final String nome;
+  final String? series;
+  final String? repeticoes;
+
+  factory ExerciseAlternative.fromJson(Map<String, dynamic> json) => ExerciseAlternative(
+        nome: json['nome'] ?? json['name'] ?? '',
+        series: json['series']?.toString(),
+        repeticoes: json['repeticoes']?.toString(),
+      );
+}
+
 class AppApi {
   AppApi(this._dio);
   final Dio _dio;
@@ -275,6 +288,23 @@ class AppApi {
   Future<List<ExerciseVideo>> getExerciseVideos(String name) async {
     final response = await _dio.get('/agent/exercise-video', queryParameters: {'name': name});
     return (response.data['videos'] as List? ?? []).map((v) => ExerciseVideo.fromJson(v)).toList();
+  }
+
+  Future<List<ExerciseAlternative>> getExerciseAlternatives({
+    required String exerciseName,
+    String series = '3',
+    String reps = '12',
+    bool isCardio = false,
+  }) async {
+    final response = await _dio.post('/app/workout/exercise/alternatives', data: {
+      'exerciseName': exerciseName,
+      'series': series,
+      'reps': reps,
+      'isCardio': isCardio,
+    });
+    return (response.data['alternatives'] as List? ?? [])
+        .map((a) => ExerciseAlternative.fromJson(a))
+        .toList();
   }
 
 }
