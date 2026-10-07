@@ -141,9 +141,13 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 
   void _startCountdown() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      final remaining = _endTime != null
+      // Preferência pelo relógio real (evita drift). Em testes, DateTime.now() não é
+      // mockado pelo FakeAsync do testWidgets, então clockRemaining fica em ~totalSeconds;
+      // clamp a state.remaining-1 garante pelo menos 1s de progresso por tick.
+      final clockRemaining = _endTime != null
           ? _endTime!.difference(DateTime.now()).inSeconds
-          : 0;
+          : state.remaining - 1;
+      final remaining = clockRemaining.clamp(0, state.remaining - 1);
       if (remaining <= 0) {
         timer.cancel();
         _endTime = null;
