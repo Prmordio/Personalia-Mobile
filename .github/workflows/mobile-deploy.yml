@@ -141,24 +141,10 @@ jobs:
           # Patch Runner target PROVISIONING_PROFILE_SPECIFIER with UUID so that
           # xcodebuild resolves the profile without a global command-line override
           # (which would also hit Pods targets and cause "does not support profiles").
-          python3 - "$PP_UUID" <<'PYEOF'
-import sys, re
-uuid = sys.argv[1]
-path = "ios/Runner.xcodeproj/project.pbxproj"
-with open(path, encoding="utf-8") as f:
-    content = f.read()
-new = re.sub(
-    r'PROVISIONING_PROFILE_SPECIFIER = "[^"]*"',
-    f'PROVISIONING_PROFILE_SPECIFIER = "{uuid}"',
-    content,
-)
-if new == content:
-    print("ERROR: PROVISIONING_PROFILE_SPECIFIER not found in project.pbxproj", file=sys.stderr)
-    sys.exit(1)
-with open(path, "w", encoding="utf-8") as f:
-    f.write(new)
-print(f"PROVISIONING_PROFILE_SPECIFIER → {uuid}")
-PYEOF
+          sed -i '' \
+            "s/PROVISIONING_PROFILE_SPECIFIER = \"PersonaliA AppStore\"/PROVISIONING_PROFILE_SPECIFIER = \"${PP_UUID}\"/" \
+            ios/Runner.xcodeproj/project.pbxproj
+          grep "PROVISIONING_PROFILE_SPECIFIER" ios/Runner.xcodeproj/project.pbxproj
 
           # ── Archive ───────────────────────────────────────────────────────
           # DART_DEFINES: Flutter expects each define individually base64-encoded, comma-joined.
