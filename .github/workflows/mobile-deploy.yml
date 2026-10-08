@@ -192,12 +192,14 @@ jobs:
             exit 1
           }
 
-          mkdir -p \
-            "$HOME/Library/MobileDevice/Provisioning Profiles"
-
-          cp \
-            "$RUNNER_TEMP/profile.mobileprovision" \
-            "$HOME/Library/MobileDevice/Provisioning Profiles/$PP_UUID.mobileprovision"
+          # Xcode 16+ uses UserData; keep the legacy location for older versions.
+          for PROFILE_DIR in \
+            "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles" \
+            "$HOME/Library/MobileDevice/Provisioning Profiles"; do
+            mkdir -p "$PROFILE_DIR"
+            cp "$RUNNER_TEMP/profile.mobileprovision" \
+              "$PROFILE_DIR/$PP_UUID.mobileprovision"
+          done
 
 
           # ── Dart Defines ────────────────────────────────────────
