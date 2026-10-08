@@ -99,6 +99,7 @@ jobs:
           CERTIFICATE_BASE64: ${{ secrets.DISTRIBUTION_CERT_BASE64 }}
           P12_PASSWORD: ${{ secrets.CERT_P12_PASSWORD }}
           PROVISIONING_PROFILE_BASE64: ${{ secrets.PROVISIONING_PROFILE_BASE64 }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           PERSONALIA_API_URL: ${{ secrets.PERSONALIA_API_URL }}
           WHATSAPP_BOT_NUMBER: ${{ secrets.WHATSAPP_BOT_NUMBER }}
         run: |
@@ -145,6 +146,7 @@ jobs:
             -configuration Release \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             archive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             DART_DEFINES="$DEFINE1,$DEFINE2" \
             -allowProvisioningUpdates
 
