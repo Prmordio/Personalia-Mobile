@@ -95,36 +95,10 @@ jobs:
         run: cd ios && pod install --repo-update
 
       - name: Import distribution certificate
-        env:
-          CERTIFICATE_BASE64: ${{ secrets.DISTRIBUTION_CERT_BASE64 }}
-          P12_PASSWORD: ${{ secrets.CERT_P12_PASSWORD }}
-          KEYCHAIN_PASSWORD: temporarykeychain123
-        run: |
-          KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
-          echo "$CERTIFICATE_BASE64" | base64 --decode > $RUNNER_TEMP/certificate.p12
-
-          # Cria keychain dedicado e torna default imediatamente
-          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security default-keychain -s "$KEYCHAIN_PATH"
-
-          # Importa certificado e libera acesso sem prompt de UI
-          security import "$RUNNER_TEMP/certificate.p12" \
-            -k "$KEYCHAIN_PATH" \
-            -P "$P12_PASSWORD" \
-            -T /usr/bin/codesign \
-            -T /usr/bin/security \
-            -T /usr/bin/productbuild
-          security set-key-partition-list \
-            -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-
-          # Adiciona ao search list do usuário (login.keychain mantido)
-          security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain System.keychain
-
-          # Verifica que o certificado está visível — falha a build se não estiver
-          echo "=== Certificados disponíveis para codesigning ==="
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+        uses: apple-actions/import-codesign-certs@v3
+        with:
+          p12-file-base64: ${{ secrets.DISTRIBUTION_CERT_BASE64 }}
+          p12-password: ${{ secrets.CERT_P12_PASSWORD }}
 
       - name: Install provisioning profile
         env:
