@@ -133,9 +133,14 @@ jobs:
           cp "$RUNNER_TEMP/profile.mobileprovision" \
             ~/Library/MobileDevice/Provisioning\ Profiles/"$PP_UUID".mobileprovision
 
+          # Patch Runner target with the profile UUID so xcodebuild picks it up
+          # without a global command-line PROVISIONING_PROFILE_SPECIFIER that
+          # would also affect Pods targets and cause "does not support profiles" errors.
+          sed -i '' \
+            "s/PROVISIONING_PROFILE_SPECIFIER = \"PersonaliA AppStore\"/PROVISIONING_PROFILE_SPECIFIER = \"$PP_UUID\"/" \
+            ios/Runner.xcodeproj/project.pbxproj
+
           # ── Archive ───────────────────────────────────────────────────────
-          # Bypass Flutter's development-cert check by calling xcodebuild directly.
-          # xcodebuild archive invokes Flutter's build script (xcode_backend.sh) internally.
           # DART_DEFINES: Flutter expects each define individually base64-encoded, comma-joined.
           DEFINE1=$(printf '%s' "API_BASE_URL=$PERSONALIA_API_URL" | base64 | tr -d '\n')
           DEFINE2=$(printf '%s' "WHATSAPP_BOT_NUMBER=$WHATSAPP_BOT_NUMBER" | base64 | tr -d '\n')
@@ -149,7 +154,6 @@ jobs:
             CODE_SIGN_STYLE="Manual" \
             CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            PROVISIONING_PROFILE_SPECIFIER="$PP_UUID" \
             DART_DEFINES="$DEFINE1,$DEFINE2" \
             -allowProvisioningUpdates
 
