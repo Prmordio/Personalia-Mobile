@@ -94,7 +94,7 @@ jobs:
       - name: Install CocoaPods dependencies
         run: cd ios && pod install --repo-update
 
-            - name: Build IPA
+      - name: Build IPA
         env:
           CERTIFICATE_BASE64: ${{ secrets.DISTRIBUTION_CERT_BASE64 }}
           P12_PASSWORD: ${{ secrets.CERT_P12_PASSWORD }}
