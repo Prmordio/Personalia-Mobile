@@ -92,11 +92,9 @@ jobs:
         run: flutter pub get
 
       - name: Install CocoaPods dependencies
-        run: |
-          cd ios
-          pod install --repo-update
+        run: cd ios && pod install --repo-update
 
-      - name: Build IPA
+            - name: Build IPA
         env:
           CERTIFICATE_BASE64: ${{ secrets.DISTRIBUTION_CERT_BASE64 }}
           P12_PASSWORD: ${{ secrets.CERT_P12_PASSWORD }}
@@ -107,10 +105,12 @@ jobs:
         run: |
           set -e
 
+          # ── Keychain ──────────────────────────────────────────────────────
           KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
           KEYCHAIN_PASS="ci-keychain-pass-$(date +%s)"
 
-          echo "$CERTIFICATE_BASE64" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          echo "$CERTIFICATE_BASE64" | base64 --decode \
+            > "$RUNNER_TEMP/cert.p12"
 
           security create-keychain \
             -p "$KEYCHAIN_PASS" \
@@ -148,9 +148,9 @@ jobs:
 
           security find-identity \
             -v \
-            -p codesigning \
-            "$KEYCHAIN_PATH"
+            -p codesigning
 
+          # ── Provisioning Profile ──────────────────────────────────────────
           echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode \
             > "$RUNNER_TEMP/profile.mobileprovision"
 
@@ -163,7 +163,12 @@ jobs:
             -extract UUID raw \
             "$RUNNER_TEMP/profile.plist")
 
+          PP_NAME=$(plutil \
+            -extract Name raw \
+            "$RUNNER_TEMP/profile.plist")
+
           echo "Profile UUID: $PP_UUID"
+          echo "Profile Name: $PP_NAME"
 
           [ -n "$PP_UUID" ] || {
             echo "ERROR: failed to extract provisioning profile UUID"
@@ -177,48 +182,48 @@ jobs:
             "$RUNNER_TEMP/profile.mobileprovision" \
             "$HOME/Library/MobileDevice/Provisioning Profiles/$PP_UUID.mobileprovision"
 
-          echo "=== Provisioning Profile ==="
+          # O projeto espera exatamente este profile.
+          if [ "$PP_NAME" != "PersonaliA AppStore" ]; then
+            echo "ERROR: provisioning profile incorreto."
+            echo "Esperado: PersonaliA AppStore"
+            echo "Recebido: $PP_NAME"
+            exit 1
+          fi
 
-          plutil -p "$RUNNER_TEMP/profile.plist" | \
-            grep -E \
-              '"Name"|"UUID"|"TeamIdentifier"|"AppIDName"|"application-identifier"|"ExpirationDate"' \
-            || true
-
+          # ── Dart Defines ──────────────────────────────────────────────────
           DEFINE1=$(printf '%s' \
-            "API_BASE_URL=$PERSONALIA_API_URL" |
-            base64 |
-            tr -d '\n')
+            "API_BASE_URL=$PERSONALIA_API_URL" \
+            | base64 | tr -d '\n')
 
           DEFINE2=$(printf '%s' \
-            "WHATSAPP_BOT_NUMBER=$WHATSAPP_BOT_NUMBER" |
-            base64 |
-            tr -d '\n')
+            "WHATSAPP_BOT_NUMBER=$WHATSAPP_BOT_NUMBER" \
+            | base64 | tr -d '\n')
 
-          echo "=== Release signing settings ==="
+          # ── Verificação ───────────────────────────────────────────────────
+          echo "=== Runner Release signing ==="
 
           xcodebuild \
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
-            -showBuildSettings |
-            grep -E \
-              'CODE_SIGN_IDENTITY|CODE_SIGN_STYLE|DEVELOPMENT_TEAM|PROVISIONING_PROFILE' \
+            -showBuildSettings \
+            | grep -E \
+              'CODE_SIGN_IDENTITY|CODE_SIGN_STYLE|DEVELOPMENT_TEAM|PROVISIONING_PROFILE|PRODUCT_BUNDLE_IDENTIFIER' \
             || true
 
+          # ── Archive ───────────────────────────────────────────────────────
           echo "=== Archiving Runner ==="
 
           xcodebuild \
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
+            -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             archive \
-            CODE_SIGN_STYLE="Manual" \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            PROVISIONING_PROFILE="$PP_UUID" \
             DART_DEFINES="$DEFINE1,$DEFINE2"
 
+          # ── Export IPA ────────────────────────────────────────────────────
           echo "=== Exporting IPA ==="
 
           xcodebuild \
@@ -227,8 +232,7 @@ jobs:
             -exportOptionsPlist ios/ExportOptions.plist \
             -exportPath "$RUNNER_TEMP/ipa"
 
-          echo "=== Generated IPA ==="
-
+          echo "=== IPA gerado ==="
           ls -lah "$RUNNER_TEMP/ipa"
 
       - name: Upload to TestFlight
