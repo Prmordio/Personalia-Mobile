@@ -155,6 +155,7 @@ jobs:
             -configuration Release \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             archive \
+            CODE_SIGN_STYLE="Manual" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             PROVISIONING_PROFILE="$PP_UUID" \
             DART_DEFINES="$DEFINE1,$DEFINE2" \
