@@ -146,9 +146,7 @@ jobs:
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             archive \
             CODE_SIGN_IDENTITY="Apple Distribution" \
-            CODE_SIGN_STYLE="Manual" \
             DEVELOPMENT_TEAM="W7XF3A5XJ7" \
-            PROVISIONING_PROFILE_SPECIFIER="PersonaliA AppStore" \
             DART_DEFINES="$DEFINE1,$DEFINE2" \
             -allowProvisioningUpdates
 
