@@ -94,7 +94,62 @@ jobs:
         run: flutter pub get
 
       - name: Generate app icons
-        run: dart run flutter_launcher_icons
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Icon source commit: $(git rev-parse HEAD)"
+          # Keep App Store requirements explicit even when checking out an older tag.
+          cat > "$RUNNER_TEMP/ios-launcher-icons.yaml" <<'YAML'
+          flutter_launcher_icons:
+            android: false
+            ios: true
+            image_path: assets/images/logo.png
+            remove_alpha_ios: true
+            background_color_ios: "#000000"
+          YAML
+          dart run flutter_launcher_icons -f "$RUNNER_TEMP/ios-launcher-icons.yaml"
+
+          python3 <<'PY'
+          import json, pathlib, struct
+          catalog = pathlib.Path('ios/Runner/Assets.xcassets/AppIcon.appiconset')
+          images = json.loads((catalog / 'Contents.json').read_text())['images']
+          checked = set()
+          marketing_found = False
+          for image in images:
+              filename = image.get('filename')
+              if not filename:
+                  continue
+              marketing_found |= image.get('idiom') == 'ios-marketing'
+              if filename in checked:
+                  continue
+              checked.add(filename)
+              data = (catalog / filename).read_bytes()
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit('ERROR: app icon is not PNG: ' + filename)
+              offset = 8
+              width = height = color_type = None
+              has_transparency = False
+              while offset + 12 <= len(data):
+                  length = struct.unpack_from('>I', data, offset)[0]
+                  kind = data[offset + 4:offset + 8]
+                  payload = data[offset + 8:offset + 8 + length]
+                  if kind == b'IHDR':
+                      width, height = struct.unpack_from('>II', payload)
+                      color_type = payload[9]
+                  if kind == b'tRNS':
+                      has_transparency = True
+                  offset += length + 12
+                  if kind == b'IEND':
+                      break
+              print(f'Icon {filename}: {width}x{height}, PNG color type={color_type}')
+              if color_type is None or color_type in (4, 6) or has_transparency:
+                  raise SystemExit('ERROR: app icon still contains alpha: ' + filename)
+              if image.get('idiom') == 'ios-marketing' and (width, height) != (1024, 1024):
+                  raise SystemExit('ERROR: App Store icon must be 1024x1024')
+          if not marketing_found:
+              raise SystemExit('ERROR: App Store marketing icon missing')
+          print('App icons verified: no alpha channel or transparency')
+          PY
 
       - name: Install CocoaPods dependencies
         run: |
