@@ -128,17 +128,37 @@ jobs:
 
           # ── Provisioning Profile ──────────────────────────────────────────
           echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
-          PP_UUID=$(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" | plutil -extract UUID raw -)
+          # Decode CMS envelope to a plain plist file before extracting UUID.
+          # Piping into `plutil -extract ... raw -` is unreliable; file-based is stable.
+          security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          PP_UUID=$(plutil -extract UUID raw "$RUNNER_TEMP/profile.plist")
+          echo "Profile UUID: $PP_UUID"
+          [ -z "$PP_UUID" ] && { echo "ERROR: failed to extract provisioning profile UUID"; exit 1; }
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
           cp "$RUNNER_TEMP/profile.mobileprovision" \
             ~/Library/MobileDevice/Provisioning\ Profiles/"$PP_UUID".mobileprovision
 
-          # Patch Runner target with the profile UUID so xcodebuild picks it up
-          # without a global command-line PROVISIONING_PROFILE_SPECIFIER that
-          # would also affect Pods targets and cause "does not support profiles" errors.
-          sed -i '' \
-            "s/PROVISIONING_PROFILE_SPECIFIER = \"PersonaliA AppStore\"/PROVISIONING_PROFILE_SPECIFIER = \"$PP_UUID\"/" \
-            ios/Runner.xcodeproj/project.pbxproj
+          # Patch Runner target PROVISIONING_PROFILE_SPECIFIER with UUID so that
+          # xcodebuild resolves the profile without a global command-line override
+          # (which would also hit Pods targets and cause "does not support profiles").
+          python3 - "$PP_UUID" <<'PYEOF'
+import sys, re
+uuid = sys.argv[1]
+path = "ios/Runner.xcodeproj/project.pbxproj"
+with open(path, encoding="utf-8") as f:
+    content = f.read()
+new = re.sub(
+    r'PROVISIONING_PROFILE_SPECIFIER = "[^"]*"',
+    f'PROVISIONING_PROFILE_SPECIFIER = "{uuid}"',
+    content,
+)
+if new == content:
+    print("ERROR: PROVISIONING_PROFILE_SPECIFIER not found in project.pbxproj", file=sys.stderr)
+    sys.exit(1)
+with open(path, "w", encoding="utf-8") as f:
+    f.write(new)
+print(f"PROVISIONING_PROFILE_SPECIFIER → {uuid}")
+PYEOF
 
           # ── Archive ───────────────────────────────────────────────────────
           # DART_DEFINES: Flutter expects each define individually base64-encoded, comma-joined.
