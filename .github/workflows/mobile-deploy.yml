@@ -41,7 +41,9 @@ jobs:
 
       - name: Reconstruct keystore
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > "$GITHUB_WORKSPACE/upload-keystore.jks"
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" \
+            | base64 --decode \
+            > "$GITHUB_WORKSPACE/upload-keystore.jks"
 
       - name: Reconstruct key.properties
         run: |
@@ -92,7 +94,9 @@ jobs:
         run: flutter pub get
 
       - name: Install CocoaPods dependencies
-        run: cd ios && pod install --repo-update
+        run: |
+          cd ios
+          pod install --repo-update
 
       - name: Build IPA
         env:
@@ -102,14 +106,17 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           PERSONALIA_API_URL: ${{ secrets.PERSONALIA_API_URL }}
           WHATSAPP_BOT_NUMBER: ${{ secrets.WHATSAPP_BOT_NUMBER }}
+
         run: |
           set -e
 
-          # ── Keychain ──────────────────────────────────────────────────────
+          # ── Keychain ─────────────────────────────────────────────
+
           KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
           KEYCHAIN_PASS="ci-keychain-pass-$(date +%s)"
 
-          echo "$CERTIFICATE_BASE64" | base64 --decode \
+          echo "$CERTIFICATE_BASE64" \
+            | base64 --decode \
             > "$RUNNER_TEMP/cert.p12"
 
           security create-keychain \
@@ -144,14 +151,17 @@ jobs:
           security default-keychain \
             -s "$KEYCHAIN_PATH"
 
-          echo "=== Identidades disponíveis ==="
+          echo "=== Signing identities ==="
 
           security find-identity \
             -v \
             -p codesigning
 
-          # ── Provisioning Profile ──────────────────────────────────────────
-          echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode \
+
+          # ── Provisioning Profile ────────────────────────────────
+
+          echo "$PROVISIONING_PROFILE_BASE64" \
+            | base64 --decode \
             > "$RUNNER_TEMP/profile.mobileprovision"
 
           security cms \
@@ -171,7 +181,14 @@ jobs:
           echo "Profile Name: $PP_NAME"
 
           [ -n "$PP_UUID" ] || {
-            echo "ERROR: failed to extract provisioning profile UUID"
+            echo "ERROR: provisioning profile inválido"
+            exit 1
+          }
+
+          [ "$PP_NAME" = "PersonaliA AppStore" ] || {
+            echo "ERROR: provisioning profile incorreto"
+            echo "Esperado: PersonaliA AppStore"
+            echo "Recebido: $PP_NAME"
             exit 1
           }
 
@@ -182,36 +199,39 @@ jobs:
             "$RUNNER_TEMP/profile.mobileprovision" \
             "$HOME/Library/MobileDevice/Provisioning Profiles/$PP_UUID.mobileprovision"
 
-          # O projeto espera exatamente este profile.
-          if [ "$PP_NAME" != "PersonaliA AppStore" ]; then
-            echo "ERROR: provisioning profile incorreto."
-            echo "Esperado: PersonaliA AppStore"
-            echo "Recebido: $PP_NAME"
-            exit 1
-          fi
 
-          # ── Dart Defines ──────────────────────────────────────────────────
+          # ── Dart Defines ────────────────────────────────────────
+
           DEFINE1=$(printf '%s' \
             "API_BASE_URL=$PERSONALIA_API_URL" \
-            | base64 | tr -d '\n')
+            | base64 \
+            | tr -d '\n')
 
           DEFINE2=$(printf '%s' \
             "WHATSAPP_BOT_NUMBER=$WHATSAPP_BOT_NUMBER" \
-            | base64 | tr -d '\n')
+            | base64 \
+            | tr -d '\n')
 
-          # ── Verificação ───────────────────────────────────────────────────
-          echo "=== Runner Release signing ==="
+
+          # ── Signing check ───────────────────────────────────────
+
+          echo "=== Effective signing configuration ==="
 
           xcodebuild \
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
+            -destination "generic/platform=iOS" \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             -showBuildSettings \
             | grep -E \
-              'CODE_SIGN_IDENTITY|CODE_SIGN_STYLE|DEVELOPMENT_TEAM|PROVISIONING_PROFILE|PRODUCT_BUNDLE_IDENTIFIER' \
+              'DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE' \
             || true
 
-          # ── Archive ───────────────────────────────────────────────────────
+
+          # ── Archive ─────────────────────────────────────────────
+
           echo "=== Archiving Runner ==="
 
           xcodebuild \
@@ -221,9 +241,13 @@ jobs:
             -destination "generic/platform=iOS" \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             archive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             DART_DEFINES="$DEFINE1,$DEFINE2"
 
-          # ── Export IPA ────────────────────────────────────────────────────
+
+          # ── Export IPA ──────────────────────────────────────────
+
           echo "=== Exporting IPA ==="
 
           xcodebuild \
@@ -232,7 +256,8 @@ jobs:
             -exportOptionsPlist ios/ExportOptions.plist \
             -exportPath "$RUNNER_TEMP/ipa"
 
-          echo "=== IPA gerado ==="
+          echo "=== Generated IPA ==="
+
           ls -lah "$RUNNER_TEMP/ipa"
 
       - name: Upload to TestFlight
