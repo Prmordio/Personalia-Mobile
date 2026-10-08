@@ -99,6 +99,8 @@ jobs:
           pod install --repo-update
 
       - name: Build IPA
+        id: build_ipa
+        shell: bash
         env:
           CERTIFICATE_BASE64: ${{ secrets.DISTRIBUTION_CERT_BASE64 }}
           P12_PASSWORD: ${{ secrets.CERT_P12_PASSWORD }}
@@ -320,10 +322,19 @@ jobs:
 
           ls -lah "$RUNNER_TEMP/ipa"
 
+          shopt -s nullglob
+          IPA_FILES=("$RUNNER_TEMP/ipa/"*.ipa)
+          if [ "${#IPA_FILES[@]}" -ne 1 ]; then
+            echo "ERROR: expected exactly one exported IPA; found ${#IPA_FILES[@]}"
+            exit 1
+          fi
+          echo "IPA selected for upload: ${IPA_FILES[0]}"
+          printf 'ipa_path=%s\n' "${IPA_FILES[0]}" >> "$GITHUB_OUTPUT"
+
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
         with:
-          app-path: ${{ runner.temp }}/ipa/Runner.ipa
+          app-path: ${{ steps.build_ipa.outputs.ipa_path }}
           issuer-id: ${{ secrets.APP_STORE_ISSUER_ID }}
           api-key-id: ${{ secrets.APP_STORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APP_STORE_API_PRIVATE_KEY }}
