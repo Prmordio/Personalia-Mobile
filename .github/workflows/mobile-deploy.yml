@@ -108,7 +108,9 @@ jobs:
           WHATSAPP_BOT_NUMBER: ${{ secrets.WHATSAPP_BOT_NUMBER }}
 
         run: |
-          set -e
+          set -euo pipefail
+          echo "Checked-out commit: $(git rev-parse HEAD)"
+          xcodebuild -version
 
           # ── Keychain ─────────────────────────────────────────────
 
@@ -201,6 +203,62 @@ jobs:
               "$PROFILE_DIR/$PP_UUID.mobileprovision"
           done
 
+          # Configure only Runner: a global profile override also reaches Pods.
+          export PP_UUID
+          ruby <<'RUBY'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('ios/Runner.xcodeproj')
+          runner = project.targets.find { |target| target.name == 'Runner' }
+          abort 'ERROR: Runner target missing' unless runner
+          release = runner.build_configurations.find { |config| config.name == 'Release' }
+          abort 'ERROR: Runner Release configuration missing' unless release
+          settings = release.build_settings
+          settings['CODE_SIGN_STYLE'] = 'Manual'
+          settings['CODE_SIGN_IDENTITY'] = 'Apple Distribution'
+          settings['DEVELOPMENT_TEAM'] = ENV.fetch('APPLE_TEAM_ID')
+          settings['PROVISIONING_PROFILE_SPECIFIER'] = ENV.fetch('PP_UUID')
+          settings.delete('PROVISIONING_PROFILE')
+          project.save
+          File.write(File.join(ENV.fetch('RUNNER_TEMP'), 'runner-bundle-id'),
+                     settings.fetch('PRODUCT_BUNDLE_IDENTIFIER'))
+          RUBY
+
+          python3 <<'PY'
+          import datetime, fnmatch, hashlib, os, pathlib, plistlib, subprocess
+          temp = pathlib.Path(os.environ['RUNNER_TEMP'])
+          with (temp / 'profile.plist').open('rb') as file:
+              profile = plistlib.load(file)
+          def require(condition, message):
+              if not condition:
+                  raise SystemExit('ERROR: ' + message)
+          team = os.environ['APPLE_TEAM_ID']
+          bundle = (temp / 'runner-bundle-id').read_text().strip()
+          entitlements = profile['Entitlements']
+          app_id = entitlements.get('application-identifier', '')
+          prefixes = profile.get('ApplicationIdentifierPrefix', [])
+          require(team in profile.get('TeamIdentifier', []), 'Profile team differs from APPLE_TEAM_ID')
+          require(any(fnmatch.fnmatchcase(prefix + '.' + bundle, app_id) for prefix in prefixes),
+                  'Profile App ID does not match Runner bundle ID: ' + bundle)
+          require(profile['ExpirationDate'] > datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+                  'Provisioning profile has expired')
+          require(not entitlements.get('get-task-allow', False)
+                  and 'ProvisionedDevices' not in profile
+                  and not profile.get('ProvisionsAllDevices', False),
+                  'Profile must be for App Store distribution')
+          identities = subprocess.check_output(
+              ['security', 'find-identity', '-v', '-p', 'codesigning'], text=True).upper()
+          require(any(hashlib.sha1(cert).hexdigest().upper() in identities
+                      for cert in profile.get('DeveloperCertificates', [])),
+                  'No valid signing identity with private key matches the profile certificates')
+          with open('ios/ExportOptions.plist', 'rb') as file:
+              export_options = plistlib.load(file)
+          export_options['teamID'] = team
+          export_options['provisioningProfiles'] = {bundle: profile['UUID']}
+          with (temp / 'ExportOptions.plist').open('wb') as file:
+              plistlib.dump(export_options, file)
+          print('Profile validated for Runner: ' + bundle)
+          PY
+
 
           # ── Dart Defines ────────────────────────────────────────
 
@@ -228,8 +286,7 @@ jobs:
             CODE_SIGN_IDENTITY="Apple Distribution" \
             -showBuildSettings \
             | grep -E \
-              'DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE' \
-            || true
+              'DEVELOPMENT_TEAM|CODE_SIGN_STYLE|CODE_SIGN_IDENTITY|PROVISIONING_PROFILE'
 
 
           # ── Archive ─────────────────────────────────────────────
@@ -256,7 +313,7 @@ jobs:
           xcodebuild \
             -exportArchive \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
-            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -exportPath "$RUNNER_TEMP/ipa"
 
           echo "=== Generated IPA ==="
