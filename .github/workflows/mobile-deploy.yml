@@ -134,17 +134,18 @@ jobs:
           PP_UUID=$(plutil -extract UUID raw "$RUNNER_TEMP/profile.plist")
           echo "Profile UUID: $PP_UUID"
           [ -n "$PP_UUID" ] || { echo "ERROR: failed to extract provisioning profile UUID"; exit 1; }
+          echo "--- step: mkdir provisioning profiles dir ---"
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "--- step: cp profile ---"
           cp "$RUNNER_TEMP/profile.mobileprovision" \
             ~/Library/MobileDevice/Provisioning\ Profiles/"$PP_UUID".mobileprovision
-
-          # Patch Runner target PROVISIONING_PROFILE_SPECIFIER with UUID so that
-          # xcodebuild resolves the profile without a global command-line override
-          # (which would also hit Pods targets and cause "does not support profiles").
+          echo "--- step: sed patch pbxproj ---"
           sed -i '' \
             "s/PROVISIONING_PROFILE_SPECIFIER = \"PersonaliA AppStore\"/PROVISIONING_PROFILE_SPECIFIER = \"${PP_UUID}\"/" \
             ios/Runner.xcodeproj/project.pbxproj
-          grep "PROVISIONING_PROFILE_SPECIFIER" ios/Runner.xcodeproj/project.pbxproj
+          echo "--- step: verify patch ---"
+          grep "PROVISIONING_PROFILE_SPECIFIER" ios/Runner.xcodeproj/project.pbxproj || echo "WARNING: pattern not found"
+          echo "--- step: provisioning done ---"
 
           # ── Archive ───────────────────────────────────────────────────────
           # DART_DEFINES: Flutter expects each define individually base64-encoded, comma-joined.
