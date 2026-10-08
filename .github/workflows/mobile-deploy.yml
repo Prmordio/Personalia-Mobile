@@ -103,7 +103,6 @@ jobs:
           WHATSAPP_BOT_NUMBER: ${{ secrets.WHATSAPP_BOT_NUMBER }}
         run: |
           # ── Keychain ──────────────────────────────────────────────────────
-          # Tudo no mesmo run: para o flutter build herdar o mesmo contexto de keychain.
           KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
           KEYCHAIN_PASS="ci-keychain-pass-$(date +%s)"
 
@@ -128,19 +127,42 @@ jobs:
 
           # ── Provisioning Profile ──────────────────────────────────────────
           echo "$PROVISIONING_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/profile.mobileprovision"
+          PP_UUID=$(security cms -D -i "$RUNNER_TEMP/profile.mobileprovision" | plutil -extract UUID raw -)
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          cp "$RUNNER_TEMP/profile.mobileprovision" ~/Library/MobileDevice/Provisioning\ Profiles/
+          cp "$RUNNER_TEMP/profile.mobileprovision" \
+            ~/Library/MobileDevice/Provisioning\ Profiles/"$PP_UUID".mobileprovision
 
-          # ── Build ─────────────────────────────────────────────────────────
-          flutter build ipa --release \
-            --export-options-plist=ios/ExportOptions.plist \
-            --dart-define=API_BASE_URL="$PERSONALIA_API_URL" \
-            --dart-define=WHATSAPP_BOT_NUMBER="$WHATSAPP_BOT_NUMBER"
+          # ── Archive ───────────────────────────────────────────────────────
+          # Bypass Flutter's development-cert check by calling xcodebuild directly.
+          # xcodebuild archive invokes Flutter's build script (xcode_backend.sh) internally.
+          # DART_DEFINES: Flutter expects each define individually base64-encoded, comma-joined.
+          DEFINE1=$(printf '%s' "API_BASE_URL=$PERSONALIA_API_URL" | base64 | tr -d '\n')
+          DEFINE2=$(printf '%s' "WHATSAPP_BOT_NUMBER=$WHATSAPP_BOT_NUMBER" | base64 | tr -d '\n')
+
+          xcodebuild \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            archive \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_STYLE="Manual" \
+            DEVELOPMENT_TEAM="W7XF3A5XJ7" \
+            PROVISIONING_PROFILE_SPECIFIER="PersonaliA AppStore" \
+            DART_DEFINES="$DEFINE1,$DEFINE2" \
+            -allowProvisioningUpdates
+
+          # ── Export IPA ────────────────────────────────────────────────────
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/ipa"
 
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
         with:
-          app-path: build/ios/ipa/*.ipa
+          app-path: ${{ runner.temp }}/ipa/Runner.ipa
           issuer-id: ${{ secrets.APP_STORE_ISSUER_ID }}
           api-key-id: ${{ secrets.APP_STORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APP_STORE_API_PRIVATE_KEY }}
