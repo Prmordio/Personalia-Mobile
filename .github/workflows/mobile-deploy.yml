@@ -143,16 +143,20 @@ jobs:
           DEFINE1=$(printf '%s' "API_BASE_URL=$PERSONALIA_API_URL" | base64 | tr -d '\n')
           DEFINE2=$(printf '%s' "WHATSAPP_BOT_NUMBER=$WHATSAPP_BOT_NUMBER" | base64 | tr -d '\n')
 
+          # CODE_SIGN_STYLE and CODE_SIGN_IDENTITY are NOT passed on the command line:
+          # those are already set in Runner's target build settings (project.pbxproj).
+          # Passing them globally would also force Manual signing on all Pods targets,
+          # triggering "does not support provisioning profiles" errors.
+          # PROVISIONING_PROFILE (UUID) is passed here because it is dynamic (extracted
+          # at build time) and targets only the main app bundle via pbxproj inheritance.
           xcodebuild \
             -workspace ios/Runner.xcworkspace \
             -scheme Runner \
             -configuration Release \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             archive \
-            CODE_SIGN_STYLE="Manual" \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
-            PROVISIONING_PROFILE_SPECIFIER="PersonaliA AppStore" \
+            PROVISIONING_PROFILE="$PP_UUID" \
             DART_DEFINES="$DEFINE1,$DEFINE2" \
             -allowProvisioningUpdates
 
