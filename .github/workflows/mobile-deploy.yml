@@ -145,8 +145,6 @@ jobs:
             -configuration Release \
             -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
             archive \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM="W7XF3A5XJ7" \
             DART_DEFINES="$DEFINE1,$DEFINE2" \
             -allowProvisioningUpdates
 
