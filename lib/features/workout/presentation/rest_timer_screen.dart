@@ -308,6 +308,13 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
   late final TextEditingController _weightController;
   late final TextEditingController _observationController;
 
+  // Timer visível por padrão apenas se já estava rodando ao entrar na tela.
+  bool _timerVisible = false;
+  // Fase de descanso entre exercícios (após confirmar a última série).
+  bool _inInterExerciseRest = false;
+  // Evita abrir dois diálogos simultâneos.
+  bool _alertInFlight = false;
+
   (String, int, int) get _key {
     final exercise = widget.args.exercise;
     return (exercise.nome, parseRestSeconds(exercise.descanso), parseSetsCount(exercise.series));
@@ -320,6 +327,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
     final current = ref.read(restTimerProvider(_key));
     _weightController = TextEditingController(text: current.weight);
     _observationController = TextEditingController(text: current.observation);
+    _timerVisible = current.running;
     // Sincroniza o tempo real ao reentrar na tela (ex: voltou do 2° plano ou de outra tela).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(restTimerProvider(_key).notifier).syncOnResume();
@@ -360,6 +368,84 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
     }
   }
 
+  void _handleRestEnded() {
+    if (_alertInFlight || !mounted) return;
+    setState(() => _alertInFlight = true);
+
+    if (_inInterExerciseRest) {
+      ref.read(restTimerProvider(_key).notifier).finish();
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AlertDialog(
+          title: const Text('Descanso finalizado!'),
+          content: const Text('Ótimo trabalho! Pronto para o próximo exercício.'),
+          actions: [
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.orange),
+              onPressed: () {
+                Navigator.of(context).pop(); // fecha dialog
+                Navigator.of(context).pop(); // volta à lista de exercícios
+              },
+              child: const Text('Próximo exercício'),
+            ),
+          ],
+        ),
+      ).then((_) {
+        if (mounted) setState(() => _alertInFlight = false);
+      });
+    } else {
+      showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Descanso finalizado!'),
+          content: const Text('Hora da próxima série!'),
+          actions: [
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.orange),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Vamos lá!'),
+            ),
+          ],
+        ),
+      ).then((_) {
+        if (mounted) setState(() { _timerVisible = false; _alertInFlight = false; });
+      });
+    }
+  }
+
+  Widget _buildRestButton({required String label, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: AppColors.orange,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.orange.withValues(alpha: 0.35),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.timer_outlined, color: Colors.white, size: 22),
+            const SizedBox(width: 10),
+            Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = widget.args;
@@ -369,21 +455,30 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
     final totalSets = key.$3;
     final state = ref.watch(restTimerProvider(key));
     final notifier = ref.read(restTimerProvider(key).notifier);
-    // Usa o mesmo detector de cardio da lista de exercícios: nome + "min" em repetições.
     final isCardio = isCardioExercise(exercise);
 
     if (isCardio) {
       return _buildCardioScreen(context, exercise, state, notifier);
     }
 
+    // Detecta fim do descanso e exibe alerta em tela.
+    ref.listen<RestTimerState>(restTimerProvider(key), (prev, next) {
+      if (prev == null) return;
+      if (prev.remaining > 0 && next.remaining <= 0 && !next.running && _timerVisible) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _handleRestEnded();
+        });
+      }
+    });
+
     final done = state.remaining <= 0;
-    // N séries = N-1 descansos. Após o último descanso, o usuário ainda faz a série final
-    // sem mais cronômetro — lastSetReady indica esse momento.
+    // N séries = N-1 descansos. Após o último descanso, o usuário ainda faz a série final.
     final allSetsDone = totalSets <= 1 ? state.completedSets >= 1 : state.completedSets >= totalSets - 1;
     final lastSetReady = allSetsDone && done && state.completedSets < totalSets;
     final allFinished = state.completedSets >= totalSets;
 
     final imageBytes = ref.watch(exerciseImageProvider(exercise.nome)).asData?.value;
+    final showTimer = _timerVisible || state.running;
 
     return Scaffold(
       appBar: AppBar(title: Text(exercise.nome)),
@@ -425,7 +520,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
               _ActionButton(
                 icon: Icons.swap_horiz,
                 label: 'Trocar',
-                color: const Color(0xFF42A5F5),
+                color: AppColors.orange,
                 onPressed: () async {
                   final alt = await Navigator.of(context).push<ExerciseAlternative>(
                     MaterialPageRoute(
@@ -434,8 +529,6 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                   );
                   if (alt != null) {
                     notifier.resetForNewSession();
-                    // Reinicia o timer com o exercício trocado; navega de volta para a tela
-                    // de detalhe e abre a nova tela de timer para o exercício alternativo.
                     if (context.mounted) Navigator.of(context).pop(alt);
                   }
                 },
@@ -443,129 +536,196 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (var i = 1; i <= totalSets; i++) ...[
-                _SetIndicator(index: i, done: i <= state.completedSets),
-                if (i != totalSets) const SizedBox(width: 12),
+
+          // Indicadores de série — ocultos durante o descanso entre exercícios.
+          if (!_inInterExerciseRest) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 1; i <= totalSets; i++) ...[
+                  _SetIndicator(index: i, done: i <= state.completedSets),
+                  if (i != totalSets) const SizedBox(width: 12),
+                ],
               ],
-            ],
-          ),
-          const SizedBox(height: 32),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 220,
-                height: 220,
-                child: CircularProgressIndicator(
-                  value: totalSeconds == 0 ? 1 : 1 - (state.remaining / totalSeconds),
-                  strokeWidth: 10,
-                  color: done ? Colors.green : AppColors.orange,
-                  backgroundColor: AppColors.background,
-                ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    done ? 'Pronto!' : _format(state.remaining),
-                    style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 24),
+          ] else
+            const SizedBox(height: 8),
+
+          // --- Seção do cronômetro ou botões de ação ---
+          if (showTimer) ...[
+            // Cronômetro circular
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 220,
+                  height: 220,
+                  child: CircularProgressIndicator(
+                    value: totalSeconds == 0 ? 1 : 1 - (state.remaining / totalSeconds),
+                    strokeWidth: 10,
+                    color: done ? Colors.green : AppColors.orange,
+                    backgroundColor: AppColors.background,
                   ),
-                  const SizedBox(height: 12),
-                  IconButton(
-                    iconSize: 56,
-                    color: allFinished
-                        ? Colors.green
-                        : lastSetReady
-                            ? Colors.green
-                            : AppColors.orange,
-                    icon: Icon(
-                      allFinished
-                          ? Icons.check_circle
-                          : lastSetReady
-                              ? Icons.flag_circle
-                              : done
-                                  ? Icons.replay_circle_filled
-                                  : (state.running ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      done ? 'Pronto!' : _format(state.remaining),
+                      style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold),
                     ),
-                    onPressed: allFinished
-                        ? null
-                        : lastSetReady
-                            ? () => notifier.confirmLastSet()
-                            : done
-                                ? () {
-                                    // Reset + inicia próxima série em um único toque.
-                                    notifier.reset();
-                                    _ensureSession(ref, args.dayName);
-                                    notifier.toggle();
-                                  }
-                                : () {
-                                    _ensureSession(ref, args.dayName);
-                                    notifier.toggle();
-                                  },
+                    const SizedBox(height: 12),
+                    IconButton(
+                      iconSize: 56,
+                      color: done ? Colors.green : AppColors.orange,
+                      icon: Icon(
+                        done
+                            ? Icons.replay_circle_filled
+                            : (state.running ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                      ),
+                      onPressed: done
+                          ? () {
+                              notifier.reset();
+                              _ensureSession(ref, args.dayName);
+                              notifier.toggle();
+                            }
+                          : () {
+                              _ensureSession(ref, args.dayName);
+                              notifier.toggle();
+                            },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(onPressed: () => notifier.addSeconds(15), child: const Text('+15s')),
+                const SizedBox(width: 12),
+                TextButton(onPressed: notifier.reset, child: const Text('Reiniciar')),
+              ],
+            ),
+            const SizedBox(height: 24),
+          ] else if (_inInterExerciseRest) ...[
+            // Descanso entre exercícios: timer ainda não iniciado.
+            _buildRestButton(
+              label: 'Iniciar descanso entre exercícios',
+              onTap: () {
+                setState(() => _timerVisible = true);
+                _ensureSession(ref, args.dayName);
+                notifier.toggle();
+              },
+            ),
+            const SizedBox(height: 24),
+          ] else if (lastSetReady && !_inInterExerciseRest) ...[
+            // Última série concluída — confirmar e iniciar descanso entre exercícios.
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  side: const BorderSide(color: AppColors.orange, width: 2),
+                  foregroundColor: AppColors.orange,
+                ),
+                icon: const Icon(Icons.flag_circle, size: 24),
+                label: const Text('Confirmar última série', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                onPressed: () {
+                  notifier.confirmLastSet();
+                  notifier.reset();
+                  setState(() { _inInterExerciseRest = true; _timerVisible = false; });
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+          ] else if (!allFinished && !state.finished) ...[
+            // Botão estilizado "Iniciar descanso" para exibir o cronômetro.
+            _buildRestButton(
+              label: 'Iniciar descanso',
+              onTap: () {
+                setState(() => _timerVisible = true);
+                // reset garante partida do tempo cheio se o descanso anterior zerou.
+                notifier.reset();
+                _ensureSession(ref, args.dayName);
+                notifier.toggle();
+              },
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          // --- Seção de peso / observação / finalizar ---
+          if (state.finished) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green.shade700),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Exercício concluído!',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(onPressed: () => notifier.addSeconds(15), child: const Text('+15s')),
-              const SizedBox(width: 12),
-              TextButton(onPressed: notifier.reset, child: const Text('Reiniciar')),
-            ],
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: state.finished ? Colors.green.shade600 : Colors.green,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            const SizedBox(height: 24),
+          ] else ...[
+            TextField(
+              controller: _weightController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Peso utilizado (kg)',
+                prefixIcon: Icon(Icons.fitness_center),
+                border: OutlineInputBorder(),
               ),
-              icon: Icon(state.finished ? Icons.check_circle : Icons.flag),
-              label: Text(
-                state.finished
-                    ? 'Exercício concluído!'
-                    : state.weight.trim().isEmpty
-                        ? 'Digite o peso para finalizar'
-                        : 'Finalizar exercício',
+              onChanged: notifier.setWeight,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _observationController,
+              decoration: const InputDecoration(
+                labelText: 'Observação (opcional)',
+                prefixIcon: Icon(Icons.notes),
+                border: OutlineInputBorder(),
               ),
-              onPressed: state.finished || state.weight.trim().isEmpty
-                  ? null
-                  : () {
-                      notifier.finish();
-                      Navigator.of(context).pop();
-                    },
+              maxLines: 2,
+              onChanged: notifier.setObservation,
             ),
-          ),
-          const SizedBox(height: 24),
-          TextField(
-            controller: _weightController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(
-              labelText: 'Peso utilizado (kg)',
-              prefixIcon: Icon(Icons.fitness_center),
-              border: OutlineInputBorder(),
+            const SizedBox(height: 8),
+            if (state.weight.trim().isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  'Digite o peso para finalizar',
+                  style: TextStyle(color: Colors.orange.shade700, fontSize: 13),
+                ),
+              ),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                icon: const Icon(Icons.flag),
+                label: const Text('Finalizar exercício', style: TextStyle(fontSize: 15)),
+                onPressed: state.weight.trim().isEmpty
+                    ? null
+                    : () {
+                        notifier.finish();
+                        Navigator.of(context).pop();
+                      },
+              ),
             ),
-            onChanged: notifier.setWeight,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _observationController,
-            decoration: const InputDecoration(
-              labelText: 'Observação (opcional)',
-              prefixIcon: Icon(Icons.notes),
-              border: OutlineInputBorder(),
-            ),
-            maxLines: 2,
-            onChanged: notifier.setObservation,
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
+          ],
         ],
       ),
     );
@@ -628,7 +788,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
               _ActionButton(
                 icon: Icons.swap_horiz,
                 label: 'Trocar',
-                color: const Color(0xFF42A5F5),
+                color: AppColors.orange,
                 onPressed: () async {
                   final alt = await Navigator.of(context).push<ExerciseAlternative>(
                     MaterialPageRoute(

@@ -22,7 +22,6 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
   bool _showFinished = false;
   bool _finishTriggered = false;
 
-  // Trocas de exercício feitas nesta sessão: nome original (lowercase) → exercício substituto
   final Map<String, WorkoutExercise> _sessionSwaps = {};
 
   void _openFinishScreen(List<WorkoutExercise> exercises, String dayName) {
@@ -85,7 +84,41 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
     WorkoutExercise effective,
     String? lastWeight,
     String? dayName,
+    List<WorkoutExercise> allExercises,
   ) async {
+    // Verifica se outro exercício está em andamento (iniciado mas não finalizado).
+    for (final ex in allExercises) {
+      final eff = _effectiveFor(ex);
+      if (eff.nome.trim().toLowerCase() == effective.nome.trim().toLowerCase()) continue;
+      final s = parseRestSeconds(eff.descanso);
+      final t = parseSetsCount(eff.series);
+      final ts = ref.read(restTimerProvider((eff.nome, s, t)));
+      if (ts.completedSets > 0 && !ts.finished) {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Exercício em andamento'),
+            content: Text(
+              '"${eff.nome}" ainda está em andamento.\n\nDeseja abandoná-lo e iniciar "${effective.nome}"?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF6B35)),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Sim, trocar'),
+              ),
+            ],
+          ),
+        );
+        if (confirm != true || !mounted) return;
+        break;
+      }
+    }
+
     await context.push(
       '/workout/rest-timer',
       extra: RestTimerArgs(exercise: effective, lastWeight: lastWeight, dayName: dayName),
@@ -134,7 +167,6 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
             newReps: effective.repeticoes,
           );
       setState(() => _sessionSwaps.remove(original.nome.trim().toLowerCase()));
-      // Invalida o provider para refletir o plano atualizado
       ref.invalidate(todayWorkoutProvider);
     } catch (_) {
       if (mounted) {
@@ -148,7 +180,6 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
   @override
   Widget build(BuildContext context) {
     final todayAsync = ref.watch(effectiveTodayWorkoutProvider);
-    // Constrói mapa de último peso varrendo os 10 treinos mais recentes (mais antigo sobrescrito pelo mais novo).
     final historyAsync = ref.watch(workoutHistoryProvider);
     final lastWeights = <String, String>{};
     final history = historyAsync.asData?.value ?? [];
@@ -173,7 +204,6 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
 
           final exercises = today.exercises;
 
-          // Compute finished state for each exercise (usa o exercício efetivo, que pode ser trocado)
           final timerStates = {
             for (final ex in exercises)
               ex.nome: ref.watch(restTimerProvider((_effectiveFor(ex).nome, parseRestSeconds(_effectiveFor(ex).descanso), parseSetsCount(_effectiveFor(ex).series))))
@@ -183,7 +213,6 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
           final finished = exercises.where((e) => timerStates[e.nome]!.finished).toList();
           final allDone = exercises.isNotEmpty && pending.isEmpty;
 
-          // Auto-trigger finish screen when all exercises done
           if (allDone && !_finishTriggered) {
             _finishTriggered = true;
             WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -201,7 +230,6 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
               ],
               const SizedBox(height: 16),
               if (exercises.isEmpty) const Text('Nenhum exercício encontrado para hoje.'),
-              // Pending exercises
               for (final ex in pending)
                 _ExerciseCard(
                   exercise: ex,
@@ -210,9 +238,8 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
                   lastWeight: lastWeights[_effectiveFor(ex).nome.trim().toLowerCase()],
                   dayName: today.dayName,
                   onSwap: () => _handleSwapExercise(ex),
-                  onStart: (eff, lastW, day) => _handleStartExercise(ex, eff, lastW, day),
+                  onStart: (eff, lastW, day) => _handleStartExercise(ex, eff, lastW, day, exercises),
                 ),
-              // Toggle for finished
               if (finished.isNotEmpty) ...[
                 const SizedBox(height: 8),
                 InkWell(
@@ -247,7 +274,7 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
                       lastWeight: lastWeights[_effectiveFor(ex).nome.trim().toLowerCase()],
                       dayName: today.dayName,
                       onSwap: () => _handleSwapExercise(ex),
-                      onStart: (eff, lastW, day) => _handleStartExercise(ex, eff, lastW, day),
+                      onStart: (eff, lastW, day) => _handleStartExercise(ex, eff, lastW, day, exercises),
                     ),
               ],
             ],
@@ -318,116 +345,115 @@ class _ExerciseCard extends ConsumerWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       color: cardColor,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(effectiveExercise.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                if (isSwapped)
-                                  Text(
-                                    'Trocado: ${exercise.nome}',
-                                    style: const TextStyle(color: Colors.blue, fontSize: 11),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          if (finished)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
-                              child: const Row(
-                                mainAxisSize: MainAxisSize.min,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: finished ? null : () => onStart(effectiveExercise, lastWeight, dayName),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Icon(Icons.check, color: Colors.white, size: 11),
-                                  SizedBox(width: 3),
-                                  Text('Concluído', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                                  Text(effectiveExercise.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  if (isSwapped)
+                                    Text(
+                                      'Trocado: ${exercise.nome}',
+                                      style: const TextStyle(color: Colors.blue, fontSize: 11),
+                                    ),
                                 ],
                               ),
-                            )
-                          else if (inProgress)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: const Color(0xFFFF6B35), borderRadius: BorderRadius.circular(12)),
-                              child: Text(
-                                isCardio ? 'Em execução' : '${timerState.completedSets}/$totalSets séries',
-                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
-                              ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 4,
-                        children: [
-                          if (isCardio) ...[
-                            if (effectiveExercise.repeticoes != null) _Stat('Meta', effectiveExercise.repeticoes!),
-                            if (finished) _Stat('Tempo', timerState.weight),
-                            _Stat('Último tempo', lastWeight ?? '—'),
-                          ] else ...[
-                            if (effectiveExercise.series != null) _Stat('Séries', effectiveExercise.series!),
-                            if (effectiveExercise.repeticoes != null) _Stat('Repetições', effectiveExercise.repeticoes!),
-                            if (effectiveExercise.descanso != null) _Stat('Descanso', effectiveExercise.descanso!),
-                            _Stat('Último peso', lastWeight != null ? '$lastWeight kg' : '—'),
+                            if (finished)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check, color: Colors.white, size: 11),
+                                    SizedBox(width: 3),
+                                    Text('Concluído', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                              )
+                            else if (inProgress)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(color: const Color(0xFFFF6B35), borderRadius: BorderRadius.circular(12)),
+                                child: Text(
+                                  isCardio ? 'Em execução' : '${timerState.completedSets}/$totalSets séries',
+                                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+                                ),
+                              ),
                           ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (imageBytes != null) ...[
-                  const SizedBox(width: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.memory(
-                      imageBytes,
-                      width: 72,
-                      height: 72,
-                      fit: BoxFit.cover,
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 4,
+                          children: [
+                            if (isCardio) ...[
+                              if (effectiveExercise.repeticoes != null) _Stat('Meta', effectiveExercise.repeticoes!),
+                              if (finished) _Stat('Tempo', timerState.weight),
+                              _Stat('Último tempo', lastWeight ?? '—'),
+                            ] else ...[
+                              if (effectiveExercise.series != null) _Stat('Séries', effectiveExercise.series!),
+                              if (effectiveExercise.repeticoes != null) _Stat('Repetições', effectiveExercise.repeticoes!),
+                              if (effectiveExercise.descanso != null) _Stat('Descanso', effectiveExercise.descanso!),
+                              _Stat('Último peso', lastWeight != null ? '$lastWeight kg' : '—'),
+                            ],
+                          ],
+                        ),
+                      ],
                     ),
                   ),
+                  if (imageBytes != null) ...[
+                    const SizedBox(width: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.memory(
+                        imageBytes,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ],
                 ],
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                _ActionButton(
-                  icon: finished ? Icons.check_circle : inProgress ? Icons.replay_circle_filled : Icons.play_circle_fill,
-                  label: finished ? 'Feito' : inProgress ? 'Continuar' : 'Iniciar',
-                  color: finished ? Colors.green : const Color(0xFFFF6B35),
-                  onPressed: () => onStart(effectiveExercise, lastWeight, dayName),
-                ),
-                _ActionButton(
-                  icon: Icons.search,
-                  label: 'Vídeos',
-                  color: const Color(0xFF2196F3),
-                  onPressed: () => showExerciseVideoSheet(context, exerciseName: effectiveExercise.nome),
-                ),
-                _ActionButton(
-                  icon: Icons.swap_horiz,
-                  label: 'Trocar',
-                  color: isSwapped ? Colors.blue : const Color(0xFF42A5F5),
-                  onPressed: finished ? null : onSwap,
-                ),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 8),
+              // Only Vídeos (blue) and Trocar (orange) — card tap handles starting
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _ActionButton(
+                    icon: Icons.search,
+                    label: 'Vídeos',
+                    color: const Color(0xFF2196F3),
+                    onPressed: () => showExerciseVideoSheet(context, exerciseName: effectiveExercise.nome),
+                  ),
+                  _ActionButton(
+                    icon: Icons.swap_horiz,
+                    label: 'Trocar',
+                    color: const Color(0xFFFF6B35),
+                    onPressed: finished ? null : onSwap,
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
