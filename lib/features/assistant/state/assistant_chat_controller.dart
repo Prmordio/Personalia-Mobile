@@ -37,10 +37,25 @@ class AssistantChatController extends StateNotifier<List<ChatMessage>> {
     final text = rawText.trim();
     if (text.isEmpty || isWaiting) return;
     _push(ChatMessage(fromUser: true, text: text));
+
+    final buffer = StringBuffer();
     try {
-      _resolve(ChatMessage(fromUser: false, text: await _api.ask(text)));
+      await for (final chunk in _api.askStream(text)) {
+        if (!mounted) return;
+        buffer.write(chunk);
+        // Atualiza a bolha em tempo real (efeito typewriter) mantendo o pending=true.
+        state = [
+          ...state.where((m) => !m.pending),
+          ChatMessage(fromUser: false, text: buffer.toString(), pending: true),
+        ];
+      }
+      if (!mounted) return;
+      final reply = buffer.toString();
+      _resolve(ChatMessage(fromUser: false, text: reply.isEmpty ? _genericError : reply));
     } on DioException catch (e) {
       _resolve(ChatMessage(fromUser: false, text: _messageFrom(e)));
+    } catch (_) {
+      _resolve(ChatMessage(fromUser: false, text: buffer.isEmpty ? _genericError : buffer.toString()));
     }
   }
 
