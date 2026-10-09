@@ -307,6 +307,20 @@ class AppApi {
         .toList();
   }
 
+  Future<void> swapExercisePermanently({
+    required String originalExerciseName,
+    required String newName,
+    String? newSeries,
+    String? newReps,
+  }) async {
+    await _dio.post('/app/workout/exercise/swap/permanent', data: {
+      'originalExerciseName': originalExerciseName,
+      'newName': newName,
+      if (newSeries != null) 'newSeries': newSeries,
+      if (newReps != null) 'newReps': newReps,
+    });
+  }
+
 }
 
 final appApiProvider = Provider<AppApi>((ref) => AppApi(ref.watch(apiClientProvider).dio));

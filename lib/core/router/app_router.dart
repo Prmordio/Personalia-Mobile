@@ -24,6 +24,7 @@ import '../../features/home/data/app_api.dart';
 import '../../features/workout/presentation/current_workout_screen.dart';
 import '../../features/workout/presentation/last_workout_screen.dart';
 import '../../features/workout/presentation/rest_timer_screen.dart';
+import '../../features/workout/presentation/swap_exercise_screen.dart';
 import '../../features/workout/presentation/today_workout_screen.dart';
 import '../../features/workout/presentation/workout_day_detail_screen.dart';
 import '../network/token_storage.dart';
@@ -108,6 +109,10 @@ GoRouter buildRouter({
       GoRoute(
         path: '/workout/rest-timer',
         builder: (context, state) => RestTimerScreen(args: state.extra as RestTimerArgs),
+      ),
+      GoRoute(
+        path: '/workout/swap-exercise',
+        builder: (context, state) => SwapExerciseScreen(args: state.extra as SwapExerciseArgs),
       ),
       GoRoute(
         path: '/coming-soon/:section',
