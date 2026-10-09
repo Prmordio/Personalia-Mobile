@@ -7,6 +7,7 @@ import '../data/exercise_image_provider.dart';
 import '../data/workout_summary.dart';
 import '../state/active_workout_session.dart';
 import 'rest_timer_screen.dart';
+import 'swap_exercise_screen.dart';
 import 'widgets/exercise_video_sheet.dart';
 import 'workout_finish_screen.dart';
 
@@ -20,6 +21,9 @@ class TodayWorkoutScreen extends ConsumerStatefulWidget {
 class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
   bool _showFinished = false;
   bool _finishTriggered = false;
+
+  // Trocas de exercício feitas nesta sessão: nome original (lowercase) → exercício substituto
+  final Map<String, WorkoutExercise> _sessionSwaps = {};
 
   void _openFinishScreen(List<WorkoutExercise> exercises, String dayName) {
     final session = ref.read(activeWorkoutSessionProvider);
@@ -58,6 +62,89 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
     if (ok == true && mounted) _openFinishScreen(exercises, dayName);
   }
 
+  Future<void> _handleSwapExercise(WorkoutExercise exercise) async {
+    final alt = await context.push<ExerciseAlternative>(
+      '/workout/swap-exercise',
+      extra: SwapExerciseArgs(exercise: exercise),
+    );
+    if (alt != null && mounted) {
+      setState(() {
+        _sessionSwaps[exercise.nome.trim().toLowerCase()] = WorkoutExercise(
+          nome: alt.nome,
+          series: alt.series ?? exercise.series,
+          repeticoes: alt.repeticoes ?? exercise.repeticoes,
+          modeloDeTreino: exercise.modeloDeTreino,
+          descanso: exercise.descanso,
+        );
+      });
+    }
+  }
+
+  Future<void> _handleStartExercise(
+    WorkoutExercise original,
+    WorkoutExercise effective,
+    String? lastWeight,
+    String? dayName,
+  ) async {
+    await context.push(
+      '/workout/rest-timer',
+      extra: RestTimerArgs(exercise: effective, lastWeight: lastWeight, dayName: dayName),
+    );
+    if (!mounted) return;
+
+    final totalSeconds = parseRestSeconds(effective.descanso);
+    final totalSets = parseSetsCount(effective.series);
+    final timerState = ref.read(restTimerProvider((effective.nome, totalSeconds, totalSets)));
+    final wasSwapped = _sessionSwaps.containsKey(original.nome.trim().toLowerCase());
+
+    if (timerState.finished && wasSwapped) {
+      await _askPermanentSwap(original, effective);
+    }
+  }
+
+  Future<void> _askPermanentSwap(WorkoutExercise original, WorkoutExercise effective) async {
+    if (!mounted) return;
+    final isPermanent = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Tornar troca permanente?'),
+        content: Text(
+          'Deseja substituir "${original.nome}" por "${effective.nome}" no seu plano de treino?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Só desta vez'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sim, alterar plano'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (isPermanent != true) return;
+
+    try {
+      await ref.read(appApiProvider).swapExercisePermanently(
+            originalExerciseName: original.nome,
+            newName: effective.nome,
+            newSeries: effective.series,
+            newReps: effective.repeticoes,
+          );
+      setState(() => _sessionSwaps.remove(original.nome.trim().toLowerCase()));
+      // Invalida o provider para refletir o plano atualizado
+      ref.invalidate(todayWorkoutProvider);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível alterar o plano. Tente novamente.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final todayAsync = ref.watch(effectiveTodayWorkoutProvider);
@@ -86,10 +173,10 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
 
           final exercises = today.exercises;
 
-          // Compute finished state for each exercise
+          // Compute finished state for each exercise (usa o exercício efetivo, que pode ser trocado)
           final timerStates = {
             for (final ex in exercises)
-              ex.nome: ref.watch(restTimerProvider((ex.nome, parseRestSeconds(ex.descanso), parseSetsCount(ex.series))))
+              ex.nome: ref.watch(restTimerProvider((_effectiveFor(ex).nome, parseRestSeconds(_effectiveFor(ex).descanso), parseSetsCount(_effectiveFor(ex).series))))
           };
 
           final pending = exercises.where((e) => !timerStates[e.nome]!.finished).toList();
@@ -118,8 +205,12 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
               for (final ex in pending)
                 _ExerciseCard(
                   exercise: ex,
-                  lastWeight: lastWeights[ex.nome.trim().toLowerCase()],
+                  effectiveExercise: _effectiveFor(ex),
+                  isSwapped: _sessionSwaps.containsKey(ex.nome.trim().toLowerCase()),
+                  lastWeight: lastWeights[_effectiveFor(ex).nome.trim().toLowerCase()],
                   dayName: today.dayName,
+                  onSwap: () => _handleSwapExercise(ex),
+                  onStart: (eff, lastW, day) => _handleStartExercise(ex, eff, lastW, day),
                 ),
               // Toggle for finished
               if (finished.isNotEmpty) ...[
@@ -151,8 +242,12 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
                   for (final ex in finished)
                     _ExerciseCard(
                       exercise: ex,
-                      lastWeight: lastWeights[ex.nome.trim().toLowerCase()],
+                      effectiveExercise: _effectiveFor(ex),
+                      isSwapped: _sessionSwaps.containsKey(ex.nome.trim().toLowerCase()),
+                      lastWeight: lastWeights[_effectiveFor(ex).nome.trim().toLowerCase()],
                       dayName: today.dayName,
+                      onSwap: () => _handleSwapExercise(ex),
+                      onStart: (eff, lastW, day) => _handleStartExercise(ex, eff, lastW, day),
                     ),
               ],
             ],
@@ -167,7 +262,7 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
                 final today = todayAsync.value!;
                 final timerStates = {
                   for (final ex in today.exercises)
-                    ex.nome: ref.read(restTimerProvider((ex.nome, parseRestSeconds(ex.descanso), parseSetsCount(ex.series))))
+                    ex.nome: ref.read(restTimerProvider((_effectiveFor(ex).nome, parseRestSeconds(_effectiveFor(ex).descanso), parseSetsCount(_effectiveFor(ex).series))))
                 };
                 final allDone = today.exercises.isNotEmpty && today.exercises.every((e) => timerStates[e.nome]!.finished);
                 _confirmFinish(today.exercises, today.dayName, allDone);
@@ -179,24 +274,39 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
           : null,
     );
   }
+
+  WorkoutExercise _effectiveFor(WorkoutExercise original) =>
+      _sessionSwaps[original.nome.trim().toLowerCase()] ?? original;
 }
 
 class _ExerciseCard extends ConsumerWidget {
-  const _ExerciseCard({required this.exercise, this.lastWeight, this.dayName});
+  const _ExerciseCard({
+    required this.exercise,
+    required this.effectiveExercise,
+    required this.isSwapped,
+    this.lastWeight,
+    this.dayName,
+    required this.onSwap,
+    required this.onStart,
+  });
 
   final WorkoutExercise exercise;
+  final WorkoutExercise effectiveExercise;
+  final bool isSwapped;
   final String? lastWeight;
   final String? dayName;
+  final VoidCallback onSwap;
+  final void Function(WorkoutExercise effective, String? lastWeight, String? dayName) onStart;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalSeconds = parseRestSeconds(exercise.descanso);
-    final totalSets = parseSetsCount(exercise.series);
-    final timerState = ref.watch(restTimerProvider((exercise.nome, totalSeconds, totalSets)));
+    final totalSeconds = parseRestSeconds(effectiveExercise.descanso);
+    final totalSets = parseSetsCount(effectiveExercise.series);
+    final timerState = ref.watch(restTimerProvider((effectiveExercise.nome, totalSeconds, totalSets)));
     final finished = timerState.finished;
     final inProgress = !finished && timerState.completedSets > 0;
-    final isCardio = exercise.modeloDeTreino?.toLowerCase() == 'cardio';
-    final imageBytes = ref.watch(exerciseImageProvider(exercise.nome)).asData?.value;
+    final isCardio = effectiveExercise.modeloDeTreino?.toLowerCase() == 'cardio';
+    final imageBytes = ref.watch(exerciseImageProvider(effectiveExercise.nome)).asData?.value;
 
     Color? cardColor;
     if (finished) {
@@ -223,7 +333,17 @@ class _ExerciseCard extends ConsumerWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: Text(exercise.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(effectiveExercise.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                if (isSwapped)
+                                  Text(
+                                    'Trocado: ${exercise.nome}',
+                                    style: const TextStyle(color: Colors.blue, fontSize: 11),
+                                  ),
+                              ],
+                            ),
                           ),
                           if (finished)
                             Container(
@@ -255,13 +375,13 @@ class _ExerciseCard extends ConsumerWidget {
                         runSpacing: 4,
                         children: [
                           if (isCardio) ...[
-                            if (exercise.repeticoes != null) _Stat('Meta', exercise.repeticoes!),
+                            if (effectiveExercise.repeticoes != null) _Stat('Meta', effectiveExercise.repeticoes!),
                             if (finished) _Stat('Tempo', timerState.weight),
                             _Stat('Último tempo', lastWeight ?? '—'),
                           ] else ...[
-                            if (exercise.series != null) _Stat('Séries', exercise.series!),
-                            if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
-                            if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
+                            if (effectiveExercise.series != null) _Stat('Séries', effectiveExercise.series!),
+                            if (effectiveExercise.repeticoes != null) _Stat('Repetições', effectiveExercise.repeticoes!),
+                            if (effectiveExercise.descanso != null) _Stat('Descanso', effectiveExercise.descanso!),
                             _Stat('Último peso', lastWeight != null ? '$lastWeight kg' : '—'),
                           ],
                         ],
@@ -291,22 +411,19 @@ class _ExerciseCard extends ConsumerWidget {
                   icon: finished ? Icons.check_circle : inProgress ? Icons.replay_circle_filled : Icons.play_circle_fill,
                   label: finished ? 'Feito' : inProgress ? 'Continuar' : 'Iniciar',
                   color: finished ? Colors.green : const Color(0xFFFF6B35),
-                  onPressed: () => context.push(
-                    '/workout/rest-timer',
-                    extra: RestTimerArgs(exercise: exercise, lastWeight: lastWeight, dayName: dayName),
-                  ),
+                  onPressed: () => onStart(effectiveExercise, lastWeight, dayName),
                 ),
                 _ActionButton(
                   icon: Icons.search,
                   label: 'Vídeos',
                   color: const Color(0xFF2196F3),
-                  onPressed: () => showExerciseVideoSheet(context, exerciseName: exercise.nome),
+                  onPressed: () => showExerciseVideoSheet(context, exerciseName: effectiveExercise.nome),
                 ),
                 _ActionButton(
                   icon: Icons.swap_horiz,
                   label: 'Trocar',
-                  color: const Color(0xFF42A5F5),
-                  onPressed: () => context.push('/coming-soon/trocar-exercicio'),
+                  color: isSwapped ? Colors.blue : const Color(0xFF42A5F5),
+                  onPressed: finished ? null : onSwap,
                 ),
               ],
             ),
@@ -340,7 +457,7 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -352,9 +469,16 @@ class _ActionButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 26),
+            Icon(icon, color: onPressed != null ? color : Colors.grey, size: 26),
             const SizedBox(height: 2),
-            Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w500)),
+            Text(
+              label,
+              style: TextStyle(
+                color: onPressed != null ? color : Colors.grey,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
