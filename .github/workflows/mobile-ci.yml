@@ -6,11 +6,11 @@ on:
       - master
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   ci:
-    name: Analyze, Test & Tag
+    name: Analyze & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -33,29 +33,3 @@ jobs:
 
       - name: Test
         run: flutter test
-
-      - name: Validate version bump
-        id: meta
-        run: |
-          CURR=$(grep '^version:' pubspec.yaml | sed 's/version: //' | tr -d '[:space:]')
-          PREV=$(git show HEAD^:pubspec.yaml 2>/dev/null | grep '^version:' | sed 's/version: //' | tr -d '[:space:]' || echo "")
-
-          echo "current=$CURR"
-          echo "previous=$PREV"
-
-          if [ "$CURR" = "$PREV" ]; then
-            echo "❌ Versão não foi alterada no pubspec.yaml (atual: $CURR)."
-            echo "Atualize 'version:' na sua branch antes de abrir o PR."
-            exit 1
-          fi
-
-          echo "version=$CURR" >> $GITHUB_OUTPUT
-          echo "tag=mobile/v${CURR}" >> $GITHUB_OUTPUT
-          echo "✅ Versão bump detectado: $PREV → $CURR"
-
-      - name: Create and push tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "${{ steps.meta.outputs.tag }}" -m "Release ${{ steps.meta.outputs.tag }}"
-          git push origin "${{ steps.meta.outputs.tag }}"
