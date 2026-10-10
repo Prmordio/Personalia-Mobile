@@ -228,6 +228,14 @@ class AppApi {
     return response.data?['started'] != false;
   }
 
+  /// Fire-and-forget: notifica o backend que o timer de descanso local terminou para
+  /// disparar push FCM (multi-device, complementa a notificação local do app).
+  Future<void> fireRestTimerPush() async {
+    try {
+      await _dio.post('/app/workout/rest-timer-push');
+    } catch (_) {}
+  }
+
   /// 'idle' | 'running' | 'failed' — 'failed' quando a última geração terminou sem treino.
   Future<String> getGenerationStatus() async {
     final response = await _dio.get('/app/workout/generation');
