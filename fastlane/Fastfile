@@ -1,0 +1,47 @@
+desc 'Promote the exact beta build without rebuilding or uploading binaries'
+lane :promote do
+  build = ENV.fetch('RELEASE_BUILD')
+  if ENV.fetch('RELEASE_PLATFORM') == 'android'
+    package = 'com.personalia.personalia_app'
+    credentials = ENV.fetch('PLAY_STORE_JSON_KEY')
+    codes = google_play_track_version_codes(
+      package_name: package, json_key_data: credentials, track: 'internal'
+    )
+    UI.user_error!("Build #{build} is no longer on the internal track") unless codes.map(&:to_s).include?(build)
+    rollout = Float(ENV.fetch('ANDROID_ROLLOUT'))
+    upload_to_play_store(
+      package_name: package,
+      json_key_data: credentials,
+      track: 'internal',
+      track_promote_to: 'production',
+      version_code: build.to_i,
+      track_promote_release_status: rollout == 1.0 ? 'completed' : 'inProgress',
+      rollout: rollout,
+      skip_upload_apk: true,
+      skip_upload_aab: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_changelogs: true
+    )
+  else
+    api_key = app_store_connect_api_key(
+      key_id: ENV.fetch('APP_STORE_API_KEY_ID'),
+      issuer_id: ENV.fetch('APP_STORE_ISSUER_ID'),
+      key_content: ENV.fetch('APP_STORE_API_PRIVATE_KEY')
+    )
+    deliver(
+      api_key: api_key,
+      app_identifier: 'com.personalia.personalia-app',
+      app_version: ENV.fetch('RELEASE_VERSION'),
+      build_number: build,
+      submit_for_review: true,
+      automatic_release: ENV.fetch('IOS_AUTOMATIC_RELEASE') == 'true',
+      skip_binary_upload: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      precheck_include_in_app_purchases: false,
+      force: true
+    )
+  end
+end

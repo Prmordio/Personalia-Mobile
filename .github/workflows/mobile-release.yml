@@ -1,21 +1,29 @@
-name: Mobile Release
+name: Publish Mobile Beta
 
 on:
-  push:
-    branches:
-      - 'release/**'
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit da master (vazio = master atual)'
+        required: false
+        type: string
+      platform:
+        description: 'Plataforma'
+        type: choice
+        options: [both, android, ios]
+        default: both
 
 permissions:
   contents: read
 
 concurrency:
-  group: mobile-release
+  group: mobile-store-release
   cancel-in-progress: false
 
 jobs:
   release:
     name: Validate & Tag
-    if: github.event.created == true && github.event.deleted == false
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -24,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.commit || 'master' }}
           fetch-depth: 0
 
       - name: Validate release source and version
@@ -34,11 +42,11 @@ jobs:
           set -euo pipefail
           git fetch origin master
           if ! git merge-base --is-ancestor HEAD origin/master; then
-            echo 'ERROR: a branch de release deve apontar para um commit da master.'
+            echo 'ERROR: o commit selecionado deve pertencer à master.'
             exit 1
           fi
           VERSION=$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | tr -d '[:space:]')
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$ ]]; then
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+[1-9][0-9]*$ ]]; then
             echo 'ERROR: version deve usar o formato X.Y.Z+BUILD no pubspec.yaml.'
             exit 1
           fi
@@ -82,10 +90,10 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
   deploy:
-    name: Deploy Release
+    name: Publish Beta
     needs: release
     uses: ./.github/workflows/mobile-deploy.yml
     with:
       tag: ${{ needs.release.outputs.tag }}
-      platform: both
+      platform: ${{ inputs.platform }}
     secrets: inherit

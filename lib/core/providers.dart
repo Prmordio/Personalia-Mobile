@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'network/api_client.dart';
+import 'network/device_token_api.dart';
 import 'network/token_storage.dart';
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) => TokenStorage());
@@ -15,4 +16,8 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(storage, onUnauthorized: () {
     refresh.value++;
   });
+});
+
+final deviceTokenApiProvider = Provider<DeviceTokenApi>((ref) {
+  return DeviceTokenApi(ref.watch(apiClientProvider).dio);
 });

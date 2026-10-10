@@ -1,0 +1,116 @@
+name: Promote Mobile Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag testada (ex: mobile/v1.6.1+22)'
+        required: true
+        type: string
+      beta_run_id:
+        description: 'Run ID informado no resumo da publicação beta'
+        required: true
+        type: string
+      platform:
+        description: 'Plataforma'
+        type: choice
+        options: [both, android, ios]
+        default: both
+      android_rollout:
+        description: 'Fração do rollout Android: 0.1 = 10%, 1 = 100%'
+        type: string
+        default: '0.1'
+      ios_automatic_release:
+        description: 'Publicar automaticamente após aprovação da Apple'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: mobile-store-release
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.verify.outputs.version }}
+      build: ${{ steps.verify.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify beta evidence and immutable tag
+        id: verify
+        uses: actions/github-script@v7
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          BETA_RUN_ID: ${{ inputs.beta_run_id }}
+          PLATFORM: ${{ inputs.platform }}
+          ROLLOUT: ${{ inputs.android_rollout }}
+        with:
+          script: |
+            const fs = require('fs');
+            const cp = require('child_process');
+            const tag = process.env.RELEASE_TAG;
+            const match = /^mobile\/v(\d+\.\d+\.\d+)\+([1-9]\d*)$/.exec(tag);
+            if (!match || !/^\d+$/.test(process.env.BETA_RUN_ID)) throw new Error('Tag ou run ID inválido');
+            const rollout = Number(process.env.ROLLOUT);
+            if (!Number.isFinite(rollout) || rollout <= 0 || rollout > 1) throw new Error('Rollout deve estar entre 0 e 1');
+            const repo = context.repo;
+            const run_id = Number(process.env.BETA_RUN_ID);
+            const {data: run} = await github.rest.actions.getWorkflowRun({...repo, run_id});
+            if (run.path !== '.github/workflows/mobile-release.yml' || run.event !== 'workflow_dispatch' || run.head_branch !== 'master' || run.status !== 'completed') {
+              throw new Error('Selecione uma execução beta manual concluída na master');
+            }
+            cp.execFileSync('git', ['fetch', 'origin', `refs/tags/${tag}:refs/tags/${tag}`]);
+            const commit = cp.execFileSync('git', ['rev-parse', `${tag}^{commit}`], {encoding: 'utf8'}).trim();
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {...repo, run_id, per_page: 100});
+            const platforms = process.env.PLATFORM === 'both' ? ['android', 'ios'] : [process.env.PLATFORM];
+            for (const platform of platforms) {
+              const candidates = artifacts.filter(a => new RegExp(`^beta-${platform}-\\d+$`).test(a.name) && !a.expired);
+              candidates.sort((a, b) => b.id - a.id);
+              if (!candidates.length) throw new Error(`Sem confirmação beta para ${platform}; retenção: 90 dias`);
+              const {data} = await github.rest.actions.downloadArtifact({...repo, artifact_id: candidates[0].id, archive_format: 'zip'});
+              const zip = `${process.env.RUNNER_TEMP}/beta-${platform}.zip`;
+              fs.writeFileSync(zip, Buffer.from(data));
+              const manifest = JSON.parse(cp.execFileSync('unzip', ['-p', zip, 'beta-manifest.json'], {encoding: 'utf8'}));
+              if (manifest.tag !== tag || manifest.commit !== commit || manifest.platform !== platform || manifest.run_id !== String(run_id) || manifest.version !== `${match[1]}+${match[2]}`) {
+                throw new Error(`Registro beta incompatível para ${platform}`);
+              }
+            }
+            core.setOutput('version', match[1]);
+            core.setOutput('build', match[2]);
+            await core.summary.addRaw(`Release validada: ${tag}; beta run ${run_id}; commit ${commit}`).write();
+
+  promote:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ inputs.platform == 'both' && fromJSON('["android","ios"]') || fromJSON(format('["{0}"]', inputs.platform)) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: Install Fastlane
+        run: gem install fastlane --version 2.232.2 --no-document
+      - name: Promote existing store build
+        env:
+          RELEASE_PLATFORM: ${{ matrix.platform }}
+          RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          RELEASE_BUILD: ${{ needs.validate.outputs.build }}
+          ANDROID_ROLLOUT: ${{ inputs.android_rollout }}
+          IOS_AUTOMATIC_RELEASE: ${{ inputs.ios_automatic_release }}
+          PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}
+          APP_STORE_ISSUER_ID: ${{ secrets.APP_STORE_ISSUER_ID }}
+          APP_STORE_API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
+          APP_STORE_API_PRIVATE_KEY: ${{ secrets.APP_STORE_API_PRIVATE_KEY }}
+          FASTLANE_SKIP_UPDATE_CHECK: 'true'
+          FASTLANE_HIDE_CHANGELOG: 'true'
+        run: fastlane promote
