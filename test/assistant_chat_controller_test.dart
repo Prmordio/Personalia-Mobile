@@ -19,18 +19,27 @@ class _FakeAssistantApi extends AssistantApi {
 
   @override
   Future<String> ask(String text) async {
+    if (pendingAnswer != null) return pendingAnswer!.future;
+    return 'Resposta para: $text';
+  }
+
+  @override
+  Stream<String> askStream(String text) async* {
     if (statusCode != 0) {
       throw DioException(
-        requestOptions: RequestOptions(path: '/app/assistant/message'),
+        requestOptions: RequestOptions(path: '/app/assistant/message-stream'),
         response: Response(
-          requestOptions: RequestOptions(path: '/app/assistant/message'),
+          requestOptions: RequestOptions(path: '/app/assistant/message-stream'),
           statusCode: statusCode,
           data: {'message': 'Você fez muitas perguntas nesta hora.'},
         ),
       );
     }
-    if (pendingAnswer != null) return pendingAnswer!.future;
-    return 'Resposta para: $text';
+    if (pendingAnswer != null) {
+      yield await pendingAnswer!.future;
+    } else {
+      yield 'Resposta para: $text';
+    }
   }
 
   @override
