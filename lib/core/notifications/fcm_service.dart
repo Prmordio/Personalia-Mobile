@@ -16,7 +16,8 @@ class FcmService {
   FcmService._();
   static final instance = FcmService._();
 
-  final _messaging = FirebaseMessaging.instance;
+  // Lazy getter — evita acesso ao Firebase antes de initializeApp() (ex: em testes).
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
   final _localPlugin = FlutterLocalNotificationsPlugin();
 
   /// Rota pendente capturada quando o app estava encerrado e o usuário tocou na notificação.
