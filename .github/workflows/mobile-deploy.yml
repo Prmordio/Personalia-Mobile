@@ -433,6 +433,31 @@ jobs:
           if-no-files-found: error
           retention-days: 90
 
+      - name: Upload Crashlytics dSYMs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! grep -q 'firebase_crashlytics:' pubspec.yaml; then
+            echo 'Release anterior à integração Crashlytics; sem upload de símbolos.'
+            exit 0
+          fi
+          APP_ID=$(python3 - <<'PY'
+          import pathlib, re
+          source = pathlib.Path('lib/firebase_options.dart').read_text()
+          section = source.split('static const FirebaseOptions ios =', 1)[1]
+          print(re.search(r"appId:\s*'([^']+)'", section)[1])
+          PY
+          )
+          ios/Pods/FirebaseCrashlytics/upload-symbols \
+            -ai "$APP_ID" -p ios "$RUNNER_TEMP/Runner.xcarchive/dSYMs"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-dsyms-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/Runner.xcarchive/dSYMs
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
         with:

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../core/telemetry/app_telemetry.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../home/data/app_api.dart';
@@ -457,6 +458,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         preferredGymTime: state.preferredGymTime,
       );
       state = state.copyWith(loading: false, step: OnboardingStep.freeTrial);
+      AppTelemetry.instance.event('onboarding_completed');
       return true;
     } on OnboardingValidationException catch (e) {
       state = state.copyWith(loading: false, fieldErrors: e.errors, step: OnboardingStep.trainingDuration);

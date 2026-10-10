@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'token_storage.dart';
+import '../telemetry/performance_interceptor.dart';
 
 /// URL base do gateway. Em dev local: Android emulator usa 10.0.2.2 (não localhost),
 /// iOS simulator/desktop usa localhost. Sobrescreva com:
@@ -29,6 +30,7 @@ class ApiClient {
         handler.next(error);
       },
     ));
+    _dio.interceptors.add(PerformanceInterceptor());
   }
 
   final Dio _dio;

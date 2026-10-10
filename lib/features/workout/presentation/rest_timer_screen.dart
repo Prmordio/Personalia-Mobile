@@ -1,3 +1,4 @@
+import '../../../core/telemetry/app_telemetry.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -364,6 +365,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
 
   void _ensureSession(WidgetRef ref, String? dayName) {
     if (dayName != null && ref.read(activeWorkoutSessionProvider) == null) {
+      AppTelemetry.instance.event('workout_started');
       ref.read(activeWorkoutSessionProvider.notifier).state =
           ActiveWorkoutSession(dayName: dayName, startedAt: DateTime.now());
     }

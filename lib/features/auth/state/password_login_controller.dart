@@ -1,3 +1,4 @@
+import '../../../core/telemetry/app_telemetry.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
@@ -31,6 +32,7 @@ class PasswordLoginController extends StateNotifier<PasswordLoginState> {
     try {
       final token = await _authApi.loginWithPassword(email, password);
       await _tokenStorage.save(token);
+      AppTelemetry.instance.event('login');
       onLoggedIn?.call();
       _refresh.value++;
       state = state.copyWith(loading: false);
