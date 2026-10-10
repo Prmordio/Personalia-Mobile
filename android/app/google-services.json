@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "4348857471",
+    "project_id": "personalia-b2e70",
+    "storage_bucket": "personalia-b2e70.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:4348857471:android:2cf782354a49ed9be8434a",
+        "android_client_info": {
+          "package_name": "com.personalia.personalia_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQQzpfsfQw1D_sOIfzKrTBEqge37IgkLM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

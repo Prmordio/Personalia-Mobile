@@ -1,4 +1,4 @@
-name: Mobile Deploy
+name: Mobile Beta Build
 
 on:
   workflow_call:
@@ -9,21 +9,6 @@ on:
       platform:
         required: false
         type: string
-        default: both
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag para deploy (ex: mobile/v1.0.0+42)'
-        required: true
-        type: string
-      platform:
-        description: 'Plataforma'
-        required: true
-        type: choice
-        options:
-          - both
-          - android
-          - ios
         default: both
 
 permissions:
@@ -72,6 +57,13 @@ jobs:
             --dart-define=API_BASE_URL=${{ secrets.PERSONALIA_API_URL }} \
             --dart-define=WHATSAPP_BOT_NUMBER=${{ secrets.WHATSAPP_BOT_NUMBER }}
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-build-${{ github.run_attempt }}
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Upload to Play Store — internal track
         uses: r0adkll/upload-google-play@v1
         with:
@@ -80,6 +72,33 @@ jobs:
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           track: internal
           status: completed
+
+      - name: Record successful beta publication
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_PLATFORM: android
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const cp = require('child_process');
+            const version = /^version:\s*(\S+)/m.exec(fs.readFileSync('pubspec.yaml', 'utf8'))[1];
+            if (process.env.RELEASE_TAG !== `mobile/v${version}`) throw new Error('Tag/version mismatch');
+            const manifest = {
+              tag: process.env.RELEASE_TAG, version,
+              commit: cp.execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim(),
+              platform: process.env.RELEASE_PLATFORM, run_id: String(context.runId)
+            };
+            fs.writeFileSync('beta-manifest.json', JSON.stringify(manifest));
+            await core.summary.addRaw(`Beta publicado: ${manifest.tag} (${manifest.platform}). Run ID: ${context.runId}.\n\n`)
+              .addLink('Promover release', `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/workflows/mobile-promote.yml`).write();
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta-android-${{ github.run_attempt }}
+          path: beta-manifest.json
+          if-no-files-found: error
+          retention-days: 90
 
   ios:
     name: Build & Deploy → TestFlight
@@ -164,6 +183,15 @@ jobs:
         run: |
           cd ios
           pod install --repo-update
+
+      - name: Generate Flutter release configuration
+        env:
+          PERSONALIA_API_URL: ${{ secrets.PERSONALIA_API_URL }}
+          WHATSAPP_BOT_NUMBER: ${{ secrets.WHATSAPP_BOT_NUMBER }}
+        run: |
+          flutter build ios --release --config-only --no-codesign \
+            --dart-define="API_BASE_URL=$PERSONALIA_API_URL" \
+            --dart-define="WHATSAPP_BOT_NUMBER=$WHATSAPP_BOT_NUMBER"
 
       - name: Build IPA
         id: build_ipa
@@ -398,6 +426,13 @@ jobs:
           echo "IPA selected for upload: ${IPA_FILES[0]}"
           printf 'ipa_path=%s\n' "${IPA_FILES[0]}" >> "$GITHUB_OUTPUT"
 
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-${{ github.run_attempt }}
+          path: ${{ steps.build_ipa.outputs.ipa_path }}
+          if-no-files-found: error
+          retention-days: 90
+
       - name: Upload to TestFlight
         uses: apple-actions/upload-testflight-build@v1
         with:
@@ -405,3 +440,30 @@ jobs:
           issuer-id: ${{ secrets.APP_STORE_ISSUER_ID }}
           api-key-id: ${{ secrets.APP_STORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APP_STORE_API_PRIVATE_KEY }}
+
+      - name: Record successful beta publication
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_PLATFORM: ios
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const cp = require('child_process');
+            const version = /^version:\s*(\S+)/m.exec(fs.readFileSync('pubspec.yaml', 'utf8'))[1];
+            if (process.env.RELEASE_TAG !== `mobile/v${version}`) throw new Error('Tag/version mismatch');
+            const manifest = {
+              tag: process.env.RELEASE_TAG, version,
+              commit: cp.execFileSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'}).trim(),
+              platform: process.env.RELEASE_PLATFORM, run_id: String(context.runId)
+            };
+            fs.writeFileSync('beta-manifest.json', JSON.stringify(manifest));
+            await core.summary.addRaw(`Beta publicado: ${manifest.tag} (${manifest.platform}). Run ID: ${context.runId}.\n\n`)
+              .addLink('Promover release', `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/workflows/mobile-promote.yml`).write();
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: beta-ios-${{ github.run_attempt }}
+          path: beta-manifest.json
+          if-no-files-found: error
+          retention-days: 90
