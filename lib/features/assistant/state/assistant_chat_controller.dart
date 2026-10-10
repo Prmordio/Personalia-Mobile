@@ -1,3 +1,4 @@
+import '../../../core/telemetry/app_telemetry.dart';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,6 +37,7 @@ class AssistantChatController extends StateNotifier<List<ChatMessage>> {
   Future<void> send(String rawText) async {
     final text = rawText.trim();
     if (text.isEmpty || isWaiting) return;
+    AppTelemetry.instance.event('assistant_message_sent');
     _push(ChatMessage(fromUser: true, text: text));
 
     final buffer = StringBuffer();

@@ -1,3 +1,4 @@
+import '../../../core/telemetry/app_telemetry.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,9 +38,10 @@ int parseSetsCount(String? series, {int fallback = 1}) {
 }
 
 class RestTimerArgs {
-  const RestTimerArgs({required this.exercise, this.lastWeight, this.dayName});
+  const RestTimerArgs({required this.exercise, this.lastWeight, this.lastObservation, this.dayName});
   final WorkoutExercise exercise;
   final String? lastWeight;
+  final String? lastObservation;
 
   /// Dia do plano em andamento (para a Home mostrar "Continuar treino").
   final String? dayName;
@@ -363,6 +365,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
 
   void _ensureSession(WidgetRef ref, String? dayName) {
     if (dayName != null && ref.read(activeWorkoutSessionProvider) == null) {
+      AppTelemetry.instance.event('workout_started');
       ref.read(activeWorkoutSessionProvider.notifier).state =
           ActiveWorkoutSession(dayName: dayName, startedAt: DateTime.now());
     }
@@ -465,6 +468,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
     ref.listen<RestTimerState>(restTimerProvider(key), (prev, next) {
       if (prev == null) return;
       if (prev.remaining > 0 && next.remaining <= 0 && !next.running && _timerVisible) {
+        ref.read(appApiProvider).fireRestTimerPush();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _handleRestEnded();
         });
@@ -505,6 +509,8 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
               if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
               if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
               _Stat('Último peso', args.lastWeight != null ? '${args.lastWeight} kg' : '—'),
+            if (args.lastObservation != null && args.lastObservation!.isNotEmpty)
+              _Stat('Última obs.', args.lastObservation!),
             ],
           ),
           const SizedBox(height: 8),

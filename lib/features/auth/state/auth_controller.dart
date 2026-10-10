@@ -1,3 +1,4 @@
+import '../../../core/telemetry/app_telemetry.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
 import '../data/auth_api.dart';
@@ -96,6 +97,7 @@ class LoginController extends StateNotifier<LoginState> {
     try {
       final token = await _authApi.verifyOtp(state.phoneNumber, code);
       await _tokenStorage.save(token);
+      AppTelemetry.instance.event('login');
       _refresh.value++;
       state = state.copyWith(loading: false);
       return true;

@@ -1,3 +1,4 @@
+import '../telemetry/app_telemetry.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -70,6 +71,7 @@ class FcmService {
     // App encerrado: captura rota para processar depois que o router estiver pronto
     final initial = await _messaging.getInitialMessage();
     if (initial != null) {
+      AppTelemetry.instance.event('push_opened');
       _pendingRoute = _routeFromMessage(initial);
     }
   }
@@ -126,6 +128,7 @@ class FcmService {
   }
 
   void _handleMessageRoute(RemoteMessage message) {
+    AppTelemetry.instance.event('push_opened');
     final route = _routeFromMessage(message);
     if (route != null) _navigate(route);
   }

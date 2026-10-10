@@ -1,3 +1,4 @@
+import '../../../core/telemetry/app_telemetry.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -163,6 +164,7 @@ class AppAccessController extends StateNotifier<AppAccessState> {
     await _run(() async {
       final token = await _authApi.completeAppAccess(state.sessionId!, password);
       await _tokenStorage.save(token);
+      AppTelemetry.instance.event('login');
       onLoggedIn?.call();
       _refresh.value++;
       state = state.copyWith(loading: false);

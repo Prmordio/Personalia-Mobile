@@ -83,6 +83,7 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
     WorkoutExercise original,
     WorkoutExercise effective,
     String? lastWeight,
+    String? lastObservation,
     String? dayName,
     List<WorkoutExercise> allExercises,
   ) async {
@@ -121,7 +122,7 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
 
     await context.push(
       '/workout/rest-timer',
-      extra: RestTimerArgs(exercise: effective, lastWeight: lastWeight, dayName: dayName),
+      extra: RestTimerArgs(exercise: effective, lastWeight: lastWeight, lastObservation: lastObservation, dayName: dayName),
     );
     if (!mounted) return;
 
@@ -182,10 +183,14 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
     final todayAsync = ref.watch(effectiveTodayWorkoutProvider);
     final historyAsync = ref.watch(workoutHistoryProvider);
     final lastWeights = <String, String>{};
+    final lastObservations = <String, String>{};
     final history = historyAsync.asData?.value ?? [];
     for (final workout in history.reversed) {
       for (final ex in workout.exercises) {
         if (ex.weight != null) lastWeights[ex.name.trim().toLowerCase()] = ex.weight!;
+        if (ex.observation != null && ex.observation!.isNotEmpty) {
+          lastObservations[ex.name.trim().toLowerCase()] = ex.observation!;
+        }
       }
     }
 
@@ -236,9 +241,10 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
                   effectiveExercise: _effectiveFor(ex),
                   isSwapped: _sessionSwaps.containsKey(ex.nome.trim().toLowerCase()),
                   lastWeight: lastWeights[_effectiveFor(ex).nome.trim().toLowerCase()],
+                  lastObservation: lastObservations[_effectiveFor(ex).nome.trim().toLowerCase()],
                   dayName: today.dayName,
                   onSwap: () => _handleSwapExercise(ex),
-                  onStart: (eff, lastW, day) => _handleStartExercise(ex, eff, lastW, day, exercises),
+                  onStart: (eff, lastW, lastObs, day) => _handleStartExercise(ex, eff, lastW, lastObs, day, exercises),
                 ),
               if (finished.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -272,9 +278,10 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
                       effectiveExercise: _effectiveFor(ex),
                       isSwapped: _sessionSwaps.containsKey(ex.nome.trim().toLowerCase()),
                       lastWeight: lastWeights[_effectiveFor(ex).nome.trim().toLowerCase()],
+                      lastObservation: lastObservations[_effectiveFor(ex).nome.trim().toLowerCase()],
                       dayName: today.dayName,
                       onSwap: () => _handleSwapExercise(ex),
-                      onStart: (eff, lastW, day) => _handleStartExercise(ex, eff, lastW, day, exercises),
+                      onStart: (eff, lastW, lastObs, day) => _handleStartExercise(ex, eff, lastW, lastObs, day, exercises),
                     ),
               ],
             ],
@@ -312,6 +319,7 @@ class _ExerciseCard extends ConsumerWidget {
     required this.effectiveExercise,
     required this.isSwapped,
     this.lastWeight,
+    this.lastObservation,
     this.dayName,
     required this.onSwap,
     required this.onStart,
@@ -321,9 +329,10 @@ class _ExerciseCard extends ConsumerWidget {
   final WorkoutExercise effectiveExercise;
   final bool isSwapped;
   final String? lastWeight;
+  final String? lastObservation;
   final String? dayName;
   final VoidCallback onSwap;
-  final void Function(WorkoutExercise effective, String? lastWeight, String? dayName) onStart;
+  final void Function(WorkoutExercise effective, String? lastWeight, String? lastObservation, String? dayName) onStart;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -347,7 +356,7 @@ class _ExerciseCard extends ConsumerWidget {
       color: cardColor,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: finished ? null : () => onStart(effectiveExercise, lastWeight, dayName),
+        onTap: finished ? null : () => onStart(effectiveExercise, lastWeight, lastObservation, dayName),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -413,6 +422,8 @@ class _ExerciseCard extends ConsumerWidget {
                               if (effectiveExercise.repeticoes != null) _Stat('Repetições', effectiveExercise.repeticoes!),
                               if (effectiveExercise.descanso != null) _Stat('Descanso', effectiveExercise.descanso!),
                               _Stat('Último peso', lastWeight != null ? '$lastWeight kg' : '—'),
+                              if (lastObservation != null && lastObservation!.isNotEmpty)
+                                _Stat('Última obs.', lastObservation!),
                             ],
                           ],
                         ),

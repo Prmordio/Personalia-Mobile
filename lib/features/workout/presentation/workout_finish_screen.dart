@@ -1,3 +1,4 @@
+import '../../../core/telemetry/app_telemetry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
@@ -56,7 +57,9 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
             .toList(),
       );
       ref.invalidate(lastWorkoutProvider);
-    } catch (_) {
+      AppTelemetry.instance.event('workout_completed');
+    } catch (error, stack) {
+      AppTelemetry.instance.recoverableError(error, stack, 'save_workout');
       // best-effort — falha de rede não bloqueia o usuário
     }
   }

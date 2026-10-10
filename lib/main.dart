@@ -7,23 +7,32 @@ import 'core/notifications/rest_alarm.dart';
 import 'core/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/telemetry/app_telemetry.dart';
 import 'features/onboarding/data/onboarding_api.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await AppTelemetry.instance.initialize();
   await LocalNotificationRestAlarm.instance.init();
   await FcmService.instance.init();
   runApp(const ProviderScope(child: PersonaliaApp()));
 }
 
 final _routerProvider = Provider<GoRouter>((ref) {
-  return buildRouter(
+  final router = buildRouter(
     tokenStorage: ref.watch(tokenStorageProvider),
     refresh: ref.watch(authRefreshProvider),
     onboardingApi: ref.watch(onboardingApiProvider),
   );
+  void trackScreen() => AppTelemetry.instance.screen(router.routerDelegate.currentConfiguration.uri.path);
+  router.routerDelegate.addListener(trackScreen);
+  ref.onDispose(() {
+    router.routerDelegate.removeListener(trackScreen);
+    router.dispose();
+  });
+  return router;
 });
 
 class PersonaliaApp extends ConsumerStatefulWidget {

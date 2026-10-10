@@ -1,3 +1,4 @@
+import '../../../core/telemetry/app_telemetry.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -46,6 +47,7 @@ class BiometricLoginService {
     try {
       final jwt = await _authApi.loginWithBiometric(credential.credentialId, credential.token);
       await _tokenStorage.save(jwt);
+      AppTelemetry.instance.event('login');
       _refresh.value++;
       return BiometricLoginResult.success;
     } on DioException catch (e) {

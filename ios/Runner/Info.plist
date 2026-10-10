@@ -2,6 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<key>FirebaseCrashlyticsCollectionEnabled</key>
+		<false/>
+		<key>firebase_performance_collection_enabled</key>
+		<false/>
+		<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
+		<false/>
+		<key>FirebaseAutomaticScreenReportingEnabled</key>
+		<false/>
+		<key>GOOGLE_ANALYTICS_IDFA_COLLECTION_ENABLED</key>
+		<false/>
 		<key>NSCameraUsageDescription</key>
 		<string>Use a câmera para fotografar aparelhos da academia e descobrir o exercício.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
