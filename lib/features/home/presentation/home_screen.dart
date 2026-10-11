@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/locale/locale_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/emoji_loader.dart';
 import '../data/app_api.dart';
@@ -217,7 +218,9 @@ class _NoWorkoutCard extends ConsumerWidget {
     final controller = ref.read(workoutGenerationProvider.notifier);
 
     Future<void> generate() async {
-      final outcome = await controller.generate();
+      final locale = ref.read(localeProvider);
+      final language = locale?.languageCode ?? 'pt';
+      final outcome = await controller.generate(language: language);
       if (!context.mounted) return;
       switch (outcome) {
         case GenerateOutcome.subscriptionRequired:

@@ -1145,6 +1145,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get assistantVideoBtn => 'Ver videos de ejecución';
 
   @override
+  String get assistantWelcome =>
+      '¡Hola! 👋 Soy el asistente de PersonalIA. Pregúntame sobre entrenamiento, ejercicios, nutrición o recuperación — o envía la foto de una máquina del gimnasio y te digo qué ejercicio hacer. 📸';
+
+  @override
   String get editProfileTitle => 'Actualizar mi perfil';
 
   @override

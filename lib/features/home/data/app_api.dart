@@ -223,8 +223,11 @@ class AppApi {
 
   /// false quando o backend recusa por falta de assinatura (`reason: subscription_required`) —
   /// nesse caso nada é gerado e o app deve oferecer o "Assinar".
-  Future<bool> generateWorkout() async {
-    final response = await _dio.post('/app/workout/generate');
+  Future<bool> generateWorkout({String? language}) async {
+    final response = await _dio.post(
+      '/app/workout/generate',
+      data: {'language': language ?? 'pt-BR'},
+    );
     return response.data?['started'] != false;
   }
 

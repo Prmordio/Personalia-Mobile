@@ -470,6 +470,7 @@
   "assistantSendTooltip": "Enviar",
   "assistantInputHint": "Escreva sua dúvida...",
   "assistantVideoBtn": "Ver vídeos de execução",
+  "assistantWelcome": "Oi! 👋 Sou o assistente do PersonalIA. Pergunte sobre treino, exercícios, alimentação ou recuperação — ou mande a foto de um aparelho da academia que eu te digo qual exercício fazer nele. 📸",
 
   "editProfileTitle": "Atualizar meu perfil",
   "editTrainingPrefsTitle": "Preferências de Treino",

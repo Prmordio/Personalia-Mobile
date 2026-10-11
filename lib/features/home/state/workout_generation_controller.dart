@@ -30,13 +30,13 @@ class WorkoutGenerationController extends StateNotifier<WorkoutGenerationStatus>
   bool get isBusy =>
       state == WorkoutGenerationStatus.requesting || state == WorkoutGenerationStatus.generating;
 
-  Future<GenerateOutcome> generate() async {
+  Future<GenerateOutcome> generate({String language = 'pt-BR'}) async {
     if (isBusy) return GenerateOutcome.alreadyRunning;
 
     state = WorkoutGenerationStatus.requesting;
     final bool started;
     try {
-      started = await _api.generateWorkout();
+      started = await _api.generateWorkout(language: language);
     } catch (_) {
       if (mounted) state = WorkoutGenerationStatus.idle;
       return GenerateOutcome.failed;

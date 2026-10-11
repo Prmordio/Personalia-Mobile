@@ -2140,6 +2140,12 @@ abstract class AppLocalizations {
   /// **'Ver vídeos de execução'**
   String get assistantVideoBtn;
 
+  /// No description provided for @assistantWelcome.
+  ///
+  /// In pt, this message translates to:
+  /// **'Oi! 👋 Sou o assistente do PersonalIA. Pergunte sobre treino, exercícios, alimentação ou recuperação — ou mande a foto de um aparelho da academia que eu te digo qual exercício fazer nele. 📸'**
+  String get assistantWelcome;
+
   /// No description provided for @editProfileTitle.
   ///
   /// In pt, this message translates to:

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/locale/locale_controller.dart';
 import '../../workout/presentation/widgets/exercise_video_sheet.dart';
 import '../state/assistant_chat_controller.dart';
 
@@ -42,7 +43,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     final text = _input.text;
     if (text.trim().isEmpty) return;
     _input.clear();
-    ref.read(assistantChatProvider.notifier).send(text);
+    final locale = ref.read(localeProvider);
+    final language = locale?.languageCode ?? 'pt';
+    ref.read(assistantChatProvider.notifier).send(text, language: language);
   }
 
   Future<void> _pickPhoto(ImageSource source) async {
@@ -63,7 +66,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               : name.endsWith('.webp')
               ? 'image/webp'
               : 'image/jpeg');
-      await ref.read(assistantChatProvider.notifier).sendPhoto(bytes, mime);
+      final locale = ref.read(localeProvider);
+      final language = locale?.languageCode ?? 'pt';
+      await ref.read(assistantChatProvider.notifier).sendPhoto(bytes, mime, language: language);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
