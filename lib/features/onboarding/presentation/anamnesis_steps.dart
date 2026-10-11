@@ -1,22 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/l10n.dart';
 import '../state/onboarding_controller.dart';
 import 'widgets/step_scaffold.dart';
-
-const _mainGoalOptions = [
-  MapEntry('ganho_massa', 'Ganho de massa'),
-  MapEntry('perda_peso', 'Perda de peso'),
-  MapEntry('forca', 'Força'),
-  MapEntry('condicionamento', 'Condicionamento'),
-];
-
-const _activityLevelOptions = [
-  MapEntry('sedentario', 'Sedentário'),
-  MapEntry('leve', 'Leve (1-3 dias/semana)'),
-  MapEntry('moderado', 'Moderado (3-5 dias/semana)'),
-  MapEntry('intenso', 'Intenso (6-7 dias/semana)'),
-  MapEntry('atleta', 'Atleta ou trabalho físico pesado'),
-];
 
 class MainGoalStep extends ConsumerWidget {
   const MainGoalStep({super.key});
@@ -25,17 +11,23 @@ class MainGoalStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
+    final options = [
+      MapEntry('ganho_massa', l.goalMassGain),
+      MapEntry('perda_peso', l.goalWeightLoss),
+      MapEntry('forca', l.goalStrength),
+      MapEntry('condicionamento', l.goalConditioning),
+    ];
     return StepScaffold(
-      title: 'Qual é o seu objetivo principal?',
+      title: l.onboardingMainGoalTitle,
       onBack: () => controller.goTo(OnboardingStep.profileConfirmation),
       error: state.fieldErrors['mainGoal'],
-      child: ChoiceList(options: _mainGoalOptions, selected: state.mainGoal, onSelected: controller.setMainGoal),
+      child: ChoiceList(options: options, selected: state.mainGoal, onSelected: controller.setMainGoal),
     );
   }
 }
 
-/// Doenças/condições médicas e limitações físicas numa tela só — cada "Sim" revela um
-/// campo de texto inline, em vez de navegar pra uma tela separada.
+/// Doenças/condições médicas e limitações físicas numa tela só.
 class HealthConditionsStep extends ConsumerStatefulWidget {
   const HealthConditionsStep({super.key});
 
@@ -59,20 +51,21 @@ class _HealthConditionsStepState extends ConsumerState<HealthConditionsStep> {
   Widget build(BuildContext context) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
     final error = state.fieldErrors['hasDiseases'] ??
         state.fieldErrors['diseases'] ??
         state.fieldErrors['hasLimitations'] ??
         state.fieldErrors['limitations'];
     return StepScaffold(
-      title: 'Saúde e limitações',
+      title: l.onboardingHealthTitle,
       onBack: () => controller.goTo(OnboardingStep.mainGoal),
       error: error,
-      buttonLabel: 'Continuar',
+      buttonLabel: l.continuar,
       onContinue: controller.confirmHealthConditions,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Você possui alguma doença ou condição médica?', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(l.onboardingHasDiseases, style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           YesNoChoice(value: state.hasDiseases, onChanged: controller.setHasDiseases),
           if (state.hasDiseases == true) ...[
@@ -80,12 +73,12 @@ class _HealthConditionsStepState extends ConsumerState<HealthConditionsStep> {
             TextField(
               controller: _diseasesController,
               maxLines: 3,
-              decoration: const InputDecoration(hintText: 'Ex: Hipertensão controlada'),
+              decoration: InputDecoration(hintText: l.onboardingDiseasesHint),
               onChanged: controller.setDiseases,
             ),
           ],
           const SizedBox(height: 28),
-          const Text('Você possui alguma limitação física?', style: TextStyle(fontWeight: FontWeight.w600)),
+          Text(l.onboardingHasLimitations, style: const TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           YesNoChoice(value: state.hasPhysicalLimitations, onChanged: controller.setHasLimitations),
           if (state.hasPhysicalLimitations == true) ...[
@@ -93,7 +86,7 @@ class _HealthConditionsStepState extends ConsumerState<HealthConditionsStep> {
             TextField(
               controller: _limitationsController,
               maxLines: 3,
-              decoration: const InputDecoration(hintText: 'Ex: Lesão no ombro direito'),
+              decoration: InputDecoration(hintText: l.onboardingLimitationsHint),
               onChanged: controller.setLimitations,
             ),
           ],
@@ -110,12 +103,20 @@ class ActivityLevelStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
+    final options = [
+      MapEntry('sedentario', l.activitySedentary),
+      MapEntry('leve', l.activityLight),
+      MapEntry('moderado', l.activityModerate),
+      MapEntry('intenso', l.activityIntense),
+      MapEntry('atleta', l.activityAthlete),
+    ];
     return StepScaffold(
-      title: 'Qual o seu nível de atividade física atual?',
+      title: l.onboardingActivityLevelTitle,
       onBack: () => controller.goTo(OnboardingStep.healthConditions),
       error: state.fieldErrors['physicalActivityLevel'],
       child: ChoiceList(
-        options: _activityLevelOptions,
+        options: options,
         selected: state.physicalActivityLevel,
         onSelected: controller.setActivityLevel,
       ),
@@ -130,23 +131,39 @@ class AnamnesisConfirmationStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
-    final goalLabel = _mainGoalOptions.firstWhere((o) => o.key == state.mainGoal, orElse: () => const MapEntry('', '')).value;
-    final activityLabel =
-        _activityLevelOptions.firstWhere((o) => o.key == state.physicalActivityLevel, orElse: () => const MapEntry('', '')).value;
+    final l = context.l10n;
+
+    final goalOptions = [
+      MapEntry('ganho_massa', l.goalMassGain),
+      MapEntry('perda_peso', l.goalWeightLoss),
+      MapEntry('forca', l.goalStrength),
+      MapEntry('condicionamento', l.goalConditioning),
+    ];
+    final activityOptions = [
+      MapEntry('sedentario', l.activitySedentary),
+      MapEntry('leve', l.activityLight),
+      MapEntry('moderado', l.activityModerate),
+      MapEntry('intenso', l.activityIntense),
+      MapEntry('atleta', l.activityAthlete),
+    ];
+
+    final goalLabel = goalOptions.firstWhere((o) => o.key == state.mainGoal, orElse: () => const MapEntry('', '')).value;
+    final activityLabel = activityOptions.firstWhere((o) => o.key == state.physicalActivityLevel, orElse: () => const MapEntry('', '')).value;
+
     return StepScaffold(
-      title: 'Confira sua anamnese',
+      title: l.onboardingConfirmAnamnesisTitle,
       onBack: () => controller.goTo(OnboardingStep.activityLevel),
       loading: state.loading,
       error: state.error,
-      buttonLabel: 'Confirmar',
+      buttonLabel: l.confirmar,
       onContinue: () => controller.submitAnamnesis(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SummaryRow('Objetivo', goalLabel),
-          _SummaryRow('Doenças', state.hasDiseases == true ? state.diseases : 'Não'),
-          _SummaryRow('Limitações físicas', state.hasPhysicalLimitations == true ? state.physicalLimitations : 'Não'),
-          _SummaryRow('Nível de atividade', activityLabel),
+          _SummaryRow(l.summaryGoal, goalLabel),
+          _SummaryRow(l.summaryDiseases, state.hasDiseases == true ? state.diseases : l.nao),
+          _SummaryRow(l.summaryPhysicalLimitations, state.hasPhysicalLimitations == true ? state.physicalLimitations : l.nao),
+          _SummaryRow(l.summaryActivityLevel, activityLabel),
         ],
       ),
     );

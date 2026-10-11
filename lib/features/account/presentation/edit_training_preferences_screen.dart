@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../onboarding/data/onboarding_api.dart';
-import '../../onboarding/presentation/widgets/step_scaffold.dart' show NumberSpinner;
+import '../../onboarding/presentation/widgets/step_scaffold.dart'
+    show NumberSpinner;
 import '../state/account_providers.dart';
 
-const _focusOptions = [
-  MapEntry('superior', 'Membros superiores'),
-  MapEntry('inferior', 'Membros inferiores'),
-  MapEntry('corpo_todo', 'Corpo todo'),
-];
+const _focusKeys = ['superior', 'inferior', 'corpo_todo'];
 
 /// "Preferências de treino" (Menu). Mesmo PUT do onboarding. As mudanças valem para os
 /// próximos treinos gerados — o treino atual não muda sozinho.
@@ -21,11 +18,13 @@ class EditTrainingPreferencesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(accountStatusProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Preferências de treino')),
+      appBar: AppBar(title: Text(context.l10n.editTrainingPrefsTitle)),
       body: statusAsync.when(
         data: (status) => _PreferencesForm(current: status.trainingPreferences),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => const Center(child: Text('Não foi possível carregar suas preferências.')),
+        error: (error, stackTrace) => Center(
+          child: Text(context.l10n.errLoadPrefs),
+        ),
       ),
     );
   }
@@ -73,10 +72,12 @@ class _PreferencesFormState extends ConsumerState<_PreferencesForm> {
 
   Future<void> _save() async {
     final gymTime = _gymTime();
+    final l = context.l10n;
     final local = <String, String>{
-      if (_minDuration > _maxDuration) 'maxTrainingDuration': 'A duração máxima deve ser maior ou igual à mínima.',
-      if (_focus == null) 'trainingFocus': 'Escolha o foco do treino.',
-      if (gymTime == '') 'preferredGymTime': 'Horário inválido. Use HH:MM (ex.: 18:30).',
+      if (_minDuration > _maxDuration)
+        'maxTrainingDuration': l.errOnboardingDurationRange,
+      if (_focus == null) 'trainingFocus': l.errOnboardingChooseFocus,
+      if (gymTime == '') 'preferredGymTime': l.errOnboardingGymTime,
     };
     if (local.isNotEmpty) {
       setState(() => _errors = local);
@@ -90,7 +91,9 @@ class _PreferencesFormState extends ConsumerState<_PreferencesForm> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      await ref.read(onboardingApiProvider).saveTrainingPreferences(
+      await ref
+          .read(onboardingApiProvider)
+          .saveTrainingPreferences(
             minTrainingDuration: _minDuration,
             maxTrainingDuration: _maxDuration,
             trainingDaysPerWeek: _days,
@@ -100,13 +103,17 @@ class _PreferencesFormState extends ConsumerState<_PreferencesForm> {
           );
       ref.invalidate(accountStatusProvider);
       messenger.showSnackBar(
-        const SnackBar(content: Text('Preferências salvas ✅ Elas valem para o próximo treino gerado.')),
+        SnackBar(content: Text(context.l10n.prefsSaved)),
       );
       navigator.maybePop();
     } on OnboardingValidationException catch (e) {
       setState(() => _errors = e.errors);
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(content: Text('Não foi possível salvar. Tente novamente.')));
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(context.l10n.errSavePrefs)),
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -114,35 +121,60 @@ class _PreferencesFormState extends ConsumerState<_PreferencesForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
+    final focusOptions = [
+      MapEntry(_focusKeys[0], l.focusUpper),
+      MapEntry(_focusKeys[1], l.focusLower),
+      MapEntry(_focusKeys[2], l.focusFullBody),
+    ];
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _Section(
-          title: 'Duração do treino',
-          error: _errors['minTrainingDuration'] ?? _errors['maxTrainingDuration'],
+          title: l.onboardingDurationTitle,
+          error:
+              _errors['minTrainingDuration'] ?? _errors['maxTrainingDuration'],
           child: Column(
             children: [
-              const Text('Mínimo (min)'),
-              NumberSpinner(value: _minDuration, min: 30, max: 180, step: 5, onChanged: (v) => setState(() => _minDuration = v)),
+              Text(l.onboardingDurationMin),
+              NumberSpinner(
+                value: _minDuration,
+                min: 30,
+                max: 180,
+                step: 5,
+                onChanged: (v) => setState(() => _minDuration = v),
+              ),
               const SizedBox(height: 8),
-              const Text('Máximo (min)'),
-              NumberSpinner(value: _maxDuration, min: 30, max: 180, step: 5, onChanged: (v) => setState(() => _maxDuration = v)),
+              Text(l.onboardingDurationMax),
+              NumberSpinner(
+                value: _maxDuration,
+                min: 30,
+                max: 180,
+                step: 5,
+                onChanged: (v) => setState(() => _maxDuration = v),
+              ),
             ],
           ),
         ),
         _Section(
-          title: 'Dias de treino por semana',
+          title: l.onboardingTrainingDaysTitle,
           error: _errors['trainingDaysPerWeek'],
-          child: NumberSpinner(value: _days, min: 1, max: 7, suffix: ' dias', onChanged: (v) => setState(() => _days = v)),
+          child: NumberSpinner(
+            value: _days,
+            min: 1,
+            max: 7,
+            suffix: ' ${l.suffixDays(_days)}',
+            onChanged: (v) => setState(() => _days = v),
+          ),
         ),
         _Section(
-          title: 'Foco do treino',
+          title: l.onboardingTrainingFocusTitle,
           error: _errors['trainingFocus'],
           child: Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              for (final option in _focusOptions)
+              for (final option in focusOptions)
                 ChoiceChip(
                   label: Text(option.value),
                   selected: _focus == option.key,
@@ -152,24 +184,27 @@ class _PreferencesFormState extends ConsumerState<_PreferencesForm> {
           ),
         ),
         _Section(
-          title: 'Cardio',
+          title: l.onboardingCardioTitle,
           error: _errors['wantsCardio'],
           child: SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Incluir cardio no fim do treino'),
+            title: Text(l.onboardingCardioInclude),
             value: _wantsCardio,
             onChanged: (v) => setState(() => _wantsCardio = v),
           ),
         ),
         _Section(
-          title: 'Horário preferido (opcional)',
+          title: l.onboardingGymTimeTitle,
           error: _errors['preferredGymTime'],
           child: Row(
             children: [
               SizedBox(width: 64, child: _timeField(_hour, 'HH')),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8),
-                child: Text(':', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                child: Text(
+                  ':',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
               ),
               SizedBox(width: 64, child: _timeField(_minute, 'MM')),
             ],
@@ -179,8 +214,12 @@ class _PreferencesFormState extends ConsumerState<_PreferencesForm> {
         ElevatedButton(
           onPressed: _saving ? null : _save,
           child: _saving
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Salvar'),
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(l.salvar),
         ),
       ],
     );
@@ -218,7 +257,10 @@ class _Section extends StatelessWidget {
             child,
             if (error != null) ...[
               const SizedBox(height: 4),
-              Text(error!, style: const TextStyle(color: AppColors.error)),
+              Text(
+                error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ],
           ],
         ),

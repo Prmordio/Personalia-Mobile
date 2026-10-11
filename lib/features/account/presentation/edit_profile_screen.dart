@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../home/data/app_api.dart';
 import '../../onboarding/data/onboarding_api.dart';
 import '../state/account_providers.dart';
 
 final _brDate = DateFormat('dd/MM/yyyy');
-const _genders = ['Masculino', 'Feminino'];
+const _genderValues = ['Masculino', 'Feminino'];
 
 /// "Atualizar meu perfil" (Menu). Usa o mesmo PUT do onboarding — as validações são as do
 /// backend (mesmas mensagens do bot). O email é só leitura: ele é o login e só muda com
@@ -20,11 +20,12 @@ class EditProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(accountStatusProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Atualizar meu perfil')),
+      appBar: AppBar(title: Text(context.l10n.editProfileTitle)),
       body: statusAsync.when(
         data: (status) => _ProfileForm(profile: status.profile),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => const Center(child: Text('Não foi possível carregar seu perfil.')),
+        error: (error, stackTrace) =>
+            Center(child: Text(context.l10n.errLoadProfile)),
       ),
     );
   }
@@ -40,10 +41,18 @@ class _ProfileForm extends ConsumerStatefulWidget {
 
 class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late final _name = TextEditingController(text: widget.profile.name ?? '');
-  late final _weight = TextEditingController(text: widget.profile.weight?.toString() ?? '');
-  late final _height = TextEditingController(text: widget.profile.height?.toString() ?? '');
-  late final _cpf = TextEditingController(text: _formatCpf(widget.profile.cpf ?? ''));
-  late String? _gender = _genders.contains(widget.profile.gender) ? widget.profile.gender : null;
+  late final _weight = TextEditingController(
+    text: widget.profile.weight?.toString() ?? '',
+  );
+  late final _height = TextEditingController(
+    text: widget.profile.height?.toString() ?? '',
+  );
+  late final _cpf = TextEditingController(
+    text: _formatCpf(widget.profile.cpf ?? ''),
+  );
+  late String? _gender = _genderValues.contains(widget.profile.gender)
+      ? widget.profile.gender
+      : null;
   late DateTime? _birthDate = _parseBr(widget.profile.birthDate);
   Map<String, String> _errors = const {};
   bool _saving = false;
@@ -79,13 +88,16 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   Future<void> _save() async {
     final weight = num.tryParse(_weight.text.replaceAll(',', '.'));
     final height = num.tryParse(_height.text.replaceAll(',', '.'));
+    final l = context.l10n;
     final local = <String, String>{
-      if (_name.text.trim().isEmpty) 'name': 'Informe seu nome.',
-      if (_gender == null) 'gender': 'Selecione o gênero.',
-      if (_birthDate == null) 'birthDate': 'Informe sua data de nascimento.',
-      if (weight == null) 'weight': 'Informe seu peso em kg.',
-      if (height == null) 'height': 'Informe sua altura em cm.',
-      if (_cpf.text.isNotEmpty && _cpf.text.replaceAll(RegExp(r'\D'), '').length != 11) 'cpf': 'O CPF tem 11 dígitos.',
+      if (_name.text.trim().isEmpty) 'name': l.errProfileName,
+      if (_gender == null) 'gender': l.errProfileGender,
+      if (_birthDate == null) 'birthDate': l.errProfileBirthDate,
+      if (weight == null) 'weight': l.errProfileWeight,
+      if (height == null) 'height': l.errProfileHeight,
+      if (_cpf.text.isNotEmpty &&
+          _cpf.text.replaceAll(RegExp(r'\D'), '').length != 11)
+        'cpf': l.errProfileCpf,
     };
     if (local.isNotEmpty) {
       setState(() => _errors = local);
@@ -99,7 +111,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     try {
-      await ref.read(onboardingApiProvider).updateProfile(
+      await ref
+          .read(onboardingApiProvider)
+          .updateProfile(
             name: _name.text.trim(),
             gender: _gender!,
             birthDate: _brDate.format(_birthDate!),
@@ -110,14 +124,20 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           );
       ref.invalidate(accountStatusProvider);
       ref.invalidate(progressProvider);
-      messenger.showSnackBar(const SnackBar(content: Text('Perfil atualizado ✅')));
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.l10n.profileSaved)),
+      );
       navigator.maybePop();
     } on OnboardingValidationException catch (e) {
       setState(() => _errors = e.errors);
     } on OnboardingConflictException catch (e) {
       setState(() => _errors = {e.field: e.message});
     } catch (_) {
-      messenger.showSnackBar(const SnackBar(content: Text('Não foi possível salvar. Tente novamente.')));
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(context.l10n.errSaveProfile)),
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -125,50 +145,67 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
+    final genderLabels = [l.profileGenderMale, l.profileGenderFemale];
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _Field(
-          label: 'Nome',
+          label: l.profileFieldName,
           error: _errors['name'],
-          child: TextField(controller: _name, textCapitalization: TextCapitalization.words),
+          child: TextField(
+            controller: _name,
+            textCapitalization: TextCapitalization.words,
+          ),
         ),
         _Field(
-          label: 'Gênero',
+          label: l.profileFieldGender,
           error: _errors['gender'],
           child: Wrap(
             spacing: 8,
             children: [
-              for (final g in _genders)
-                ChoiceChip(label: Text(g), selected: _gender == g, onSelected: (_) => setState(() => _gender = g)),
+              for (var i = 0; i < _genderValues.length; i++)
+                ChoiceChip(
+                  label: Text(genderLabels[i]),
+                  selected: _gender == _genderValues[i],
+                  onSelected: (_) => setState(() => _gender = _genderValues[i]),
+                ),
             ],
           ),
         ),
         _Field(
-          label: 'Data de nascimento',
+          label: l.profileFieldBirthDate,
           error: _errors['birthDate'],
           child: OutlinedButton(
             onPressed: _pickBirthDate,
-            child: Text(_birthDate != null ? _brDate.format(_birthDate!) : 'Selecionar data'),
+            child: Text(
+              _birthDate != null
+                  ? _brDate.format(_birthDate!)
+                  : l.profileSelectDate,
+            ),
           ),
         ),
         Row(
           children: [
             Expanded(
               child: _Field(
-                label: 'Peso (kg)',
+                label: l.profileFieldWeight,
                 error: _errors['weight'],
                 child: TextField(
                   controller: _weight,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                  ],
                 ),
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _Field(
-                label: 'Altura (cm)',
+                label: l.profileFieldHeight,
                 error: _errors['height'],
                 child: TextField(
                   controller: _height,
@@ -180,39 +217,47 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           ],
         ),
         _Field(
-          label: 'CPF (opcional)',
+          label: l.profileFieldCpf,
           error: _errors['cpf'],
           child: TextField(
             controller: _cpf,
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(11), _CpfFormatter()],
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(11),
+              _CpfFormatter(),
+            ],
             decoration: const InputDecoration(hintText: '000.000.000-00'),
           ),
         ),
         if ((widget.profile.phone ?? '').isNotEmpty)
           _Field(
-            label: 'Telefone',
+            label: l.profileFieldPhone,
             child: TextFormField(
               initialValue: _formatPhone(widget.profile.phone!),
               enabled: false,
-              decoration: const InputDecoration(helperText: 'É o seu número do WhatsApp — identifica sua conta.'),
+              decoration: InputDecoration(helperText: l.profilePhoneHelper),
             ),
           ),
         _Field(
-          label: 'Email',
+          label: l.profileFieldEmail,
           error: _errors['email'],
           child: TextFormField(
             initialValue: widget.profile.email ?? '',
             enabled: false,
-            decoration: const InputDecoration(helperText: 'O email é o seu login e não pode ser alterado aqui.'),
+            decoration: InputDecoration(helperText: l.profileEmailHelper),
           ),
         ),
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed: _saving ? null : _save,
           child: _saving
-              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Text('Salvar'),
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Text(l.salvar),
         ),
       ],
     );
@@ -237,7 +282,10 @@ class _Field extends StatelessWidget {
           child,
           if (error != null) ...[
             const SizedBox(height: 4),
-            Text(error!, style: const TextStyle(color: AppColors.error)),
+            Text(
+              error!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ],
         ],
       ),
@@ -263,7 +311,10 @@ String _formatPhone(String raw) {
 /// Máscara 000.000.000-00 enquanto digita (recebe só dígitos, até 11).
 class _CpfFormatter extends TextInputFormatter {
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
     final buffer = StringBuffer();
     for (var i = 0; i < digits.length; i++) {
@@ -272,6 +323,9 @@ class _CpfFormatter extends TextInputFormatter {
       buffer.write(digits[i]);
     }
     final text = buffer.toString();
-    return TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length));
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
   }
 }

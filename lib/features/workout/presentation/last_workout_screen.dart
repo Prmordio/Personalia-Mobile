@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../home/data/app_api.dart';
 
 final _dateFormat = DateFormat('dd/MM/yyyy');
@@ -14,23 +15,27 @@ class LastWorkoutScreen extends ConsumerWidget {
     final historyAsync = ref.watch(workoutHistoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Histórico de Treinos')),
+      appBar: AppBar(title: Text(context.l10n.lastWorkoutTitle)),
       body: historyAsync.when(
         data: (history) {
           if (history.isEmpty) {
-            return const Center(child: Text('Você ainda não finalizou nenhum treino.'));
+            return Center(
+              child: Text(context.l10n.historyEmpty),
+            );
           }
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(workoutHistoryProvider),
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: history.length,
-              itemBuilder: (context, index) => _WorkoutHistoryCard(entry: history[index]),
+              itemBuilder: (context, index) =>
+                  _WorkoutHistoryCard(entry: history[index]),
             ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => const Center(child: Text('Não foi possível carregar o histórico.')),
+        error: (error, stackTrace) =>
+            Center(child: Text(context.l10n.errLoadHistory)),
       ),
     );
   }
@@ -74,17 +79,30 @@ class _WorkoutHistoryCardState extends State<_WorkoutHistoryCard> {
                             if (entry.isToday)
                               Container(
                                 margin: const EdgeInsets.only(right: 8),
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.green.shade50,
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: Text('Hoje', style: TextStyle(color: Colors.green.shade700, fontSize: 11, fontWeight: FontWeight.w600)),
+                                child: Text(
+                                  context.l10n.historyToday,
+                                  style: TextStyle(
+                                    color: Colors.green.shade700,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
                             Expanded(
                               child: Text(
                                 entry.dayName,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
                               ),
                             ),
                           ],
@@ -93,21 +111,75 @@ class _WorkoutHistoryCardState extends State<_WorkoutHistoryCard> {
                         Row(
                           children: [
                             if (date != null) ...[
-                              Icon(Icons.calendar_today_outlined, size: 13, color: Colors.grey.shade500),
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                size: 13,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                               const SizedBox(width: 4),
-                              Text(_dateFormat.format(date), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                              Text(
+                                _dateFormat.format(date),
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontSize: 13,
+                                ),
+                              ),
                               if (entry.startedAt != null) ...[
-                                Text('  ·  ', style: TextStyle(color: Colors.grey.shade400)),
-                                Icon(Icons.schedule_outlined, size: 13, color: Colors.grey.shade500),
+                                Text(
+                                  '  ·  ',
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outline,
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.schedule_outlined,
+                                  size: 13,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
                                 const SizedBox(width: 4),
-                                Text(_timeFormat.format(entry.startedAt!), style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                                Text(
+                                  _timeFormat.format(entry.startedAt!),
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    fontSize: 13,
+                                  ),
+                                ),
                               ],
                             ],
                             if (entry.durationMinutes != null) ...[
-                              Text('  ·  ', style: TextStyle(color: Colors.grey.shade400)),
-                              Icon(Icons.timer_outlined, size: 13, color: Colors.grey.shade500),
+                              Text(
+                                '  ·  ',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                              Icon(
+                                Icons.timer_outlined,
+                                size: 13,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
                               const SizedBox(width: 4),
-                              Text('${entry.durationMinutes}min', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                              Text(
+                                '${entry.durationMinutes}min',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontSize: 13,
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -116,10 +188,18 @@ class _WorkoutHistoryCardState extends State<_WorkoutHistoryCard> {
                   ),
                   Row(
                     children: [
-                      Text('${entry.exercises.length} ex.', style: TextStyle(color: Colors.grey.shade500, fontSize: 13)),
+                      Text(
+                        '${entry.exercises.length} ex.',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
+                      ),
                       const SizedBox(width: 4),
                       Icon(
-                        _expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                        _expanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
                         color: colorScheme.primary,
                       ),
                     ],
@@ -134,20 +214,47 @@ class _WorkoutHistoryCardState extends State<_WorkoutHistoryCard> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.fitness_center, size: 16, color: Colors.grey),
+                        const Icon(
+                          Icons.fitness_center,
+                          size: 16,
+                          color: Colors.grey,
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(ex.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                              if (ex.observation != null && ex.observation!.isNotEmpty)
-                                Text(ex.observation!, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                              Text(
+                                ex.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (ex.observation != null &&
+                                  ex.observation!.isNotEmpty)
+                                Text(
+                                  ex.observation!,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    fontSize: 12,
+                                  ),
+                                ),
                             ],
                           ),
                         ),
                         if (ex.weight != null)
-                          Text('${ex.weight} kg', style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w500)),
+                          Text(
+                            '${ex.weight} kg',
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                       ],
                     ),
                   ),

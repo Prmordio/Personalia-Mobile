@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/reports_api.dart';
 import 'widgets/report_charts.dart';
@@ -10,19 +11,20 @@ import 'widgets/report_scaffold.dart';
 class ReportsScreen extends ConsumerWidget {
   const ReportsScreen({super.key});
 
-  static const _reports = [
-    ('Evolução de cargas', 'Quanto suas cargas subiram em cada exercício', Icons.trending_up, '/reports/load-evolution'),
-    ('Medidas corporais', 'Peso, IMC e histórico de pesagens', Icons.monitor_weight, '/reports/body'),
-    ('Volume de treino', 'Tonelagem levantada em cada treino', Icons.fitness_center, '/reports/volume'),
-    ('Frequência', 'Calendário do mês e treinos por semana', Icons.calendar_month, '/reports/frequency'),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(weeklySummaryProvider);
+    final l = context.l10n;
+
+    final reports = [
+      (l.reportLoadEvolution, l.reportLoadEvolutionDesc, Icons.trending_up, '/reports/load-evolution'),
+      (l.reportBody, l.reportBodyDesc, Icons.monitor_weight, '/reports/body'),
+      (l.reportVolume, l.reportVolumeDesc, Icons.fitness_center, '/reports/volume'),
+      (l.reportFrequency, l.reportFrequencyDesc, Icons.calendar_month, '/reports/frequency'),
+    ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Relatórios')),
+      appBar: AppBar(title: Text(l.reportsTitle)),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(weeklySummaryProvider),
         child: ListView(
@@ -34,17 +36,17 @@ class ReportsScreen extends ConsumerWidget {
                 padding: EdgeInsets.all(32),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (error, stackTrace) => const Card(
+              error: (error, stackTrace) => Card(
                 child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text('Não foi possível carregar o resumo da semana.'),
+                  padding: const EdgeInsets.all(20),
+                  child: Text(l.errLoadWeeklySummary),
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            const Text('Seus relatórios', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(l.reportsYourReports, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
-            for (final (title, description, icon, route) in _reports)
+            for (final (title, description, icon, route) in reports)
               Card(
                 child: ListTile(
                   leading: Icon(icon, color: AppColors.orange),
@@ -57,8 +59,8 @@ class ReportsScreen extends ConsumerWidget {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.picture_as_pdf, color: AppColors.orange),
-                title: const Text('Plano de treino (PDF)'),
-                subtitle: const Text('Todos os dias e exercícios do seu plano'),
+                title: Text(l.reportPlanPdf),
+                subtitle: Text(l.reportPlanPdfDesc),
                 trailing: const Icon(Icons.download),
                 onTap: () => sharePdfReport(context, ref, ReportPdf.plan),
               ),
@@ -76,24 +78,27 @@ class _WeeklySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final evolution = summary.tonnageEvolutionPercentage;
     return ReportCard(
-      title: 'Resumo da semana',
+      title: l.weeklySummaryTitle,
       subtitle: summary.weekPeriod.isEmpty ? null : summary.weekPeriod,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              StatTile(value: '${summary.workoutsExecuted}/${summary.workoutsPlanned}', label: 'Treinos'),
-              StatTile(value: '${summary.trainingTimeMinutes.round()} min', label: 'Tempo'),
-              StatTile(value: '${summary.totalTonnageKg.round()} kg', label: 'Tonelagem'),
+              StatTile(value: '${summary.workoutsExecuted}/${summary.workoutsPlanned}', label: l.statWorkouts),
+              StatTile(value: '${summary.trainingTimeMinutes.round()} min', label: l.statTime),
+              StatTile(value: '${summary.totalTonnageKg.round()} kg', label: l.statTonnage),
             ],
           ),
           if (evolution != null) ...[
             const SizedBox(height: 12),
             Text(
-              '${evolution >= 0 ? '📈 +' : '📉 '}${evolution.toStringAsFixed(0)}% de tonelagem vs. semana passada',
+              evolution >= 0
+                  ? l.tonnageEvolutionUp(evolution.toStringAsFixed(0))
+                  : l.tonnageEvolutionDown(evolution.toStringAsFixed(0)),
               style: TextStyle(color: evolution >= 0 ? Colors.green.shade700 : AppColors.error),
             ),
           ],

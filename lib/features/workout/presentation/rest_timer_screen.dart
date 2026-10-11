@@ -2,6 +2,7 @@ import '../../../core/telemetry/app_telemetry.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/notifications/rest_alarm.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/data/app_api.dart';
@@ -38,7 +39,12 @@ int parseSetsCount(String? series, {int fallback = 1}) {
 }
 
 class RestTimerArgs {
-  const RestTimerArgs({required this.exercise, this.lastWeight, this.lastObservation, this.dayName});
+  const RestTimerArgs({
+    required this.exercise,
+    this.lastWeight,
+    this.lastObservation,
+    this.dayName,
+  });
   final WorkoutExercise exercise;
   final String? lastWeight;
   final String? lastObservation;
@@ -73,16 +79,15 @@ class RestTimerState {
     String? observation,
     bool? finished,
     int? elapsed,
-  }) =>
-      RestTimerState(
-        remaining: remaining ?? this.remaining,
-        completedSets: completedSets ?? this.completedSets,
-        running: running ?? this.running,
-        weight: weight ?? this.weight,
-        observation: observation ?? this.observation,
-        finished: finished ?? this.finished,
-        elapsed: elapsed ?? this.elapsed,
-      );
+  }) => RestTimerState(
+    remaining: remaining ?? this.remaining,
+    completedSets: completedSets ?? this.completedSets,
+    running: running ?? this.running,
+    weight: weight ?? this.weight,
+    observation: observation ?? this.observation,
+    finished: finished ?? this.finished,
+    elapsed: elapsed ?? this.elapsed,
+  );
 }
 
 class RestTimerNotifier extends StateNotifier<RestTimerState> {
@@ -92,7 +97,13 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     this.exerciseName = '',
     this.alarm,
     this.onSetStarted,
-  }) : super(RestTimerState(remaining: totalSeconds, completedSets: 0, running: false));
+  }) : super(
+         RestTimerState(
+           remaining: totalSeconds,
+           completedSets: 0,
+           running: false,
+         ),
+       );
 
   final int totalSeconds;
   final int totalSets;
@@ -133,11 +144,17 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     final isFreshStart = state.remaining == totalSeconds;
     state = state.copyWith(
       running: true,
-      completedSets: isFreshStart && state.completedSets < totalSets ? state.completedSets + 1 : state.completedSets,
+      completedSets: isFreshStart && state.completedSets < totalSets
+          ? state.completedSets + 1
+          : state.completedSets,
     );
     if (isFreshStart) onSetStarted?.call();
     _endTime = DateTime.now().add(Duration(seconds: state.remaining));
-    alarm?.schedule(id: alarmId, after: Duration(seconds: state.remaining), exerciseName: exerciseName);
+    alarm?.schedule(
+      id: alarmId,
+      after: Duration(seconds: state.remaining),
+      exerciseName: exerciseName,
+    );
     _startCountdown();
   }
 
@@ -184,7 +201,11 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     state = state.copyWith(remaining: newRemaining);
     if (state.running && _endTime != null) {
       _endTime = _endTime!.add(Duration(seconds: seconds));
-      alarm?.schedule(id: alarmId, after: Duration(seconds: newRemaining), exerciseName: exerciseName);
+      alarm?.schedule(
+        id: alarmId,
+        after: Duration(seconds: newRemaining),
+        exerciseName: exerciseName,
+      );
     }
   }
 
@@ -201,7 +222,8 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
   }
 
   void setWeight(String value) => state = state.copyWith(weight: value);
-  void setObservation(String value) => state = state.copyWith(observation: value);
+  void setObservation(String value) =>
+      state = state.copyWith(observation: value);
 
   // Campos internos do cardio — não persistem no estado, são auxiliares do Timer.
   DateTime? _cardioStartTime;
@@ -231,14 +253,22 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     // Agenda notificação push quando atingir a duração alvo.
     if (targetSeconds > 0 && state.elapsed < targetSeconds) {
       final remaining = targetSeconds - state.elapsed;
-      alarm?.schedule(id: alarmId, after: Duration(seconds: remaining), exerciseName: exerciseName);
+      alarm?.schedule(
+        id: alarmId,
+        after: Duration(seconds: remaining),
+        exerciseName: exerciseName,
+      );
     }
 
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      final newElapsed = _cardioElapsedAtStart + DateTime.now().difference(_cardioStartTime!).inSeconds;
+      final newElapsed =
+          _cardioElapsedAtStart +
+          DateTime.now().difference(_cardioStartTime!).inSeconds;
 
       // Dispara notificação no app quando atingir o tempo alvo (app em primeiro plano).
-      if (_cardioTargetSeconds > 0 && !_cardioGoalFired && newElapsed >= _cardioTargetSeconds) {
+      if (_cardioTargetSeconds > 0 &&
+          !_cardioGoalFired &&
+          newElapsed >= _cardioTargetSeconds) {
         _cardioGoalFired = true;
         alarm?.cancel(alarmId);
         alarm?.fireNow(id: alarmId, exerciseName: exerciseName);
@@ -266,7 +296,12 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     _cardioElapsedAtStart = 0;
     _cardioGoalFired = false;
     alarm?.cancel(alarmId);
-    state = RestTimerState(remaining: totalSeconds, completedSets: 0, running: false, elapsed: 0);
+    state = RestTimerState(
+      remaining: totalSeconds,
+      completedSets: 0,
+      running: false,
+      elapsed: 0,
+    );
   }
 
   void finish() {
@@ -287,15 +322,19 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
 /// sem autoDispose de propósito — o cronômetro (e o Timer por trás dele) precisa sobreviver
 /// à navegação pra fora da tela e voltar, em vez de reiniciar a cada vez.
 final restTimerProvider =
-    StateNotifierProvider.family<RestTimerNotifier, RestTimerState, (String, int, int)>((ref, key) {
-  final (exerciseName, totalSeconds, totalSets) = key;
-  return RestTimerNotifier(
-    totalSeconds: totalSeconds,
-    totalSets: totalSets,
-    exerciseName: exerciseName,
-    alarm: ref.read(restAlarmProvider),
-  );
-});
+    StateNotifierProvider.family<
+      RestTimerNotifier,
+      RestTimerState,
+      (String, int, int)
+    >((ref, key) {
+      final (exerciseName, totalSeconds, totalSets) = key;
+      return RestTimerNotifier(
+        totalSeconds: totalSeconds,
+        totalSets: totalSets,
+        exerciseName: exerciseName,
+        alarm: ref.read(restAlarmProvider),
+      );
+    });
 
 class RestTimerScreen extends ConsumerStatefulWidget {
   const RestTimerScreen({super.key, required this.args});
@@ -306,7 +345,8 @@ class RestTimerScreen extends ConsumerStatefulWidget {
   ConsumerState<RestTimerScreen> createState() => _RestTimerScreenState();
 }
 
-class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsBindingObserver {
+class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
+    with WidgetsBindingObserver {
   late final TextEditingController _weightController;
   late final TextEditingController _observationController;
 
@@ -319,7 +359,11 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
 
   (String, int, int) get _key {
     final exercise = widget.args.exercise;
-    return (exercise.nome, parseRestSeconds(exercise.descanso), parseSetsCount(exercise.series));
+    return (
+      exercise.nome,
+      parseRestSeconds(exercise.descanso),
+      parseSetsCount(exercise.series),
+    );
   }
 
   @override
@@ -375,14 +419,15 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
     if (_alertInFlight || !mounted) return;
     setState(() => _alertInFlight = true);
 
+    final l = context.l10n;
     if (_inInterExerciseRest) {
       ref.read(restTimerProvider(_key).notifier).finish();
       showDialog<void>(
         context: context,
         barrierDismissible: false,
         builder: (_) => AlertDialog(
-          title: const Text('Descanso finalizado!'),
-          content: const Text('Ótimo trabalho! Pronto para o próximo exercício.'),
+          title: Text(l.restFinishedTitle),
+          content: Text(l.restInterExerciseMsg),
           actions: [
             FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AppColors.orange),
@@ -390,7 +435,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                 Navigator.of(context).pop(); // fecha dialog
                 Navigator.of(context).pop(); // volta à lista de exercícios
               },
-              child: const Text('Próximo exercício'),
+              child: Text(l.restBtnNextExercise),
             ),
           ],
         ),
@@ -401,23 +446,30 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
       showDialog<void>(
         context: context,
         builder: (_) => AlertDialog(
-          title: const Text('Descanso finalizado!'),
-          content: const Text('Hora da próxima série!'),
+          title: Text(l.restFinishedTitle),
+          content: Text(l.restSetFinishedMsg),
           actions: [
             FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AppColors.orange),
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Vamos lá!'),
+              child: Text(l.restBtnLetsGo),
             ),
           ],
         ),
       ).then((_) {
-        if (mounted) setState(() { _timerVisible = false; _alertInFlight = false; });
+        if (mounted)
+          setState(() {
+            _timerVisible = false;
+            _alertInFlight = false;
+          });
       });
     }
   }
 
-  Widget _buildRestButton({required String label, required VoidCallback onTap}) {
+  Widget _buildRestButton({
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -441,7 +493,11 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
             const SizedBox(width: 10),
             Text(
               label,
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -467,7 +523,10 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
     // Detecta fim do descanso e exibe alerta em tela.
     ref.listen<RestTimerState>(restTimerProvider(key), (prev, next) {
       if (prev == null) return;
-      if (prev.remaining > 0 && next.remaining <= 0 && !next.running && _timerVisible) {
+      if (prev.remaining > 0 &&
+          next.remaining <= 0 &&
+          !next.running &&
+          _timerVisible) {
         ref.read(appApiProvider).fireRestTimerPush();
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _handleRestEnded();
@@ -477,11 +536,16 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
 
     final done = state.remaining <= 0;
     // N séries = N-1 descansos. Após o último descanso, o usuário ainda faz a série final.
-    final allSetsDone = totalSets <= 1 ? state.completedSets >= 1 : state.completedSets >= totalSets - 1;
+    final allSetsDone = totalSets <= 1
+        ? state.completedSets >= 1
+        : state.completedSets >= totalSets - 1;
     final lastSetReady = allSetsDone && done && state.completedSets < totalSets;
     final allFinished = state.completedSets >= totalSets;
 
-    final imageBytes = ref.watch(exerciseImageProvider(exercise.nome)).asData?.value;
+    final imageBytes = ref
+        .watch(exerciseImageProvider(exercise.nome))
+        .asData
+        ?.value;
     final showTimer = _timerVisible || state.running;
 
     return Scaffold(
@@ -505,12 +569,18 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
             spacing: 24,
             runSpacing: 8,
             children: [
-              if (exercise.series != null) _Stat('Séries', exercise.series!),
-              if (exercise.repeticoes != null) _Stat('Repetições', exercise.repeticoes!),
-              if (exercise.descanso != null) _Stat('Descanso', exercise.descanso!),
-              _Stat('Último peso', args.lastWeight != null ? '${args.lastWeight} kg' : '—'),
-            if (args.lastObservation != null && args.lastObservation!.isNotEmpty)
-              _Stat('Última obs.', args.lastObservation!),
+              if (exercise.series != null) _Stat(context.l10n.restStatSeries, exercise.series!),
+              if (exercise.repeticoes != null)
+                _Stat(context.l10n.restStatReps, exercise.repeticoes!),
+              if (exercise.descanso != null)
+                _Stat(context.l10n.restStatRest, exercise.descanso!),
+              _Stat(
+                context.l10n.restStatLastWeight,
+                args.lastWeight != null ? '${args.lastWeight} kg' : '—',
+              ),
+              if (args.lastObservation != null &&
+                  args.lastObservation!.isNotEmpty)
+                _Stat(context.l10n.restStatLastObs, args.lastObservation!),
             ],
           ),
           const SizedBox(height: 8),
@@ -519,20 +589,26 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
             children: [
               _ActionButton(
                 icon: Icons.search,
-                label: 'Vídeos',
+                label: context.l10n.restBtnVideos,
                 color: const Color(0xFF2196F3),
-                onPressed: () => showExerciseVideoSheet(context, exerciseName: exercise.nome),
+                onPressed: () => showExerciseVideoSheet(
+                  context,
+                  exerciseName: exercise.nome,
+                ),
               ),
               _ActionButton(
                 icon: Icons.swap_horiz,
-                label: 'Trocar',
+                label: context.l10n.restBtnSwap,
                 color: AppColors.orange,
                 onPressed: () async {
-                  final alt = await Navigator.of(context).push<ExerciseAlternative>(
-                    MaterialPageRoute(
-                      builder: (_) => SwapExerciseScreen(args: SwapExerciseArgs(exercise: exercise)),
-                    ),
-                  );
+                  final alt = await Navigator.of(context)
+                      .push<ExerciseAlternative>(
+                        MaterialPageRoute(
+                          builder: (_) => SwapExerciseScreen(
+                            args: SwapExerciseArgs(exercise: exercise),
+                          ),
+                        ),
+                      );
                   if (alt != null) {
                     notifier.resetForNewSession();
                     if (context.mounted) Navigator.of(context).pop(alt);
@@ -568,18 +644,25 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                   width: 220,
                   height: 220,
                   child: CircularProgressIndicator(
-                    value: totalSeconds == 0 ? 1 : 1 - (state.remaining / totalSeconds),
+                    value: totalSeconds == 0
+                        ? 1
+                        : 1 - (state.remaining / totalSeconds),
                     strokeWidth: 10,
                     color: done ? Colors.green : AppColors.orange,
-                    backgroundColor: AppColors.background,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                   ),
                 ),
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      done ? 'Pronto!' : _format(state.remaining),
-                      style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold),
+                      done ? context.l10n.restTimerDone : _format(state.remaining),
+                      style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 12),
                     IconButton(
@@ -588,7 +671,9 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                       icon: Icon(
                         done
                             ? Icons.replay_circle_filled
-                            : (state.running ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                            : (state.running
+                                  ? Icons.pause_circle_filled
+                                  : Icons.play_circle_fill),
                       ),
                       onPressed: done
                           ? () {
@@ -609,16 +694,22 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TextButton(onPressed: () => notifier.addSeconds(15), child: const Text('+15s')),
+                TextButton(
+                  onPressed: () => notifier.addSeconds(15),
+                  child: const Text('+15s'),
+                ),
                 const SizedBox(width: 12),
-                TextButton(onPressed: notifier.reset, child: const Text('Reiniciar')),
+                TextButton(
+                  onPressed: notifier.reset,
+                  child: Text(context.l10n.restBtnReset),
+                ),
               ],
             ),
             const SizedBox(height: 24),
           ] else if (_inInterExerciseRest) ...[
             // Descanso entre exercícios: timer ainda não iniciado.
             _buildRestButton(
-              label: 'Iniciar descanso entre exercícios',
+              label: context.l10n.restBtnStartInterExercise,
               onTap: () {
                 setState(() => _timerVisible = true);
                 _ensureSession(ref, args.dayName);
@@ -637,11 +728,17 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                   foregroundColor: AppColors.orange,
                 ),
                 icon: const Icon(Icons.flag_circle, size: 24),
-                label: const Text('Confirmar última série', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                label: Text(
+                  context.l10n.restBtnConfirmLastSet,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
                 onPressed: () {
                   notifier.confirmLastSet();
                   notifier.reset();
-                  setState(() { _inInterExerciseRest = true; _timerVisible = false; });
+                  setState(() {
+                    _inInterExerciseRest = true;
+                    _timerVisible = false;
+                  });
                 },
               ),
             ),
@@ -649,7 +746,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
           ] else if (!allFinished && !state.finished) ...[
             // Botão estilizado "Iniciar descanso" para exibir o cronômetro.
             _buildRestButton(
-              label: 'Iniciar descanso',
+              label: context.l10n.restBtnStartRest,
               onTap: () {
                 setState(() => _timerVisible = true);
                 // reset garante partida do tempo cheio se o descanso anterior zerou.
@@ -674,9 +771,9 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                 children: [
                   Icon(Icons.check_circle, color: Colors.green.shade700),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Exercício concluído!',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                  Text(
+                    context.l10n.restExerciseDone,
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                 ],
               ),
@@ -685,21 +782,23 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
           ] else ...[
             TextField(
               controller: _weightController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Peso utilizado (kg)',
-                prefixIcon: Icon(Icons.fitness_center),
-                border: OutlineInputBorder(),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: context.l10n.restWeightLabel,
+                prefixIcon: const Icon(Icons.fitness_center),
+                border: const OutlineInputBorder(),
               ),
               onChanged: notifier.setWeight,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _observationController,
-              decoration: const InputDecoration(
-                labelText: 'Observação (opcional)',
-                prefixIcon: Icon(Icons.notes),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: context.l10n.restObservationLabel,
+                prefixIcon: const Icon(Icons.notes),
+                border: const OutlineInputBorder(),
               ),
               maxLines: 2,
               onChanged: notifier.setObservation,
@@ -709,7 +808,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Text(
-                  'Digite o peso para finalizar',
+                  context.l10n.restWeightHint,
                   style: TextStyle(color: Colors.orange.shade700, fontSize: 13),
                 ),
               ),
@@ -721,7 +820,10 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 icon: const Icon(Icons.flag),
-                label: const Text('Finalizar exercício', style: TextStyle(fontSize: 15)),
+                label: Text(
+                  context.l10n.restBtnFinishExercise,
+                  style: const TextStyle(fontSize: 15),
+                ),
                 onPressed: state.weight.trim().isEmpty
                     ? null
                     : () {
@@ -750,20 +852,23 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
     final double? progressValue = state.finished
         ? 1.0
         : targetSeconds > 0
-            ? (state.elapsed / targetSeconds).clamp(0.0, 1.0)
-            : (state.running ? null : 0.0);
+        ? (state.elapsed / targetSeconds).clamp(0.0, 1.0)
+        : (state.running ? null : 0.0);
 
-    final Color progressColor = goalReached || state.finished ? Colors.green : AppColors.orange;
+    final Color progressColor = goalReached || state.finished
+        ? Colors.green
+        : AppColors.orange;
 
+    final l = context.l10n;
     String statusLabel;
     if (state.finished) {
-      statusLabel = 'Concluído! ✅';
+      statusLabel = l.restCardioDone;
     } else if (goalReached) {
-      statusLabel = 'Meta atingida! 🎉';
+      statusLabel = l.restCardioGoalReached;
     } else if (state.running) {
-      statusLabel = 'Em execução';
+      statusLabel = l.restCardioRunning;
     } else {
-      statusLabel = state.elapsed == 0 ? 'Toque para iniciar' : 'Pausado';
+      statusLabel = state.elapsed == 0 ? l.restCardioTapToStart : l.restCardioPaused;
     }
 
     return Scaffold(
@@ -776,8 +881,10 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
             spacing: 24,
             runSpacing: 8,
             children: [
-              if (exercise.repeticoes != null) _Stat('Duração', exercise.repeticoes!),
-              if (widget.args.lastWeight != null) _Stat('Último tempo', widget.args.lastWeight!),
+              if (exercise.repeticoes != null)
+                _Stat(l.statDuration, exercise.repeticoes!),
+              if (widget.args.lastWeight != null)
+                _Stat(l.restCardioLastTime, widget.args.lastWeight!),
             ],
           ),
           const SizedBox(height: 8),
@@ -787,20 +894,26 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
             children: [
               _ActionButton(
                 icon: Icons.search,
-                label: 'Vídeos',
+                label: l.restBtnVideos,
                 color: const Color(0xFF2196F3),
-                onPressed: () => showExerciseVideoSheet(context, exerciseName: exercise.nome),
+                onPressed: () => showExerciseVideoSheet(
+                  context,
+                  exerciseName: exercise.nome,
+                ),
               ),
               _ActionButton(
                 icon: Icons.swap_horiz,
-                label: 'Trocar',
+                label: l.restBtnSwap,
                 color: AppColors.orange,
                 onPressed: () async {
-                  final alt = await Navigator.of(context).push<ExerciseAlternative>(
-                    MaterialPageRoute(
-                      builder: (_) => SwapExerciseScreen(args: SwapExerciseArgs(exercise: exercise)),
-                    ),
-                  );
+                  final alt = await Navigator.of(context)
+                      .push<ExerciseAlternative>(
+                        MaterialPageRoute(
+                          builder: (_) => SwapExerciseScreen(
+                            args: SwapExerciseArgs(exercise: exercise),
+                          ),
+                        ),
+                      );
                   if (alt != null) {
                     notifier.resetForNewSession();
                     if (context.mounted) Navigator.of(context).pop(alt);
@@ -820,7 +933,9 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                   value: progressValue,
                   strokeWidth: 10,
                   color: progressColor,
-                  backgroundColor: AppColors.background,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).colorScheme.surfaceContainerHighest,
                 ),
               ),
               Column(
@@ -828,15 +943,28 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
                 children: [
                   Text(
                     _formatElapsed(state.elapsed),
-                    style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 56,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  Text(statusLabel, style: TextStyle(color: Colors.grey.shade600, fontSize: 14)),
+                  Text(
+                    statusLabel,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   if (!state.finished)
                     IconButton(
                       iconSize: 56,
                       color: goalReached ? Colors.green : AppColors.orange,
-                      icon: Icon(state.running ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                      icon: Icon(
+                        state.running
+                            ? Icons.pause_circle_filled
+                            : Icons.play_circle_fill,
+                      ),
                       onPressed: () {
                         _ensureSession(ref, widget.args.dayName);
                         notifier.toggleCardio(targetSeconds: targetSeconds);
@@ -851,12 +979,14 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
             width: double.infinity,
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
-                backgroundColor: state.finished ? Colors.green.shade600 : Colors.green,
+                backgroundColor: state.finished
+                    ? Colors.green.shade600
+                    : Colors.green,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               icon: Icon(state.finished ? Icons.check_circle : Icons.flag),
               label: Text(
-                state.finished ? 'Cardio concluído!' : 'Finalizar cardio',
+                state.finished ? l.restBtnCardioDone : l.restBtnFinishCardio,
                 style: const TextStyle(fontSize: 15),
               ),
               onPressed: state.finished || state.elapsed == 0
@@ -870,10 +1000,10 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
           const SizedBox(height: 24),
           TextField(
             controller: _observationController,
-            decoration: const InputDecoration(
-              labelText: 'Observação (opcional)',
-              prefixIcon: Icon(Icons.notes),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l.restObservationLabel,
+              prefixIcon: const Icon(Icons.notes),
+              border: const OutlineInputBorder(),
             ),
             maxLines: 2,
             onChanged: notifier.setObservation,
@@ -886,7 +1016,12 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen> with WidgetsB
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({required this.icon, required this.label, required this.color, required this.onPressed});
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onPressed,
+  });
 
   final IconData icon;
   final String label;
@@ -905,7 +1040,14 @@ class _ActionButton extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 26),
             const SizedBox(height: 2),
-            Text(label, style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w500)),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
@@ -928,10 +1070,16 @@ class _SetIndicator extends StatelessWidget {
       height: 32,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade400),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       alignment: Alignment.center,
-      child: Text('$index', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+      child: Text(
+        '$index',
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

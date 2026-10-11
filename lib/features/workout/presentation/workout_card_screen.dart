@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/workout_summary.dart';
 
@@ -30,6 +31,7 @@ class _WorkoutCardScreenState extends State<WorkoutCardScreen> {
   }
 
   void _showPhotoOptions() {
+    final l = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       builder: (_) => SafeArea(
@@ -38,18 +40,18 @@ class _WorkoutCardScreenState extends State<WorkoutCardScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Tirar foto'),
+              title: Text(l.assistantTakePhoto),
               onTap: () { Navigator.pop(context); _pickPhoto(ImageSource.camera); },
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Escolher da galeria'),
+              title: Text(l.assistantChooseGallery),
               onTap: () { Navigator.pop(context); _pickPhoto(ImageSource.gallery); },
             ),
             if (_photo != null)
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
-                title: const Text('Remover foto', style: TextStyle(color: Colors.red)),
+                title: Text(l.cardBtnRemovePhoto, style: const TextStyle(color: Colors.red)),
                 onTap: () { Navigator.pop(context); setState(() => _photo = null); },
               ),
           ],
@@ -59,6 +61,7 @@ class _WorkoutCardScreenState extends State<WorkoutCardScreen> {
   }
 
   Future<void> _share() async {
+    final shareText = context.l10n.cardShareText(widget.summary.dayName);
     setState(() => _sharing = true);
     try {
       final boundary = _cardKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
@@ -71,7 +74,7 @@ class _WorkoutCardScreenState extends State<WorkoutCardScreen> {
 
       await Share.shareXFiles(
         [XFile(file.path)],
-        text: 'Treino ${widget.summary.dayName} concluído! 💪 #PersonaliA',
+        text: shareText,
       );
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -85,7 +88,7 @@ class _WorkoutCardScreenState extends State<WorkoutCardScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Card do treino', style: TextStyle(color: Colors.white)),
+        title: Text(context.l10n.cardTitle, style: const TextStyle(color: Colors.white)),
         elevation: 0,
       ),
       body: Column(
@@ -115,7 +118,7 @@ class _WorkoutCardScreenState extends State<WorkoutCardScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                       icon: Icon(_photo == null ? Icons.add_a_photo : Icons.edit, size: 18),
-                      label: Text(_photo == null ? 'Adicionar foto' : 'Trocar foto'),
+                      label: Text(_photo == null ? context.l10n.cardBtnAddPhoto : context.l10n.cardBtnChangePhoto),
                       onPressed: _showPhotoOptions,
                     ),
                   ),
@@ -130,7 +133,7 @@ class _WorkoutCardScreenState extends State<WorkoutCardScreen> {
                       icon: _sharing
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                           : const Icon(Icons.share),
-                      label: Text(_sharing ? 'Gerando...' : 'Compartilhar'),
+                      label: Text(_sharing ? context.l10n.cardBtnGenerating : context.l10n.cardBtnShare),
                       onPressed: _sharing ? null : _share,
                     ),
                   ),
@@ -204,11 +207,11 @@ class _WorkoutCard extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             child: Row(
               children: [
-                _StatTile(icon: Icons.timer_outlined, label: 'Duração', value: summary.durationFormatted),
+                _StatTile(icon: Icons.timer_outlined, label: context.l10n.statDuration, value: summary.durationFormatted),
                 const SizedBox(width: 10),
-                _StatTile(icon: Icons.fitness_center, label: 'Exercícios', value: '${summary.completedCount}/${summary.totalExercises}'),
+                _StatTile(icon: Icons.fitness_center, label: context.l10n.cardStatExercises, value: '${summary.completedCount}/${summary.totalExercises}'),
                 const SizedBox(width: 10),
-                _StatTile(icon: Icons.monitor_weight_outlined, label: 'Volume', value: summary.totalVolumeFormatted),
+                _StatTile(icon: Icons.monitor_weight_outlined, label: context.l10n.statVolume, value: summary.totalVolumeFormatted),
               ],
             ),
           ),

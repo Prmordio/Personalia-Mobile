@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/widgets/password_text_field.dart';
 import '../state/forgot_password_controller.dart';
 
@@ -9,7 +9,8 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  ConsumerState<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
@@ -42,16 +43,21 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                 alignment: Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: state.loading ? null : () => Navigator.of(context).maybePop(),
+                  onPressed: state.loading
+                      ? null
+                      : () => Navigator.of(context).maybePop(),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text('Redefinir senha', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(
+                context.l10n.forgotPasswordTitle,
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Text(
                 onCodeStep
-                    ? 'Digite o código que chegou no seu email e escolha uma nova senha.'
-                    : 'Informe o email da sua conta. Vamos enviar um código para você criar uma nova senha.',
+                    ? context.l10n.forgotPasswordEnterCodeDesc
+                    : context.l10n.forgotPasswordEnterEmailDesc,
               ),
               const SizedBox(height: 24),
               if (!onCodeStep)
@@ -59,11 +65,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   autofillHints: const [AutofillHints.email],
-                  decoration: const InputDecoration(hintText: 'seuemail@exemplo.com'),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.onboardingEmailHint,
+                  ),
                 ),
               if (onCodeStep) ...[
                 if (state.info != null) ...[
-                  Text(state.info!),
+                  Text(context.resolveMessage(state.info)!),
                   const SizedBox(height: 16),
                 ],
                 TextField(
@@ -71,29 +79,47 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                   keyboardType: TextInputType.number,
                   maxLength: 6,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(hintText: 'Código de 6 dígitos', counterText: ''),
+                  decoration: InputDecoration(
+                    hintText: context.l10n.forgotPasswordCodeHint,
+                    counterText: '',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 PasswordTextField(
                   controller: _passwordController,
-                  hintText: 'Nova senha (mínimo 8 caracteres)',
+                  hintText: context.l10n.forgotPasswordNewPasswordHint,
                   autofillHints: const [AutofillHints.newPassword],
                 ),
               ],
               if (state.error != null) ...[
                 const SizedBox(height: 16),
-                Text(state.error!, style: const TextStyle(color: AppColors.error)),
+                Text(
+                  context.resolveMessage(state.error)!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ],
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: state.loading
                     ? null
                     : () => onCodeStep
-                        ? controller.resetPassword(_codeController.text.trim(), _passwordController.text)
-                        : controller.requestCode(_emailController.text.trim()),
+                          ? controller.resetPassword(
+                              _codeController.text.trim(),
+                              _passwordController.text,
+                            )
+                          : controller.requestCode(
+                              _emailController.text.trim(),
+                            ),
                 child: state.loading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(onCodeStep ? 'Salvar nova senha' : 'Enviar código'),
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.onSecondary,
+                        ),
+                      )
+                    : Text(onCodeStep ? context.l10n.forgotPasswordSavePassword : context.l10n.forgotPasswordSendCode),
               ),
               if (onCodeStep) ...[
                 const SizedBox(height: 8),
@@ -105,7 +131,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
                           _emailController.text = state.email;
                           controller.restart();
                         },
-                  child: const Text('Não recebi o código / trocar email'),
+                  child: Text(context.l10n.forgotPasswordNoCode),
                 ),
               ],
             ],

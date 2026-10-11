@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart' show Share;
+import '../../../core/l10n/l10n.dart';
 import '../../home/data/app_api.dart';
 
 class ReferralScreen extends ConsumerWidget {
@@ -8,17 +9,18 @@ class ReferralScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
     final referralAsync = ref.watch(referralProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Indicar Amigo')),
+      appBar: AppBar(title: Text(l.referralTitle)),
       body: referralAsync.when(
         data: (referral) {
           if (!referral.eligible) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Você precisa de uma assinatura ativa pra indicar amigos.', textAlign: TextAlign.center),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.referralNotEligible, textAlign: TextAlign.center),
               ),
             );
           }
@@ -31,7 +33,7 @@ class ReferralScreen extends ConsumerWidget {
                 children: [
                   const Text('🎁', style: TextStyle(fontSize: 48)),
                   const SizedBox(height: 16),
-                  Text('Seu cupom', style: Theme.of(context).textTheme.titleMedium),
+                  Text(l.referralYourCoupon, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 4),
                   Text(
                     referral.code ?? '',
@@ -49,7 +51,7 @@ class ReferralScreen extends ConsumerWidget {
                         }
                       },
                       icon: const Icon(Icons.share),
-                      label: const Text('Compartilhar link'),
+                      label: Text(l.referralShareLink),
                     ),
                   ),
                 ],
@@ -58,7 +60,7 @@ class ReferralScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => const Center(child: Text('Não foi possível carregar.')),
+        error: (error, stackTrace) => Center(child: Text(l.errLoadReferral)),
       ),
     );
   }

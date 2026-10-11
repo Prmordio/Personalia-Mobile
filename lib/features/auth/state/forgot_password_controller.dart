@@ -9,7 +9,7 @@ import 'auth_controller.dart' show authApiProvider;
 enum ForgotPasswordStep { email, code }
 
 const _minPasswordLength = 8;
-const _genericError = 'Não foi possível concluir. Tente novamente.';
+const _genericError = 'genericError';
 
 class ForgotPasswordState {
   const ForgotPasswordState({
@@ -52,7 +52,7 @@ class ForgotPasswordController extends StateNotifier<ForgotPasswordState> {
 
   Future<void> requestCode(String email) async {
     if (!email.contains('@')) {
-      state = state.copyWith(error: 'Informe um email válido.');
+      state = state.copyWith(error: 'errAppAccessEmail');
       return;
     }
     state = state.copyWith(loading: true);
@@ -62,7 +62,7 @@ class ForgotPasswordController extends StateNotifier<ForgotPasswordState> {
         step: ForgotPasswordStep.code,
         email: email,
         loading: false,
-        info: 'Se houver uma conta com $email, enviamos um código de 6 dígitos. Confira também o spam.',
+        info: 'forgotPasswordCodeSent:$email',
       );
     } on DioException catch (e) {
       state = state.copyWith(loading: false, error: _messageFrom(e));
@@ -72,11 +72,11 @@ class ForgotPasswordController extends StateNotifier<ForgotPasswordState> {
   /// Redefine a senha e já entra no app com ela — o redirect do go_router leva para a Home.
   Future<void> resetPassword(String code, String password) async {
     if (code.length != 6) {
-      state = state.copyWith(error: 'O código tem 6 dígitos.', info: state.info);
+      state = state.copyWith(error: 'errAuthCodeLength', info: state.info);
       return;
     }
     if (password.length < _minPasswordLength) {
-      state = state.copyWith(error: 'A senha deve ter pelo menos $_minPasswordLength caracteres.', info: state.info);
+      state = state.copyWith(error: 'errAuthPasswordTooShort', info: state.info);
       return;
     }
     state = state.copyWith(loading: true, info: state.info);

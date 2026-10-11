@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../home/data/app_api.dart';
 import '../../home/state/today_workout_override.dart';
 import '../data/exercise_image_provider.dart';
@@ -44,16 +45,17 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
       _openFinishScreen(exercises, dayName);
       return;
     }
+    final l = context.l10n;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Finalizar treino?'),
-        content: const Text('Ainda há exercícios não concluídos. Deseja finalizar assim mesmo?'),
+        title: Text(l.finishWorkoutTitle),
+        content: Text(l.finishWorkoutConfirmMsg),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(l.cancelar)),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sim, finalizar'),
+            child: Text(l.sim),
           ),
         ],
       ),
@@ -95,22 +97,21 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
       final t = parseSetsCount(eff.series);
       final ts = ref.read(restTimerProvider((eff.nome, s, t)));
       if (ts.completedSets > 0 && !ts.finished) {
+        final l = context.l10n;
         final confirm = await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
-            title: const Text('Exercício em andamento'),
-            content: Text(
-              '"${eff.nome}" ainda está em andamento.\n\nDeseja abandoná-lo e iniciar "${effective.nome}"?',
-            ),
+            title: Text(l.exerciseInProgressTitle),
+            content: Text(l.exerciseInProgressMsg(eff.nome, effective.nome)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
+                child: Text(l.cancelar),
               ),
               FilledButton(
                 style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFF6B35)),
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Sim, trocar'),
+                child: Text(l.sim),
               ),
             ],
           ),
@@ -138,21 +139,20 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
 
   Future<void> _askPermanentSwap(WorkoutExercise original, WorkoutExercise effective) async {
     if (!mounted) return;
+    final l = context.l10n;
     final isPermanent = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Tornar troca permanente?'),
-        content: Text(
-          'Deseja substituir "${original.nome}" por "${effective.nome}" no seu plano de treino?',
-        ),
+        title: Text(l.makePermanentTitle),
+        content: Text(l.makePermanentMsg(original.nome, effective.nome)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Só desta vez'),
+            child: Text(l.btnThisTimeOnly),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sim, alterar plano'),
+            child: Text(l.btnYesChangePlan),
           ),
         ],
       ),
@@ -172,7 +172,7 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível alterar o plano. Tente novamente.')),
+          SnackBar(content: Text(context.l10n.errChangePlan)),
         );
       }
     }
@@ -194,15 +194,16 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
       }
     }
 
+    final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Treino de Hoje')),
+      appBar: AppBar(title: Text(l.todayWorkoutTitle)),
       body: todayAsync.when(
         data: (today) {
           if (today.isRest) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Hoje é dia de descanso. 😴', textAlign: TextAlign.center),
+                padding: const EdgeInsets.all(24),
+                child: Text(l.workoutRestDay, textAlign: TextAlign.center),
               ),
             );
           }
@@ -234,7 +235,7 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
                 Text(today.focusLabel, style: const TextStyle(color: Colors.grey)),
               ],
               const SizedBox(height: 16),
-              if (exercises.isEmpty) const Text('Nenhum exercício encontrado para hoje.'),
+              if (exercises.isEmpty) Text(l.todayNoExercises),
               for (final ex in pending)
                 _ExerciseCard(
                   exercise: ex,
@@ -263,8 +264,8 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
                         const SizedBox(width: 6),
                         Text(
                           _showFinished
-                              ? 'Ocultar concluídos (${finished.length})'
-                              : 'Mostrar concluídos (${finished.length})',
+                              ? l.hideCompleted(finished.length)
+                              : l.showCompleted(finished.length),
                           style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w500, fontSize: 13),
                         ),
                       ],
@@ -288,7 +289,7 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => const Center(child: Text('Não foi possível carregar o treino de hoje.')),
+        error: (e, s) => Center(child: Text(l.errLoadTodayWorkout)),
       ),
       floatingActionButton: todayAsync.asData?.value != null && !todayAsync.value!.isRest && todayAsync.value!.exercises.isNotEmpty
           ? FloatingActionButton.extended(
@@ -303,7 +304,7 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
               },
               backgroundColor: Colors.green,
               icon: const Icon(Icons.emoji_events),
-              label: const Text('Finalizar treino'),
+              label: Text(l.btnFinishWorkout),
             )
           : null,
     );
@@ -378,7 +379,7 @@ class _ExerciseCard extends ConsumerWidget {
                                   Text(effectiveExercise.nome, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                   if (isSwapped)
                                     Text(
-                                      'Trocado: ${exercise.nome}',
+                                      context.l10n.exerciseSwapped(exercise.nome),
                                       style: const TextStyle(color: Colors.blue, fontSize: 11),
                                     ),
                                 ],
@@ -388,12 +389,12 @@ class _ExerciseCard extends ConsumerWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(12)),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.check, color: Colors.white, size: 11),
-                                    SizedBox(width: 3),
-                                    Text('Concluído', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                                    const Icon(Icons.check, color: Colors.white, size: 11),
+                                    const SizedBox(width: 3),
+                                    Text(context.l10n.exerciseCompleted, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
                                   ],
                                 ),
                               )
@@ -402,7 +403,9 @@ class _ExerciseCard extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                                 decoration: BoxDecoration(color: const Color(0xFFFF6B35), borderRadius: BorderRadius.circular(12)),
                                 child: Text(
-                                  isCardio ? 'Em execução' : '${timerState.completedSets}/$totalSets séries',
+                                  isCardio
+                                      ? context.l10n.exerciseRunning
+                                      : context.l10n.exerciseSetsProgress(timerState.completedSets, totalSets),
                                   style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
                                 ),
                               ),
@@ -414,16 +417,16 @@ class _ExerciseCard extends ConsumerWidget {
                           runSpacing: 4,
                           children: [
                             if (isCardio) ...[
-                              if (effectiveExercise.repeticoes != null) _Stat('Meta', effectiveExercise.repeticoes!),
-                              if (finished) _Stat('Tempo', timerState.weight),
-                              _Stat('Último tempo', lastWeight ?? '—'),
+                              if (effectiveExercise.repeticoes != null) _Stat(context.l10n.statGoal, effectiveExercise.repeticoes!),
+                              if (finished) _Stat(context.l10n.statTime, timerState.weight),
+                              _Stat(context.l10n.statLastTime, lastWeight ?? '—'),
                             ] else ...[
-                              if (effectiveExercise.series != null) _Stat('Séries', effectiveExercise.series!),
-                              if (effectiveExercise.repeticoes != null) _Stat('Repetições', effectiveExercise.repeticoes!),
-                              if (effectiveExercise.descanso != null) _Stat('Descanso', effectiveExercise.descanso!),
-                              _Stat('Último peso', lastWeight != null ? '$lastWeight kg' : '—'),
+                              if (effectiveExercise.series != null) _Stat(context.l10n.statSets, effectiveExercise.series!),
+                              if (effectiveExercise.repeticoes != null) _Stat(context.l10n.statReps, effectiveExercise.repeticoes!),
+                              if (effectiveExercise.descanso != null) _Stat(context.l10n.statRest, effectiveExercise.descanso!),
+                              _Stat(context.l10n.statLastWeight, lastWeight != null ? '$lastWeight kg' : '—'),
                               if (lastObservation != null && lastObservation!.isNotEmpty)
-                                _Stat('Última obs.', lastObservation!),
+                                _Stat(context.l10n.statLastObs, lastObservation!),
                             ],
                           ],
                         ),
@@ -451,13 +454,13 @@ class _ExerciseCard extends ConsumerWidget {
                 children: [
                   _ActionButton(
                     icon: Icons.search,
-                    label: 'Vídeos',
+                    label: context.l10n.btnVideos,
                     color: const Color(0xFF2196F3),
                     onPressed: () => showExerciseVideoSheet(context, exerciseName: effectiveExercise.nome),
                   ),
                   _ActionButton(
                     icon: Icons.swap_horiz,
-                    label: 'Trocar',
+                    label: context.l10n.btnSwap,
                     color: const Color(0xFFFF6B35),
                     onPressed: finished ? null : onSwap,
                   ),

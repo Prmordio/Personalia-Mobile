@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/l10n.dart';
 import '../state/onboarding_controller.dart';
 import 'widgets/step_scaffold.dart';
-
-const _trainingFocusOptions = [
-  MapEntry('superior', 'Membros superiores'),
-  MapEntry('inferior', 'Membros inferiores'),
-  MapEntry('corpo_todo', 'Corpo todo'),
-];
 
 class DurationRangeStep extends ConsumerWidget {
   const DurationRangeStep({super.key});
@@ -17,22 +12,23 @@ class DurationRangeStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
     final min = state.minTrainingDuration ?? 45;
     final max = state.maxTrainingDuration ?? 60;
     return StepScaffold(
-      title: 'Duração do treino',
-      subtitle: 'Entre 30 e 180 minutos.',
+      title: l.onboardingDurationTitle,
+      subtitle: l.onboardingDurationSubtitle,
       onBack: () => controller.goTo(OnboardingStep.anamnesisConfirmation),
       error: state.fieldErrors['minTrainingDuration'] ?? state.fieldErrors['maxTrainingDuration'],
-      buttonLabel: 'Continuar',
+      buttonLabel: l.continuar,
       onContinue: controller.confirmDurationRange,
       child: Column(
         children: [
-          const Text('Duração mínima (minutos)', style: TextStyle(color: Colors.grey)),
+          Text(l.onboardingDurationMin, style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 8),
           NumberSpinner(value: min, min: 30, max: 180, step: 5, onChanged: controller.setMinDurationDraft),
           const SizedBox(height: 32),
-          const Text('Duração máxima (minutos)', style: TextStyle(color: Colors.grey)),
+          Text(l.onboardingDurationMax, style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 8),
           NumberSpinner(value: max, min: 30, max: 180, step: 5, onChanged: controller.setMaxDurationDraft),
         ],
@@ -48,15 +44,16 @@ class TrainingDaysStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
     final days = state.trainingDaysPerWeek ?? 3;
     return StepScaffold(
-      title: 'Quantos dias por semana você quer treinar?',
-      subtitle: 'Entre 1 e 7 dias.',
+      title: l.onboardingTrainingDaysTitle,
+      subtitle: l.onboardingTrainingDaysSubtitle,
       onBack: () => controller.goTo(OnboardingStep.trainingDuration),
       error: state.fieldErrors['trainingDaysPerWeek'],
-      buttonLabel: 'Continuar',
+      buttonLabel: l.continuar,
       onContinue: controller.confirmTrainingDays,
-      child: NumberSpinner(value: days, min: 1, max: 7, onChanged: controller.setTrainingDaysDraft, suffix: ' dias'),
+      child: NumberSpinner(value: days, min: 1, max: 7, onChanged: controller.setTrainingDaysDraft, suffix: ' ${l.suffixDays(days)}'),
     );
   }
 }
@@ -100,13 +97,14 @@ class _GymTimeStepState extends ConsumerState<GymTimeStep> {
   Widget build(BuildContext context) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
     final hasValidTime = (state.preferredGymTime ?? '').isNotEmpty;
     return StepScaffold(
-      title: 'Qual o seu horário preferido de treino?',
-      subtitle: 'Opcional — você pode pular esta etapa.',
+      title: l.onboardingGymTimeTitle,
+      subtitle: l.onboardingGymTimeSubtitle,
       onBack: () => controller.goTo(OnboardingStep.trainingDays),
       error: state.fieldErrors['preferredGymTime'],
-      buttonLabel: hasValidTime ? 'Continuar' : null,
+      buttonLabel: hasValidTime ? l.continuar : null,
       onContinue: hasValidTime ? controller.confirmGymTime : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -148,7 +146,7 @@ class _GymTimeStepState extends ConsumerState<GymTimeStep> {
           const SizedBox(height: 16),
           TextButton(
             onPressed: controller.skipGymTime,
-            child: const Text('Pular'),
+            child: Text(l.pular),
           ),
         ],
       ),
@@ -164,7 +162,7 @@ class CardioStep extends ConsumerWidget {
     final controller = ref.read(onboardingControllerProvider.notifier);
     final state = ref.watch(onboardingControllerProvider);
     return StepScaffold(
-      title: 'Você quer incluir cardio no seu treino?',
+      title: context.l10n.onboardingCardioTitle,
       onBack: () => controller.goTo(OnboardingStep.gymTime),
       child: YesNoChoice(value: state.wantsCardio, onChanged: controller.setWantsCardio),
     );
@@ -178,13 +176,19 @@ class TrainingFocusStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
+    final options = [
+      MapEntry('superior', l.focusUpper),
+      MapEntry('inferior', l.focusLower),
+      MapEntry('corpo_todo', l.focusFullBody),
+    ];
     return StepScaffold(
-      title: 'Qual o foco do seu treino?',
+      title: l.onboardingTrainingFocusTitle,
       onBack: () => controller.goTo(OnboardingStep.cardio),
       loading: state.loading,
       error: state.error ?? state.fieldErrors['trainingFocus'],
       child: ChoiceList(
-        options: _trainingFocusOptions,
+        options: options,
         selected: state.trainingFocus,
         onSelected: (value) {
           controller.setTrainingFocus(value);

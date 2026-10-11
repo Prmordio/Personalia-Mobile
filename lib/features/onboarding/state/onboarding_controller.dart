@@ -283,7 +283,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   void confirmPassword(String value) {
     if (value.length < _minPasswordLength) {
       state = state.copyWith(
-        fieldErrors: {'password': 'A senha deve ter pelo menos $_minPasswordLength caracteres.'},
+        fieldErrors: {'password': 'errAuthPasswordTooShort'},
       );
       return;
     }
@@ -312,7 +312,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       state = state.copyWith(loading: false, fieldErrors: {e.field: e.message}, step: OnboardingStep.email);
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'Não foi possível salvar seu perfil. Tente novamente.');
+      state = state.copyWith(loading: false, error: 'errOnboardingCannotSaveProfile');
       return false;
     }
 
@@ -326,14 +326,14 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       state = state.copyWith(loading: false, fieldErrors: {e.field: e.message}, step: OnboardingStep.cpf);
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'Não foi possível aceitar os termos. Tente novamente.');
+      state = state.copyWith(loading: false, error: 'errOnboardingCannotSaveTerms');
       return false;
     }
 
     try {
       await _api.setPassword(state.password);
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'Não foi possível salvar sua senha. Tente novamente.', step: OnboardingStep.password);
+      state = state.copyWith(loading: false, error: 'errOnboardingCannotSavePassword', step: OnboardingStep.password);
       return false;
     }
 
@@ -368,14 +368,14 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   void confirmHealthConditions() {
     final errors = <String, String>{};
     if (state.hasDiseases == null) {
-      errors['hasDiseases'] = 'Responda se você possui alguma doença ou condição médica.';
+      errors['hasDiseases'] = 'errOnboardingAnswerDisease';
     } else if (state.hasDiseases == true && state.diseases.trim().length < 2) {
-      errors['diseases'] = 'Descreva suas doenças ou condições (ou volte e responda Não).';
+      errors['diseases'] = 'errOnboardingDescribeDisease';
     }
     if (state.hasPhysicalLimitations == null) {
-      errors['hasLimitations'] = 'Responda se você possui alguma limitação física.';
+      errors['hasLimitations'] = 'errOnboardingAnswerLimitation';
     } else if (state.hasPhysicalLimitations == true && state.physicalLimitations.trim().length < 2) {
-      errors['limitations'] = 'Descreva suas limitações físicas (ou volte e responda Não).';
+      errors['limitations'] = 'errOnboardingDescribeLimitation';
     }
     if (errors.isNotEmpty) {
       state = state.copyWith(fieldErrors: errors);
@@ -404,7 +404,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       state = state.copyWith(loading: false, fieldErrors: e.errors, step: _anamnesisOrder.first);
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'Não foi possível salvar sua anamnese. Tente novamente.');
+      state = state.copyWith(loading: false, error: 'errOnboardingCannotSaveAnamnesis');
       return false;
     }
   }
@@ -464,7 +464,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       state = state.copyWith(loading: false, fieldErrors: e.errors, step: OnboardingStep.trainingDuration);
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'Não foi possível salvar suas preferências. Tente novamente.');
+      state = state.copyWith(loading: false, error: 'errOnboardingCannotSavePrefs');
       return false;
     }
   }

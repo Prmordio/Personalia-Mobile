@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/widgets/password_text_field.dart';
 import '../state/onboarding_controller.dart';
 import 'widgets/step_scaffold.dart';
@@ -28,14 +29,14 @@ class _CreatePasswordStepState extends ConsumerState<CreatePasswordStep> {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
     return StepScaffold(
-      title: 'Crie uma senha',
-      subtitle: 'Assim você também pode entrar com email e senha, sem precisar de um novo código toda vez.',
+      title: context.l10n.onboardingCreatePasswordTitle,
+      subtitle: context.l10n.onboardingCreatePasswordSubtitle,
       onBack: () => controller.goTo(OnboardingStep.email),
       error: _localError ?? state.fieldErrors['password'],
-      buttonLabel: 'Continuar',
+      buttonLabel: context.l10n.continuar,
       onContinue: () {
         if (_passwordController.text != _confirmController.text) {
-          setState(() => _localError = 'As senhas não coincidem.');
+          setState(() => _localError = 'errPasswordMismatch');
           return;
         }
         setState(() => _localError = null);
@@ -45,12 +46,12 @@ class _CreatePasswordStepState extends ConsumerState<CreatePasswordStep> {
         children: [
           PasswordTextField(
             controller: _passwordController,
-            hintText: 'Senha (mínimo 8 caracteres)',
+            hintText: context.l10n.onboardingPasswordHint,
           ),
           const SizedBox(height: 12),
           PasswordTextField(
             controller: _confirmController,
-            hintText: 'Confirmar senha',
+            hintText: context.l10n.onboardingConfirmPasswordHint,
           ),
         ],
       ),

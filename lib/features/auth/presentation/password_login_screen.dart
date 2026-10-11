@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/widgets/password_text_field.dart';
 import '../state/password_login_controller.dart';
 
@@ -9,7 +9,8 @@ class PasswordLoginScreen extends ConsumerStatefulWidget {
   const PasswordLoginScreen({super.key});
 
   @override
-  ConsumerState<PasswordLoginScreen> createState() => _PasswordLoginScreenState();
+  ConsumerState<PasswordLoginScreen> createState() =>
+      _PasswordLoginScreenState();
 }
 
 class _PasswordLoginScreenState extends ConsumerState<PasswordLoginScreen> {
@@ -39,39 +40,61 @@ class _PasswordLoginScreenState extends ConsumerState<PasswordLoginScreen> {
                 alignment: Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: state.loading ? null : () => Navigator.of(context).maybePop(),
+                  onPressed: state.loading
+                      ? null
+                      : () => Navigator.of(context).maybePop(),
                 ),
               ),
               const SizedBox(height: 8),
-              const Text('Entrar com email', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(
+                context.l10n.passwordLoginTitle,
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 24),
               TextField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(hintText: 'seuemail@exemplo.com'),
+                decoration: InputDecoration(
+                  hintText: context.l10n.onboardingEmailHint,
+                ),
               ),
               const SizedBox(height: 12),
               PasswordTextField(
                 controller: _passwordController,
-                hintText: 'Senha',
+                hintText: context.l10n.passwordHint,
               ),
               if (state.error != null) ...[
                 const SizedBox(height: 16),
-                Text(state.error!, style: const TextStyle(color: AppColors.error)),
+                Text(
+                  context.resolveMessage(state.error)!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ],
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: state.loading
                     ? null
-                    : () => controller.submit(_emailController.text.trim(), _passwordController.text),
+                    : () => controller.submit(
+                        _emailController.text.trim(),
+                        _passwordController.text,
+                      ),
                 child: state.loading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Entrar'),
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.onSecondary,
+                        ),
+                      )
+                    : Text(context.l10n.entrar),
               ),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: state.loading ? null : () => context.push('/login/access'),
-                child: const Text('Esqueci minha senha'),
+                onPressed: state.loading
+                    ? null
+                    : () => context.push('/login/access'),
+                child: Text(context.l10n.forgotPasswordLink),
               ),
             ],
           ),

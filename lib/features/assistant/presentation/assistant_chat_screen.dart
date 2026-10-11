@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../workout/presentation/widgets/exercise_video_sheet.dart';
 import '../state/assistant_chat_controller.dart';
 
@@ -12,7 +12,8 @@ class AssistantChatScreen extends ConsumerStatefulWidget {
   final bool openCameraOnStart;
 
   @override
-  ConsumerState<AssistantChatScreen> createState() => _AssistantChatScreenState();
+  ConsumerState<AssistantChatScreen> createState() =>
+      _AssistantChatScreenState();
 }
 
 class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
@@ -24,7 +25,9 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   void initState() {
     super.initState();
     if (widget.openCameraOnStart) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _pickPhoto(ImageSource.camera));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _pickPhoto(ImageSource.camera),
+      );
     }
   }
 
@@ -45,21 +48,26 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
   Future<void> _pickPhoto(ImageSource source) async {
     try {
       // Reduz antes de enviar: o Gemini não precisa de foto em resolução máxima.
-      final file = await _picker.pickImage(source: source, maxWidth: 1280, imageQuality: 80);
+      final file = await _picker.pickImage(
+        source: source,
+        maxWidth: 1280,
+        imageQuality: 80,
+      );
       if (file == null) return;
       final bytes = await file.readAsBytes();
       final name = file.name.toLowerCase();
-      final mime = file.mimeType ??
+      final mime =
+          file.mimeType ??
           (name.endsWith('.png')
               ? 'image/png'
               : name.endsWith('.webp')
-                  ? 'image/webp'
-                  : 'image/jpeg');
+              ? 'image/webp'
+              : 'image/jpeg');
       await ref.read(assistantChatProvider.notifier).sendPhoto(bytes, mime);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível acessar a câmera/galeria. Verifique as permissões.')),
+        SnackBar(content: Text(context.l10n.assistantCameraError)),
       );
     }
   }
@@ -74,12 +82,12 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera),
-              title: const Text('Tirar foto do aparelho'),
+              title: Text(context.l10n.assistantTakePhoto),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Escolher da galeria'),
+              title: Text(context.l10n.assistantChooseGallery),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
             ),
           ],
@@ -98,19 +106,23 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
     ref.listen(assistantChatProvider, (_, _) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scroll.hasClients) {
-          _scroll.animateTo(_scroll.position.maxScrollExtent, duration: const Duration(milliseconds: 250), curve: Curves.easeOut);
+          _scroll.animateTo(
+            _scroll.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+          );
         }
       });
     });
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tire suas dúvidas'),
+        title: Text(context.l10n.assistantTitle),
         actions: [
           TextButton.icon(
             onPressed: waiting ? null : () => _pickPhoto(ImageSource.camera),
             icon: const Icon(Icons.photo_camera),
-            label: const Text('Pesquisar máquina'),
+            label: Text(context.l10n.assistantSearchMachine),
           ),
         ],
       ),
@@ -131,7 +143,7 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    tooltip: 'Enviar foto de aparelho',
+                    tooltip: context.l10n.assistantPhotoTooltip,
                     onPressed: waiting ? null : _choosePhotoSource,
                     icon: const Icon(Icons.add_a_photo_outlined),
                   ),
@@ -142,12 +154,15 @@ class _AssistantChatScreenState extends ConsumerState<AssistantChatScreen> {
                       maxLines: 4,
                       maxLength: 500,
                       textCapitalization: TextCapitalization.sentences,
-                      decoration: const InputDecoration(hintText: 'Escreva sua dúvida...', counterText: ''),
+                      decoration: InputDecoration(
+                        hintText: context.l10n.assistantInputHint,
+                        counterText: '',
+                      ),
                       onSubmitted: (_) => _send(),
                     ),
                   ),
                   IconButton.filled(
-                    tooltip: 'Enviar',
+                    tooltip: context.l10n.assistantSendTooltip,
                     onPressed: waiting ? null : _send,
                     icon: const Icon(Icons.send),
                   ),
@@ -172,17 +187,29 @@ class _Bubble extends StatelessWidget {
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
-        padding: message.image != null ? const EdgeInsets.all(4) : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
+        ),
+        padding: message.image != null
+            ? const EdgeInsets.all(4)
+            : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: mine ? AppColors.orange : Colors.white,
+          color: mine
+              ? Theme.of(context).colorScheme.secondary
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
             bottomLeft: Radius.circular(mine ? 16 : 4),
             bottomRight: Radius.circular(mine ? 4 : 16),
           ),
-          boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 4, offset: Offset(0, 1))],
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 4,
+              offset: Offset(0, 1),
+            ),
+          ],
         ),
         child: message.pending
             ? const _TypingDots()
@@ -192,15 +219,30 @@ class _Bubble extends StatelessWidget {
                   if (message.image != null)
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.memory(message.image!, width: 220, fit: BoxFit.cover),
+                      child: Image.memory(
+                        message.image!,
+                        width: 220,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  if (message.text.isNotEmpty) Text(message.text, style: TextStyle(color: mine ? Colors.white : Colors.black87)),
+                  if (message.text.isNotEmpty)
+                    Text(
+                      message.text,
+                      style: TextStyle(
+                        color: mine
+                            ? Theme.of(context).colorScheme.onSecondary
+                            : Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
                   if (message.exerciseName != null) ...[
                     const SizedBox(height: 8),
                     OutlinedButton.icon(
-                      onPressed: () => showExerciseVideoSheet(context, exerciseName: message.exerciseName!),
+                      onPressed: () => showExerciseVideoSheet(
+                        context,
+                        exerciseName: message.exerciseName!,
+                      ),
                       icon: const Icon(Icons.play_circle_outline),
-                      label: const Text('Ver vídeos de execução'),
+                      label: Text(context.l10n.assistantVideoBtn),
                     ),
                   ],
                 ],
@@ -217,9 +259,12 @@ class _TypingDots extends StatefulWidget {
   State<_TypingDots> createState() => _TypingDotsState();
 }
 
-class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))
-    ..repeat();
+class _TypingDotsState extends State<_TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
 
   @override
   void dispose() {
@@ -239,7 +284,12 @@ class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderState
             for (var i = 0; i < 3; i++)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: CircleAvatar(radius: 4, backgroundColor: i == active ? Colors.grey : Colors.grey.shade300),
+                child: CircleAvatar(
+                  radius: 4,
+                  backgroundColor: i == active
+                      ? Colors.grey
+                      : Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
           ],
         );
