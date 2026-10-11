@@ -39,10 +39,10 @@ class PasswordLoginController extends StateNotifier<PasswordLoginState> {
       return true;
     } on DioException catch (e) {
       final message = e.response?.data is Map ? (e.response?.data['message'] as String?) : null;
-      state = state.copyWith(loading: false, error: message ?? 'Não foi possível entrar. Tente novamente.');
+      state = state.copyWith(loading: false, error: message ?? 'errAuthLoginFailed');
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'Não foi possível entrar. Tente novamente.');
+      state = state.copyWith(loading: false, error: 'errAuthLoginFailed');
       return false;
     }
   }

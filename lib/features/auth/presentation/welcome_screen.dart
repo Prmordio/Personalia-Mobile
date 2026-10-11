@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../state/biometric_login_service.dart';
 
@@ -51,8 +52,8 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
 
     // success: o redirect do go_router leva para a Home.
     final message = switch (result) {
-      BiometricLoginResult.invalidCredential => 'Sua biometria expirou ou foi desativada. Entre com email e senha.',
-      BiometricLoginResult.failed => 'Não foi possível entrar agora. Tente novamente.',
+      BiometricLoginResult.invalidCredential => context.l10n.errAuthBiometricExpired,
+      BiometricLoginResult.failed => context.l10n.errAuthBiometricFailed,
       _ => null,
     };
     if (result == BiometricLoginResult.invalidCredential || result == BiometricLoginResult.notEnabled) {
@@ -79,13 +80,13 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                 ElevatedButton.icon(
                   onPressed: _signingIn ? null : _signInWithBiometric,
                   icon: const Icon(Icons.fingerprint),
-                  label: const Text('Entrar com biometria'),
+                  label: Text(context.l10n.welcomeBiometricButton),
                 ),
                 const SizedBox(height: 16),
               ],
               ElevatedButton(
                 onPressed: () => context.push('/login/password'),
-                child: const Text('Entrar com email e senha'),
+                child: Text(context.l10n.welcomeEmailButton),
               ),
               const SizedBox(height: 16),
               OutlinedButton(
@@ -94,12 +95,12 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 onPressed: () => context.push('/login/access'),
-                child: const Text('Já uso o PersonalIA no WhatsApp'),
+                child: Text(context.l10n.welcomeWhatsAppButton),
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => context.go('/login/phone', extra: {'isNewUser': true}),
-                child: const Text('Ainda não uso o PersonalIA — criar perfil'),
+                child: Text(context.l10n.welcomeNewUserButton),
               ),
             ],
           ),

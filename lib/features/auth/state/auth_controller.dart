@@ -64,7 +64,7 @@ class LoginController extends StateNotifier<LoginState> {
         state = state.copyWith(loading: false, channels: channels, step: LoginStep.channel);
       }
     } catch (e) {
-      state = state.copyWith(loading: false, error: 'Não foi possível verificar esse número.');
+      state = state.copyWith(loading: false, error: 'errAuthCannotVerifyPhone');
     }
   }
 
@@ -78,7 +78,7 @@ class LoginController extends StateNotifier<LoginState> {
       await _authApi.requestOtp(phoneNumber, channel);
       state = state.copyWith(loading: false, step: LoginStep.otp);
     } catch (e) {
-      state = state.copyWith(loading: false, error: 'Não foi possível enviar o código. Tente novamente.');
+      state = state.copyWith(loading: false, error: 'errAuthCannotSendCode');
     }
   }
 
@@ -86,9 +86,9 @@ class LoginController extends StateNotifier<LoginState> {
     state = state.copyWith(loading: true, error: null, info: null);
     try {
       await _authApi.requestOtp(state.phoneNumber, state.selectedChannel!);
-      state = state.copyWith(loading: false, info: 'Código reenviado.');
+      state = state.copyWith(loading: false, info: 'infoAuthCodeResent');
     } catch (e) {
-      state = state.copyWith(loading: false, error: 'Não foi possível reenviar o código. Tente novamente.');
+      state = state.copyWith(loading: false, error: 'errAuthCannotResendCode');
     }
   }
 
@@ -102,7 +102,7 @@ class LoginController extends StateNotifier<LoginState> {
       state = state.copyWith(loading: false);
       return true;
     } catch (e) {
-      state = state.copyWith(loading: false, error: 'Código inválido ou expirado.');
+      state = state.copyWith(loading: false, error: 'errAuthInvalidCode');
       return false;
     }
   }

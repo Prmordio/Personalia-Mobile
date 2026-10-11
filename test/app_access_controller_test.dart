@@ -61,10 +61,10 @@ void main() {
 
   test('should_validate_phone_and_email_before_calling_the_api', () async {
     await controller.start('1234', 'joao@example.com');
-    expect(controller.state.error, contains('DDD'));
+    expect(controller.state.error, 'errAppAccessPhone');
 
     await controller.start('(11) 98765-4321', 'sem-arroba');
-    expect(controller.state.error, contains('email'));
+    expect(controller.state.error, 'errAppAccessEmail');
 
     expect(api.calls, isEmpty);
   });
@@ -74,7 +74,7 @@ void main() {
 
     expect(api.calls, ['start:11987654321:joao@example.com']);
     expect(controller.state.step, AppAccessStep.emailCode);
-    expect(controller.state.info, contains('Se houver cadastro'));
+    expect(controller.state.info, 'appAccessInfoCodeRequested');
   });
 
   test('should_go_directly_to_phone_code_when_backend_returns_phone_code', () async {
@@ -139,7 +139,7 @@ void main() {
 
     await controller.complete('nova-senha-123', 'outra-senha-123');
 
-    expect(controller.state.error, contains('não conferem'));
+    expect(controller.state.error, 'errAuthPasswordMismatch');
     expect(api.calls.where((c) => c.startsWith('complete')), isEmpty);
   });
 

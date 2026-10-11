@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../state/onboarding_controller.dart';
 import 'widgets/step_scaffold.dart';
@@ -28,10 +29,10 @@ class _CpfStepState extends ConsumerState<CpfStep> {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
     return StepScaffold(
-      title: 'Qual o seu CPF?',
+      title: context.l10n.onboardingCpfTitle,
       onBack: () => controller.goTo(OnboardingStep.name),
       error: state.fieldErrors['cpf'],
-      buttonLabel: 'Continuar',
+      buttonLabel: context.l10n.continuar,
       onContinue: () {
         if (_controller.text.trim().isEmpty) return;
         controller.setCpf(_controller.text.trim());
@@ -39,7 +40,7 @@ class _CpfStepState extends ConsumerState<CpfStep> {
       child: TextField(
         controller: _controller,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(hintText: '000.000.000-00'),
+        decoration: InputDecoration(hintText: context.l10n.onboardingCpfHint),
       ),
     );
   }
@@ -52,12 +53,13 @@ class DisclaimerStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
     return StepScaffold(
-      title: 'Antes de continuar',
-      subtitle: 'Você declara estar apto fisicamente para treinar e aceita nossos termos de uso?',
+      title: l.disclaimerTitle,
+      subtitle: l.disclaimerSubtitle,
       onBack: () => controller.goTo(OnboardingStep.cpf),
       error: state.fieldErrors['accepted'],
-      buttonLabel: 'Continuar',
+      buttonLabel: l.continuar,
       onContinue: state.disclaimerAccepted ? controller.confirmDisclaimer : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,11 +69,11 @@ class DisclaimerStep extends ConsumerWidget {
             controlAffinity: ListTileControlAffinity.leading,
             value: state.disclaimerAccepted,
             onChanged: (value) => controller.setDisclaimerAccepted(value ?? false),
-            title: const Text('Declaro estar apto fisicamente para treinar e aceito os termos de uso.'),
+            title: Text(l.disclaimerCheckbox),
           ),
           TextButton(
             onPressed: () => launchUrl(Uri.parse(_termsUrl), mode: LaunchMode.externalApplication),
-            child: const Text('Ler os termos de uso completos', style: TextStyle(color: AppColors.blue)),
+            child: Text(l.disclaimerReadTerms, style: const TextStyle(color: AppColors.blue)),
           ),
         ],
       ),

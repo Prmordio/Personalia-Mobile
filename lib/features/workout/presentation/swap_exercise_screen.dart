@@ -1,23 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../home/data/app_api.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../home/data/app_api.dart';
 
 class SwapExerciseArgs {
   const SwapExerciseArgs({required this.exercise});
   final WorkoutExercise exercise;
 }
 
-final _alternativesProvider =
-    FutureProvider.autoDispose.family<List<ExerciseAlternative>, SwapExerciseArgs>((ref, args) {
-  final ex = args.exercise;
-  return ref.watch(appApiProvider).getExerciseAlternatives(
-        exerciseName: ex.nome,
-        series: ex.series ?? '3',
-        reps: ex.repeticoes ?? '12',
-        isCardio: ex.modeloDeTreino?.toLowerCase() == 'cardio',
-      );
-});
+final _alternativesProvider = FutureProvider.autoDispose
+    .family<List<ExerciseAlternative>, SwapExerciseArgs>((ref, args) {
+      final ex = args.exercise;
+      return ref
+          .watch(appApiProvider)
+          .getExerciseAlternatives(
+            exerciseName: ex.nome,
+            series: ex.series ?? '3',
+            reps: ex.repeticoes ?? '12',
+            isCardio: ex.modeloDeTreino?.toLowerCase() == 'cardio',
+          );
+    });
 
 class SwapExerciseScreen extends ConsumerWidget {
   const SwapExerciseScreen({super.key, required this.args});
@@ -29,7 +32,7 @@ class SwapExerciseScreen extends ConsumerWidget {
     final asyncAlts = ref.watch(_alternativesProvider(args));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Trocar Exercício')),
+      appBar: AppBar(title: Text(context.l10n.swapExerciseTitle)),
       body: asyncAlts.when(
         loading: () => Center(
           child: Column(
@@ -38,9 +41,11 @@ class SwapExerciseScreen extends ConsumerWidget {
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
               Text(
-                'Buscando alternativas para\n${args.exercise.nome}...',
+                context.l10n.swapExerciseSearching(args.exercise.nome),
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey.shade600),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -53,12 +58,14 @@ class SwapExerciseScreen extends ConsumerWidget {
               children: [
                 const Icon(Icons.error_outline, size: 48, color: Colors.red),
                 const SizedBox(height: 12),
-                const Text('Não foi possível buscar alternativas.\nTente novamente mais tarde.',
-                    textAlign: TextAlign.center),
+                Text(
+                  context.l10n.swapExerciseError,
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () => ref.invalidate(_alternativesProvider(args)),
-                  child: const Text('Tentar novamente'),
+                  child: Text(context.l10n.swapExerciseRetry),
                 ),
               ],
             ),
@@ -66,11 +73,11 @@ class SwapExerciseScreen extends ConsumerWidget {
         ),
         data: (alternatives) {
           if (alternatives.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(32),
+                padding: const EdgeInsets.all(32),
                 child: Text(
-                  'Nenhuma alternativa encontrada para este exercício.',
+                  context.l10n.swapNoAlternatives,
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -123,16 +130,25 @@ class _AlternativeCard extends StatelessWidget {
                   children: [
                     Text(
                       alternative.nome,
-                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                      ),
                     ),
-                    if (alternative.series != null || alternative.repeticoes != null) ...[
+                    if (alternative.series != null ||
+                        alternative.repeticoes != null) ...[
                       const SizedBox(height: 4),
                       Text(
                         [
-                          if (alternative.series != null) '${alternative.series} séries',
-                          if (alternative.repeticoes != null) alternative.repeticoes!,
+                          if (alternative.series != null)
+                            context.l10n.swapAltSeries(alternative.series!),
+                          if (alternative.repeticoes != null)
+                            alternative.repeticoes!,
                         ].join(' · '),
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ],

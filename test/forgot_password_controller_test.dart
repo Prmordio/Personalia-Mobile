@@ -67,7 +67,7 @@ void main() {
     await controller.requestCode('joao@example.com');
     await controller.resetPassword('123456', 'curta');
 
-    expect(controller.state.error, contains('8 caracteres'));
+    expect(controller.state.error, 'errAuthPasswordTooShort');
     expect(api.calls, ['forgot:joao@example.com']);
   });
 

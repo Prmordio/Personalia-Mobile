@@ -16,7 +16,7 @@ class _FakeAppApi extends AppApi {
   String generationStatus = 'running';
 
   @override
-  Future<bool> generateWorkout() async {
+  Future<bool> generateWorkout({String? language}) async {
     generateCalls++;
     if (generateGate != null) await generateGate!.future;
     if (generateError != null) throw generateError!;

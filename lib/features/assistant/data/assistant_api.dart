@@ -42,13 +42,13 @@ class AssistantApi {
 
   /// Streaming SSE: classifica primeiro, depois faz yield de cada chunk de texto.
   /// A bolha do chat é atualizada conforme os chunks chegam — typewriter effect.
-  Stream<String> askStream(String text) {
+  Stream<String> askStream(String text, {String language = 'pt-BR'}) {
     final controller = StreamController<String>();
 
     _dio
         .post<ResponseBody>(
       '/app/assistant/message-stream',
-      data: {'text': text},
+      data: {'text': text, 'language': language},
       options: Options(
         responseType: ResponseType.stream,
         receiveTimeout: const Duration(seconds: 45),
@@ -102,20 +102,20 @@ class AssistantApi {
     return controller.stream;
   }
 
-  Future<String> ask(String text) async {
+  Future<String> ask(String text, {String language = 'pt-BR'}) async {
     final response = await _dio.post(
       '/app/assistant/message',
-      data: {'text': text},
+      data: {'text': text, 'language': language},
       // Classification and the answer each have a 30s backend timeout.
       options: Options(receiveTimeout: const Duration(seconds: 75)),
     );
     return (response.data['reply'] as String?) ?? '';
   }
 
-  Future<EquipmentIdentification> identifyEquipment(Uint8List bytes, String mimeType) async {
+  Future<EquipmentIdentification> identifyEquipment(Uint8List bytes, String mimeType, {String language = 'pt'}) async {
     final response = await _dio.post(
       '/app/assistant/photo',
-      data: {'imageBase64': base64Encode(bytes), 'mimeType': mimeType},
+      data: {'imageBase64': base64Encode(bytes), 'mimeType': mimeType, 'language': language},
       options: Options(receiveTimeout: const Duration(seconds: 90)),
     );
     return EquipmentIdentification.fromJson(Map<String, dynamic>.from(response.data as Map));

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/l10n.dart';
 import '../state/biometric_login_service.dart';
 
 /// Logo depois de um login com senha, pergunta uma vez se o usuário quer entrar com
@@ -26,14 +27,15 @@ class _BiometricOfferGateState extends ConsumerState<BiometricOfferGate> {
     final service = ref.read(biometricLoginServiceProvider);
     if (!await service.canEnable() || !mounted) return;
 
+    final l = context.l10n;
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Entrar com biometria?'),
-        content: const Text('Da próxima vez, entre com sua digital ou rosto, sem digitar a senha.'),
+        title: Text(l.biometricOfferTitle),
+        content: Text(l.biometricOfferDesc),
         actions: [
-          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('Agora não')),
-          ElevatedButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: const Text('Ativar')),
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l.agoraNao)),
+          ElevatedButton(onPressed: () => Navigator.of(dialogContext).pop(true), child: Text(l.ativar)),
         ],
       ),
     );
@@ -44,7 +46,7 @@ class _BiometricOfferGateState extends ConsumerState<BiometricOfferGate> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          enabled ? 'Biometria ativada ✅' : 'Não foi possível ativar a biometria. Tente de novo pelo Menu.',
+          enabled ? context.l10n.biometricEnabled : context.l10n.errBiometricActivateFailed,
         ),
       ),
     );

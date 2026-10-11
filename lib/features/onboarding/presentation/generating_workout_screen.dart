@@ -3,13 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../state/onboarding_controller.dart';
 
-/// Tela final da wizard — dispara a geração do treino (via submitTrainingPreferences ->
-/// _startGenerating) e mostra o progresso enquanto o OnboardingController faz polling.
-/// Geração pode falhar por falta de assinatura ativa (mesma regra do botão manual da Home);
-/// nesse caso, o fallback "Ir para o início" leva pro mesmo botão manual.
+/// Tela final da wizard — mostra animação de "IA pensando" enquanto o OnboardingController
+/// faz polling, ou a mensagem de timeout quando o prazo é ultrapassado.
 class GeneratingWorkoutScreen extends ConsumerWidget {
   const GeneratingWorkoutScreen({super.key});
 
@@ -33,29 +32,29 @@ class GeneratingWorkoutScreen extends ConsumerWidget {
               if (!state.generationTimedOut) ...[
                 const _AiThinkingIndicator(),
                 const SizedBox(height: 8),
-                const Text(
-                  'Isso pode levar alguns minutos.',
+                Text(
+                  context.l10n.generatingWorkoutWait,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: Colors.grey),
                 ),
               ] else ...[
                 const Icon(Icons.access_time, size: 48, color: AppColors.orange),
                 const SizedBox(height: 16),
-                const Text(
-                  'Isso está demorando mais que o normal.',
+                Text(
+                  context.l10n.generatingWorkoutTimeout,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Você pode continuar pelo início — seu treino aparece por lá assim que ficar pronto.',
+                Text(
+                  context.l10n.generatingWorkoutTimeoutDesc,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey),
+                  style: const TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => context.go('/home'),
-                  child: const Text('Ir para o início'),
+                  child: Text(context.l10n.generatingWorkoutGoHome),
                 ),
               ],
             ],
@@ -66,18 +65,9 @@ class GeneratingWorkoutScreen extends ConsumerWidget {
   }
 }
 
-const _thinkingSteps = [
-  ('🤔', 'Analisando seu perfil...'),
-  ('🧠', 'Pensando no melhor plano...'),
-  ('📊', 'Calculando séries e cargas...'),
-  ('🏋️', 'Escolhendo os exercícios certos...'),
-  ('⚙️', 'Ajustando o volume de treino...'),
-  ('💪', 'Alinhando com o seu objetivo...'),
-  ('✨', 'Finalizando os detalhes...'),
-];
+const _thinkingEmojis = ['🤔', '🧠', '📊', '🏋️', '⚙️', '💪', '✨'];
 
-/// Emoji + frase giram juntos, tipo "IA pensando" — só cosmético, não reflete progresso
-/// real (não temos telemetria do agente aqui), só ilustra que algo está acontecendo.
+/// Emoji + frase giram juntos, cosmético — não reflete progresso real do agente.
 class _AiThinkingIndicator extends StatefulWidget {
   const _AiThinkingIndicator();
 
@@ -93,7 +83,7 @@ class _AiThinkingIndicatorState extends State<_AiThinkingIndicator> {
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(milliseconds: 1400), (_) {
-      setState(() => _index = (_index + 1) % _thinkingSteps.length);
+      setState(() => _index = (_index + 1) % _thinkingEmojis.length);
     });
   }
 
@@ -103,9 +93,22 @@ class _AiThinkingIndicatorState extends State<_AiThinkingIndicator> {
     super.dispose();
   }
 
+  String _label(AppLocalizations l) {
+    return switch (_index) {
+      0 => l.thinkingStep0,
+      1 => l.thinkingStep1,
+      2 => l.thinkingStep2,
+      3 => l.thinkingStep3,
+      4 => l.thinkingStep4,
+      5 => l.thinkingStep5,
+      _ => l.thinkingStep6,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
-    final (emoji, label) = _thinkingSteps[_index];
+    final emoji = _thinkingEmojis[_index];
+    final label = _label(context.l10n);
     return Column(
       children: [
         AnimatedSwitcher(

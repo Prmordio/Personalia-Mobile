@@ -27,12 +27,25 @@ class FrequencyReportScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    StatTile(value: '${report.trainedThisMonth}', label: 'Dias treinados'),
-                    StatTile(value: '${report.trainedLastMonth}', label: 'Mês passado'),
-                    StatTile(value: report.averagePerWeek.toString().replaceAll('.', ','), label: 'Média/semana'),
+                    StatTile(
+                      value: '${report.trainedThisMonth}',
+                      label: 'Dias treinados',
+                    ),
+                    StatTile(
+                      value: '${report.trainedLastMonth}',
+                      label: 'Mês passado',
+                    ),
+                    StatTile(
+                      value: report.averagePerWeek.toString().replaceAll(
+                        '.',
+                        ',',
+                      ),
+                      label: 'Média/semana',
+                    ),
                   ],
                 ),
-                if (report.trainedLastMonth > 0 || report.trainedThisMonth > 0) ...[
+                if (report.trainedLastMonth > 0 ||
+                    report.trainedThisMonth > 0) ...[
                   const SizedBox(height: 12),
                   Text(
                     diff >= 0
@@ -51,7 +64,9 @@ class FrequencyReportScreen extends StatelessWidget {
             subtitle: 'Últimas 8 semanas',
             child: SimpleBarChart(
               values: report.weekly.map((w) => w.count).toList(),
-              labels: report.weekly.map((w) => _day.format(w.weekStart)).toList(),
+              labels: report.weekly
+                  .map((w) => _day.format(w.weekStart))
+                  .toList(),
               height: 100,
               highlightLast: true,
             ),
@@ -78,7 +93,14 @@ class _MonthCalendar extends StatelessWidget {
         Row(
           children: [
             for (final w in _weekdays)
-              Expanded(child: Center(child: Text(w, style: const TextStyle(color: Colors.grey, fontSize: 12)))),
+              Expanded(
+                child: Center(
+                  child: Text(
+                    w,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 6),
@@ -95,16 +117,24 @@ class _MonthCalendar extends StatelessWidget {
               else
                 Container(
                   decoration: BoxDecoration(
-                    color: report.trainedDays.contains(day) ? AppColors.orange : Colors.grey.shade200,
+                    color: report.trainedDays.contains(day)
+                        ? Theme.of(context).colorScheme.secondary
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
-                    border: day == today ? Border.all(color: AppColors.blue, width: 2) : null,
+                    border: day == today
+                        ? Border.all(color: AppColors.blue, width: 2)
+                        : null,
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     '$day',
                     style: TextStyle(
-                      color: report.trainedDays.contains(day) ? Colors.white : Colors.black87,
-                      fontWeight: report.trainedDays.contains(day) ? FontWeight.bold : FontWeight.normal,
+                      color: report.trainedDays.contains(day)
+                          ? Theme.of(context).colorScheme.onSecondary
+                          : Theme.of(context).colorScheme.onSurface,
+                      fontWeight: report.trainedDays.contains(day)
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
                 ),

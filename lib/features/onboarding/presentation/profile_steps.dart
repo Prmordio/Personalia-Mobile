@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/l10n/l10n.dart';
 import '../state/onboarding_controller.dart';
 import 'widgets/step_scaffold.dart';
 
@@ -27,9 +28,9 @@ class _NameStepState extends ConsumerState<NameStep> {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
     return StepScaffold(
-      title: 'Qual é o seu nome completo?',
+      title: context.l10n.onboardingNameTitle,
       error: state.fieldErrors['name'],
-      buttonLabel: 'Continuar',
+      buttonLabel: context.l10n.continuar,
       onContinue: () {
         if (_controller.text.trim().isEmpty) return;
         controller.setName(_controller.text.trim());
@@ -37,7 +38,7 @@ class _NameStepState extends ConsumerState<NameStep> {
       child: TextField(
         controller: _controller,
         textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(hintText: 'Nome e sobrenome'),
+        decoration: InputDecoration(hintText: context.l10n.onboardingNameHint),
       ),
     );
   }
@@ -50,13 +51,14 @@ class GenderStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
     return StepScaffold(
-      title: 'Qual o seu gênero?',
+      title: l.onboardingGenderTitle,
       error: state.fieldErrors['gender'],
       onBack: () => controller.goTo(OnboardingStep.disclaimer),
       child: ChoiceList(
         selected: state.gender,
-        options: const [MapEntry('Masculino', 'Masculino'), MapEntry('Feminino', 'Feminino')],
+        options: [MapEntry('Masculino', l.genderMale), MapEntry('Feminino', l.genderFemale)],
         onSelected: controller.setGender,
       ),
     );
@@ -70,11 +72,12 @@ class BirthDateStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
     return StepScaffold(
-      title: 'Qual a sua data de nascimento?',
+      title: l.onboardingBirthDateTitle,
       error: state.fieldErrors['birthDate'],
       onBack: () => controller.goTo(OnboardingStep.gender),
-      buttonLabel: state.birthDate != null ? 'Continuar' : null,
+      buttonLabel: state.birthDate != null ? l.continuar : null,
       onContinue: state.birthDate != null ? controller.confirmBirthDate : null,
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
@@ -93,7 +96,7 @@ class BirthDateStep extends ConsumerWidget {
             controller.pickBirthDate(picked);
           }
         },
-        child: Text(state.birthDate != null ? _brDateFormat.format(state.birthDate!) : 'Selecionar data'),
+        child: Text(state.birthDate != null ? _brDateFormat.format(state.birthDate!) : l.onboardingPickDate),
       ),
     );
   }
@@ -120,10 +123,10 @@ class _WeightStepState extends ConsumerState<WeightStep> {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
     return StepScaffold(
-      title: 'Qual o seu peso? (kg)',
+      title: context.l10n.onboardingWeightTitle,
       error: state.fieldErrors['weight'],
       onBack: () => controller.goTo(OnboardingStep.birthDate),
-      buttonLabel: 'Continuar',
+      buttonLabel: context.l10n.continuar,
       onContinue: () {
         final value = double.tryParse(_controller.text.replaceAll(',', '.'));
         if (value != null) controller.setWeight(value);
@@ -131,7 +134,7 @@ class _WeightStepState extends ConsumerState<WeightStep> {
       child: TextField(
         controller: _controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: const InputDecoration(hintText: 'Ex: 70.5'),
+        decoration: InputDecoration(hintText: context.l10n.onboardingWeightHint),
       ),
     );
   }
@@ -158,10 +161,10 @@ class _HeightStepState extends ConsumerState<HeightStep> {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
     return StepScaffold(
-      title: 'Qual a sua altura? (cm)',
+      title: context.l10n.onboardingHeightTitle,
       error: state.fieldErrors['height'],
       onBack: () => controller.goTo(OnboardingStep.weight),
-      buttonLabel: 'Continuar',
+      buttonLabel: context.l10n.continuar,
       onContinue: () {
         final value = double.tryParse(_controller.text.replaceAll(',', '.'));
         if (value != null) controller.setHeight(value);
@@ -169,7 +172,7 @@ class _HeightStepState extends ConsumerState<HeightStep> {
       child: TextField(
         controller: _controller,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: const InputDecoration(hintText: 'Ex: 175'),
+        decoration: InputDecoration(hintText: context.l10n.onboardingHeightHint),
       ),
     );
   }
@@ -196,10 +199,10 @@ class _EmailStepState extends ConsumerState<EmailStep> {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
     return StepScaffold(
-      title: 'Qual o seu email?',
+      title: context.l10n.onboardingEmailTitle,
       error: state.fieldErrors['email'],
       onBack: () => controller.goTo(OnboardingStep.height),
-      buttonLabel: 'Continuar',
+      buttonLabel: context.l10n.continuar,
       onContinue: () {
         if (_controller.text.trim().isEmpty) return;
         controller.setEmail(_controller.text.trim());
@@ -207,7 +210,7 @@ class _EmailStepState extends ConsumerState<EmailStep> {
       child: TextField(
         controller: _controller,
         keyboardType: TextInputType.emailAddress,
-        decoration: const InputDecoration(hintText: 'seuemail@exemplo.com'),
+        decoration: InputDecoration(hintText: context.l10n.onboardingEmailHint),
       ),
     );
   }
@@ -220,24 +223,25 @@ class ProfileConfirmationStep extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(onboardingControllerProvider);
     final controller = ref.read(onboardingControllerProvider.notifier);
+    final l = context.l10n;
     return StepScaffold(
-      title: 'Confira seus dados',
+      title: l.onboardingConfirmDataTitle,
       onBack: () => controller.goTo(OnboardingStep.password),
       loading: state.loading,
       error: state.error,
-      buttonLabel: 'Confirmar',
+      buttonLabel: l.confirmar,
       onContinue: () => controller.submitProfile(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SummaryRow('Nome', state.name),
-          _SummaryRow('CPF', state.cpf),
-          _SummaryRow('Termos de uso', state.disclaimerAccepted ? 'Aceito' : 'Não aceito'),
-          _SummaryRow('Gênero', state.gender ?? ''),
-          _SummaryRow('Data de nascimento', state.birthDate != null ? _brDateFormat.format(state.birthDate!) : ''),
-          _SummaryRow('Peso', '${state.weight ?? ''} kg'),
-          _SummaryRow('Altura', '${state.height ?? ''} cm'),
-          _SummaryRow('Email', state.email),
+          _SummaryRow(l.summaryName, state.name),
+          _SummaryRow(l.summaryCpf, state.cpf),
+          _SummaryRow(l.summaryTerms, state.disclaimerAccepted ? l.summaryAccepted : l.summaryNotAccepted),
+          _SummaryRow(l.summaryGender, state.gender ?? ''),
+          _SummaryRow(l.summaryBirthDate, state.birthDate != null ? _brDateFormat.format(state.birthDate!) : ''),
+          _SummaryRow(l.summaryWeight, state.weight != null ? l.unitKg('${state.weight}') : ''),
+          _SummaryRow(l.summaryHeight, state.height != null ? l.unitCm('${state.height}') : ''),
+          _SummaryRow(l.summaryEmail, state.email),
         ],
       ),
     );

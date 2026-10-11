@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/data/app_api.dart';
 import 'widgets/exercise_list.dart';
@@ -13,15 +14,21 @@ class CurrentWorkoutScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final workoutAsync = ref.watch(currentWorkoutProvider);
 
+    final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('Meu Treino Atual')),
+      appBar: AppBar(title: Text(l.currentWorkoutTitle)),
       body: workoutAsync.when(
         data: (workout) {
           if (workout == null) {
-            return const Center(child: Text('Nenhum treino ativo.'));
+            return Center(child: Text(l.currentWorkoutNoWorkout));
           }
-          final trainingDays = workout.days.where((d) => d.exercises.isNotEmpty).length;
-          final totalExercises = workout.days.fold<int>(0, (sum, d) => sum + d.exercises.length);
+          final trainingDays = workout.days
+              .where((d) => d.exercises.isNotEmpty)
+              .length;
+          final totalExercises = workout.days.fold<int>(
+            0,
+            (sum, d) => sum + d.exercises.length,
+          );
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(currentWorkoutProvider),
             child: ListView(
@@ -34,12 +41,22 @@ class CurrentWorkoutScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Seu plano', style: TextStyle(color: Colors.white70)),
+                        Text(
+                          l.currentWorkoutPlanLabel,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
                         const SizedBox(height: 4),
-                        Text(workout.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                        Text(
+                          workout.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         Text(
-                          '$trainingDays dias de treino · $totalExercises exercícios',
+                          l.currentWorkoutDaysExercises(trainingDays, totalExercises),
                           style: const TextStyle(color: Colors.white),
                         ),
                       ],
@@ -53,7 +70,8 @@ class CurrentWorkoutScreen extends ConsumerWidget {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => const Center(child: Text('Não foi possível carregar seu treino.')),
+        error: (error, stackTrace) =>
+            Center(child: Text(l.errLoadCurrentWorkout)),
       ),
     );
   }
@@ -79,15 +97,25 @@ class _DayCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text(day.dayName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                  Expanded(
+                    child: Text(
+                      day.dayName,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
                   const Icon(Icons.chevron_right),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
                 day.exercises.isEmpty
-                    ? 'Dia de recuperação'
-                    : '${day.exercises.length} exercícios${hasCardio ? ' · com cardio' : ''}',
+                    ? context.l10n.dayRecovery
+                    : hasCardio
+                        ? context.l10n.exercisesCountWithCardio(day.exercises.length)
+                        : context.l10n.exercisesCountLabel(day.exercises.length),
                 style: const TextStyle(color: Colors.grey),
               ),
               if (preview.isNotEmpty) ...[
@@ -95,11 +123,18 @@ class _DayCard extends StatelessWidget {
                 Row(
                   children: [
                     for (final ex in preview) ...[
-                      ExerciseThumbnail(exerciseName: ex.nome, size: 52, isCardio: isCardioExercise(ex)),
+                      ExerciseThumbnail(
+                        exerciseName: ex.nome,
+                        size: 52,
+                        isCardio: isCardioExercise(ex),
+                      ),
                       const SizedBox(width: 8),
                     ],
                     if (day.exercises.length > preview.length)
-                      Text('+${day.exercises.length - preview.length}', style: const TextStyle(color: Colors.grey)),
+                      Text(
+                        '+${day.exercises.length - preview.length}',
+                        style: const TextStyle(color: Colors.grey),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -107,7 +142,10 @@ class _DayCard extends StatelessWidget {
                   preview.map((e) => e.nome).join(' · '),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ],

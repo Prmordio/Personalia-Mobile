@@ -1,6 +1,7 @@
 import '../../../core/telemetry/app_telemetry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/data/app_api.dart';
 import '../data/workout_summary.dart';
@@ -8,19 +9,15 @@ import '../state/active_workout_session.dart';
 import '../state/completed_workout_session.dart';
 import 'workout_card_screen.dart';
 
-const _moods = [
-  (emoji: '😤', label: 'Exausto'),
-  (emoji: '😑', label: 'Mais ou menos'),
-  (emoji: '😊', label: 'Bom / Rendimento ok'),
-  (emoji: '🔥', label: 'Excelente / Superei limites!'),
-];
+const _moodEmojis = ['😤', '😑', '😊', '🔥'];
 
 class WorkoutFinishScreen extends ConsumerStatefulWidget {
   const WorkoutFinishScreen({super.key, required this.summary});
   final WorkoutSummary summary;
 
   @override
-  ConsumerState<WorkoutFinishScreen> createState() => _WorkoutFinishScreenState();
+  ConsumerState<WorkoutFinishScreen> createState() =>
+      _WorkoutFinishScreenState();
 }
 
 class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
@@ -35,27 +32,32 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
   }
 
   String get _effectiveMood {
-    if (_customEmojiController.text.trim().isNotEmpty) return _customEmojiController.text.trim();
+    if (_customEmojiController.text.trim().isNotEmpty)
+      return _customEmojiController.text.trim();
     return _selectedEmoji ?? '💪';
   }
 
   Future<void> _saveToBackend(String mood) async {
     final s = widget.summary;
     try {
-      await ref.read(appApiProvider).logWorkout(
-        dayName: s.dayName,
-        startedAt: s.startedAt,
-        endedAt: s.finishedAt,
-        mood: mood.isEmpty ? null : mood,
-        exercises: s.exercises
-            .where((e) => e.finished)
-            .map((e) => {
-                  'name': e.nome,
-                  'weight': e.weight.isEmpty ? null : e.weight,
-                  'observation': e.observation,
-                })
-            .toList(),
-      );
+      await ref
+          .read(appApiProvider)
+          .logWorkout(
+            dayName: s.dayName,
+            startedAt: s.startedAt,
+            endedAt: s.finishedAt,
+            mood: mood.isEmpty ? null : mood,
+            exercises: s.exercises
+                .where((e) => e.finished)
+                .map(
+                  (e) => {
+                    'name': e.nome,
+                    'weight': e.weight.isEmpty ? null : e.weight,
+                    'observation': e.observation,
+                  },
+                )
+                .toList(),
+          );
       ref.invalidate(lastWorkoutProvider);
       AppTelemetry.instance.event('workout_completed');
     } catch (error, stack) {
@@ -71,7 +73,9 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
     await _saveToBackend(mood);
     if (!mounted) return;
     final s = widget.summary;
-    ref.read(completedWorkoutSessionProvider.notifier).state = CompletedWorkoutSession(
+    ref
+        .read(completedWorkoutSessionProvider.notifier)
+        .state = CompletedWorkoutSession(
       dayName: s.dayName,
       completedAt: s.finishedAt,
       duration: s.duration,
@@ -84,106 +88,140 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
 
   void _goToCard() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => WorkoutCardScreen(summary: widget.summary, mood: _effectiveMood)),
+      MaterialPageRoute(
+        builder: (_) =>
+            WorkoutCardScreen(summary: widget.summary, mood: _effectiveMood),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final s = widget.summary;
-    final canProceed = !_saving && (_selectedEmoji != null || _customEmojiController.text.trim().isNotEmpty);
+    final canProceed =
+        !_saving &&
+        (_selectedEmoji != null ||
+            _customEmojiController.text.trim().isNotEmpty);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Treino finalizado! 🎉')),
+      appBar: AppBar(title: Text(context.l10n.workoutFinishedTitle)),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          // Summary
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.orange.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.orange.withValues(alpha: 0.25)),
+              border: Border.all(
+                color: AppColors.orange.withValues(alpha: 0.25),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('📊 Resumo — ${s.dayName}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(
+                  context.l10n.workoutSummaryLabel(s.dayName),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 24,
                   runSpacing: 8,
                   children: [
-                    _SummaryItem('⏱️ Duração', s.durationFormatted),
-                    _SummaryItem('🏆 Exercícios', '${s.completedCount}/${s.totalExercises}'),
-                    if (s.totalVolume > 0) _SummaryItem('⚖️ Volume', s.totalVolumeFormatted),
+                    _SummaryItem(context.l10n.statDuration, s.durationFormatted),
+                    _SummaryItem(
+                      context.l10n.statExercisesCompleted,
+                      '${s.completedCount}/${s.totalExercises}',
+                    ),
+                    if (s.totalVolume > 0)
+                      _SummaryItem(context.l10n.statVolume, s.totalVolumeFormatted),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 28),
-          const Text('Como você se sentiu?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-          const SizedBox(height: 16),
-          // Emoji grid
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 2.2,
-            children: _moods.map((m) {
-              final selected = _selectedEmoji == m.emoji;
-              return InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => setState(() {
-                  _selectedEmoji = selected ? null : m.emoji;
-                  if (!selected) _customEmojiController.clear();
-                }),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.orange : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: selected ? AppColors.orange : Colors.grey.shade300),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  child: Row(
-                    children: [
-                      Text(m.emoji, style: const TextStyle(fontSize: 22)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          m.label,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: selected ? Colors.white : Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+          Text(
+            context.l10n.moodQuestion,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
           ),
           const SizedBox(height: 16),
-          // Custom emoji
+          Builder(builder: (context) {
+            final l = context.l10n;
+            final moodLabels = [l.moodExhausted, l.moodOk, l.moodGood, l.moodExcellent];
+            return GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 2.2,
+              children: List.generate(_moodEmojis.length, (i) {
+                final emoji = _moodEmojis[i];
+                final label = moodLabels[i];
+                final selected = _selectedEmoji == emoji;
+                return InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => setState(() {
+                    _selectedEmoji = selected ? null : emoji;
+                    if (!selected) _customEmojiController.clear();
+                  }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? Theme.of(context).colorScheme.secondary
+                          : Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: selected
+                            ? Theme.of(context).colorScheme.secondary
+                            : Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(emoji, style: const TextStyle(fontSize: 22)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: selected
+                                  ? Theme.of(context).colorScheme.onSecondary
+                                  : Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            );
+          }),
+          const SizedBox(height: 16),
           TextField(
             controller: _customEmojiController,
-            decoration: const InputDecoration(
-              labelText: 'Outro emoji ou sentimento',
+            decoration: InputDecoration(
+              labelText: context.l10n.moodCustomLabel,
               prefixText: '✏️ ',
-              border: OutlineInputBorder(),
-              helperText: 'Ex: 🥵 Destruído!',
+              border: const OutlineInputBorder(),
+              helperText: context.l10n.moodCustomHelper,
             ),
             onChanged: (_) => setState(() => _selectedEmoji = null),
           ),
           const SizedBox(height: 32),
-          // Card button
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
@@ -192,7 +230,10 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               icon: const Icon(Icons.photo_camera),
-              label: const Text('Gerar card do treino', style: TextStyle(fontSize: 15)),
+              label: Text(
+                context.l10n.btnGenerateCard,
+                style: const TextStyle(fontSize: 15),
+              ),
               onPressed: canProceed ? _goToCard : null,
             ),
           ),
@@ -204,9 +245,16 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               icon: _saving
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Icon(Icons.check),
-              label: const Text('Finalizar sem card', style: TextStyle(fontSize: 15)),
+              label: Text(
+                context.l10n.btnFinishWithoutCard,
+                style: const TextStyle(fontSize: 15),
+              ),
               onPressed: _saving ? null : _finalize,
             ),
           ),
@@ -228,7 +276,10 @@ class _SummaryItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
       ],
     );
   }

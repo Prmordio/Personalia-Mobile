@@ -18,13 +18,13 @@ class _FakeAssistantApi extends AssistantApi {
   int statusCode = 0;
 
   @override
-  Future<String> ask(String text) async {
+  Future<String> ask(String text, {String language = 'pt-BR'}) async {
     if (pendingAnswer != null) return pendingAnswer!.future;
     return 'Resposta para: $text';
   }
 
   @override
-  Stream<String> askStream(String text) async* {
+  Stream<String> askStream(String text, {String language = 'pt-BR'}) async* {
     if (statusCode != 0) {
       throw DioException(
         requestOptions: RequestOptions(path: '/app/assistant/message-stream'),
@@ -43,7 +43,7 @@ class _FakeAssistantApi extends AssistantApi {
   }
 
   @override
-  Future<EquipmentIdentification> identifyEquipment(Uint8List bytes, String mimeType) async => photoResult;
+  Future<EquipmentIdentification> identifyEquipment(Uint8List bytes, String mimeType, {String language = 'pt'}) async => photoResult;
 }
 
 void main() {

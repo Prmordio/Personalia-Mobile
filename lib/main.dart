@@ -2,11 +2,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'core/l10n/l10n.dart';
+import 'core/locale/locale_controller.dart';
 import 'core/notifications/fcm_service.dart';
 import 'core/notifications/rest_alarm.dart';
 import 'core/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_mode_controller.dart';
 import 'core/telemetry/app_telemetry.dart';
 import 'features/onboarding/data/onboarding_api.dart';
 import 'firebase_options.dart';
@@ -26,7 +29,9 @@ final _routerProvider = Provider<GoRouter>((ref) {
     refresh: ref.watch(authRefreshProvider),
     onboardingApi: ref.watch(onboardingApiProvider),
   );
-  void trackScreen() => AppTelemetry.instance.screen(router.routerDelegate.currentConfiguration.uri.path);
+  void trackScreen() => AppTelemetry.instance.screen(
+    router.routerDelegate.currentConfiguration.uri.path,
+  );
   router.routerDelegate.addListener(trackScreen);
   ref.onDispose(() {
     router.routerDelegate.removeListener(trackScreen);
@@ -74,6 +79,11 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp> {
       title: 'PersonalIA',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ref.watch(themeModeProvider),
+      locale: ref.watch(localeProvider),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
     );
   }

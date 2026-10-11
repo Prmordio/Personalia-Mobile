@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../home/data/app_api.dart';
 import 'widgets/exercise_list.dart';
 
@@ -20,17 +21,17 @@ class WorkoutDayDetailScreen extends StatelessWidget {
           if (day.exercises.isNotEmpty) ...[
             Row(
               children: [
-                _Summary(icon: Icons.fitness_center, value: '${strength.length}', label: 'exercícios'),
-                _Summary(icon: Icons.repeat, value: '$totalSets', label: 'séries'),
+                _Summary(icon: Icons.fitness_center, value: '${strength.length}', label: context.l10n.daySummaryExercises),
+                _Summary(icon: Icons.repeat, value: '$totalSets', label: context.l10n.daySummarySeries),
                 if (strength.length != day.exercises.length)
-                  const _Summary(icon: Icons.directions_run, value: '✓', label: 'cardio'),
+                  _Summary(icon: Icons.directions_run, value: '✓', label: context.l10n.daySummaryCardio),
               ],
             ),
             const SizedBox(height: 8),
-            const Text('Toque em um exercício para ver vídeos de execução.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+            Text(context.l10n.dayHintTapForVideos, style: const TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 12),
           ],
-          ExerciseList(exercises: day.exercises, emptyMessage: 'Dia de recuperação — sem exercícios.'),
+          ExerciseList(exercises: day.exercises, emptyMessage: context.l10n.dayRecoveryMsg),
         ],
       ),
     );

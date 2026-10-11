@@ -1,28 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/l10n/l10n.dart';
+import '../../../core/locale/locale_controller.dart';
 import '../../../core/providers.dart';
+import '../../../core/theme/theme_mode_controller.dart';
 import '../../auth/state/biometric_login_service.dart';
 
 class MenuScreen extends ConsumerWidget {
   const MenuScreen({super.key});
 
-  static const _items = [
-    ('Meu Treino Atual', Icons.fitness_center, '/workout/current'),
-    ('Histórico', Icons.history, '/workout/last'),
-    ('Pesquisar máquina', Icons.photo_camera, '/assistant?machine=1'),
-    ('Tirar dúvidas', Icons.chat_bubble_outline, '/assistant'),
-    ('Atualizar Meu Perfil', Icons.person, '/account/profile'),
-    ('Preferências de Treino', Icons.tune, '/account/preferences'),
-  ];
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final items = [
+      (l.menuCurrentWorkout, Icons.fitness_center, '/workout/current'),
+      (l.menuHistory, Icons.history, '/workout/last'),
+      (l.menuSearchMachine, Icons.photo_camera, '/assistant?machine=1'),
+      (l.menuAskDoubt, Icons.chat_bubble_outline, '/assistant'),
+      (l.menuUpdateProfile, Icons.person, '/account/profile'),
+      (l.menuTrainingPreferences, Icons.tune, '/account/preferences'),
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Menu')),
+      appBar: AppBar(title: Text(l.menuTitle)),
       body: ListView(
         children: [
-          for (final item in _items)
+          for (final item in items)
             ListTile(
               leading: Icon(item.$2),
               title: Text(item.$1),
@@ -30,11 +34,44 @@ class MenuScreen extends ConsumerWidget {
               onTap: () => context.push(item.$3),
             ),
           const Divider(),
+          ListTile(
+            leading: const Icon(Icons.brightness_6_outlined),
+            title: Text(l.menuAppearance),
+            trailing: DropdownButton<ThemeMode>(
+              value: ref.watch(themeModeProvider),
+              underline: const SizedBox.shrink(),
+              items: [
+                DropdownMenuItem(
+                  value: ThemeMode.system,
+                  child: Text(l.appearanceSystem),
+                ),
+                DropdownMenuItem(value: ThemeMode.light, child: Text(l.appearanceLight)),
+                DropdownMenuItem(value: ThemeMode.dark, child: Text(l.appearanceDark)),
+              ],
+              onChanged: (mode) async {
+                if (mode == null) return;
+                try {
+                  await ref.read(themeModeProvider.notifier).select(mode);
+                } catch (_) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l.errAppearanceSave)),
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: Text(l.menuLanguage),
+            trailing: _LanguageDropdown(),
+          ),
           const _BiometricToggle(),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Sair', style: TextStyle(color: Colors.red)),
+            title: Text(l.menuLogout, style: const TextStyle(color: Colors.red)),
             onTap: () async {
               await ref.read(tokenStorageProvider).clear();
               ref.read(authRefreshProvider).value++;
@@ -42,6 +79,36 @@ class MenuScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LanguageDropdown extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final locale = ref.watch(localeProvider);
+
+    return DropdownButton<Locale?>(
+      value: locale,
+      underline: const SizedBox.shrink(),
+      items: [
+        DropdownMenuItem(value: null, child: Text(l.langSystem)),
+        DropdownMenuItem(value: const Locale('pt'), child: Text(l.langPortuguese)),
+        DropdownMenuItem(value: const Locale('en'), child: Text(l.langEnglish)),
+        DropdownMenuItem(value: const Locale('es'), child: Text(l.langSpanish)),
+      ],
+      onChanged: (selected) async {
+        try {
+          await ref.read(localeProvider.notifier).select(selected);
+        } catch (_) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l.errLanguageSave)),
+            );
+          }
+        }
+      },
     );
   }
 }
@@ -89,7 +156,7 @@ class _BiometricToggleState extends ConsumerState<_BiometricToggle> {
     setState(() => _busy = false);
     if (!ok) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível ativar a biometria. Tente novamente.')),
+        SnackBar(content: Text(context.l10n.errBiometricToggleFailed)),
       );
     }
     await _load();
@@ -100,8 +167,8 @@ class _BiometricToggleState extends ConsumerState<_BiometricToggle> {
     if (_enabled == null || !_available) return const SizedBox.shrink();
     return SwitchListTile(
       secondary: const Icon(Icons.fingerprint),
-      title: const Text('Entrar com biometria'),
-      subtitle: const Text('Digital ou rosto em vez da senha'),
+      title: Text(context.l10n.biometricToggleTitle),
+      subtitle: Text(context.l10n.biometricToggleSubtitle),
       value: _enabled!,
       onChanged: _busy ? null : _toggle,
     );

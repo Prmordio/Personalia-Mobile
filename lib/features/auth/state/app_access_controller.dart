@@ -13,7 +13,7 @@ import 'biometric_login_service.dart' show biometricOfferPendingProvider;
 enum AppAccessStep { start, emailCode, phoneCode, confirmEmail, password }
 
 const _minPasswordLength = 8;
-const _genericError = 'Não foi possível concluir. Tente novamente.';
+const _genericError = 'genericError';
 
 class AppAccessState {
   const AppAccessState({
@@ -73,11 +73,11 @@ class AppAccessController extends StateNotifier<AppAccessState> {
   Future<void> start(String phone, String email) async {
     final digits = phone.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 10) {
-      state = state.copyWith(error: 'Informe o telefone com DDD.');
+      state = state.copyWith(error: 'errAppAccessPhone');
       return;
     }
     if (!email.contains('@')) {
-      state = state.copyWith(error: 'Informe um email válido.');
+      state = state.copyWith(error: 'errAppAccessEmail');
       return;
     }
     await _run(() async {
@@ -89,14 +89,14 @@ class AppAccessController extends StateNotifier<AppAccessState> {
         email: email,
         loading: false,
         // Mesma mensagem exista ou não o cadastro — o backend não confirma nem nega.
-        info: 'Se houver cadastro com esses dados, enviamos um código para o email e/ou WhatsApp cadastrados.',
+        info: 'appAccessInfoCodeRequested',
       );
     });
   }
 
   Future<void> verifyCode(String code) async {
     if (code.length != 6) {
-      state = state.copyWith(error: 'O código tem 6 dígitos.', info: state.info);
+      state = state.copyWith(error: 'errAuthCodeLength', info: state.info);
       return;
     }
     final factor = state.step == AppAccessStep.phoneCode ? 'phone' : 'email';
@@ -111,11 +111,11 @@ class AppAccessController extends StateNotifier<AppAccessState> {
         'password' => verified.copyWith(step: AppAccessStep.password),
         'phone_code' => verified.copyWith(
             step: AppAccessStep.phoneCode,
-            info: 'Email confirmado ✅ Agora confirme seu número pelo WhatsApp.',
+            info: 'appAccessInfoEmailConfirmed',
           ),
         'email_code' => verified.copyWith(
             step: AppAccessStep.emailCode,
-            info: 'Número confirmado ✅ Digite o código que enviamos para ${state.email}.',
+            info: 'appAccessInfoPhoneConfirmed:${state.email}',
           ),
         _ => verified.copyWith(step: AppAccessStep.confirmEmail),
       };
@@ -137,7 +137,7 @@ class AppAccessController extends StateNotifier<AppAccessState> {
 
   Future<void> confirmEmail(String email) async {
     if (!email.contains('@')) {
-      state = state.copyWith(error: 'Informe um email válido.');
+      state = state.copyWith(error: 'errAppAccessEmail');
       return;
     }
     await _run(() async {
@@ -146,7 +146,7 @@ class AppAccessController extends StateNotifier<AppAccessState> {
         step: AppAccessStep.emailCode,
         email: email,
         loading: false,
-        info: 'Enviamos um código para $email.',
+        info: 'appAccessInfoCodeSentTo:$email',
       );
     });
   }
@@ -154,11 +154,11 @@ class AppAccessController extends StateNotifier<AppAccessState> {
   /// Cria a senha e já entra no app — o redirect do go_router leva para a Home/onboarding.
   Future<void> complete(String password, String confirmation) async {
     if (password.length < _minPasswordLength) {
-      state = state.copyWith(error: 'A senha deve ter pelo menos $_minPasswordLength caracteres.');
+      state = state.copyWith(error: 'errAuthPasswordTooShort');
       return;
     }
     if (password != confirmation) {
-      state = state.copyWith(error: 'As senhas não conferem.');
+      state = state.copyWith(error: 'errAuthPasswordMismatch');
       return;
     }
     await _run(() async {

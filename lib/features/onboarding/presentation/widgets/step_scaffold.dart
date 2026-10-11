@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/app_theme.dart';
 
 /// Layout compartilhado por toda tela da wizard de onboarding: título, subtítulo opcional,
@@ -38,10 +39,19 @@ class StepScaffold extends StatelessWidget {
               if (onBack != null)
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: IconButton(icon: const Icon(Icons.arrow_back), onPressed: loading ? null : onBack),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: loading ? null : onBack,
+                  ),
                 ),
               const SizedBox(height: 8),
-              Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               if (subtitle != null) ...[
                 const SizedBox(height: 8),
                 Text(subtitle!, style: const TextStyle(color: Colors.grey)),
@@ -50,14 +60,24 @@ class StepScaffold extends StatelessWidget {
               Expanded(child: SingleChildScrollView(child: child)),
               if (error != null) ...[
                 const SizedBox(height: 12),
-                Text(error!, style: const TextStyle(color: AppColors.error)),
+                Text(
+                  context.resolveMessage(error)!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ],
               if (buttonLabel != null) ...[
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: loading ? null : onContinue,
                   child: loading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.onSecondary,
+                          ),
+                        )
                       : Text(buttonLabel!),
                 ),
               ],
@@ -72,7 +92,12 @@ class StepScaffold extends StatelessWidget {
 /// Lista de opções únicas (objetivo, nível de atividade, foco de treino etc.) — botões cheios
 /// de largura total, mesmo padrão do `_channelStep` em `login_screen.dart`.
 class ChoiceList extends StatelessWidget {
-  const ChoiceList({super.key, required this.options, required this.selected, required this.onSelected});
+  const ChoiceList({
+    super.key,
+    required this.options,
+    required this.selected,
+    required this.onSelected,
+  });
 
   final List<MapEntry<String, String>> options; // value -> label
   final String? selected;
@@ -85,11 +110,19 @@ class ChoiceList extends StatelessWidget {
         for (final option in options) ...[
           OutlinedButton(
             style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
               alignment: Alignment.centerLeft,
-              backgroundColor: selected == option.key ? AppColors.blue.withValues(alpha: 0.1) : null,
-              side: BorderSide(color: selected == option.key ? AppColors.blue : Colors.grey.shade300),
+              backgroundColor: selected == option.key
+                  ? AppColors.blue.withValues(alpha: 0.1)
+                  : null,
+              side: BorderSide(
+                color: selected == option.key
+                    ? AppColors.blue
+                    : Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             onPressed: () => onSelected(option.key),
             child: Text(option.value),
@@ -115,26 +148,42 @@ class YesNoChoice extends StatelessWidget {
         Expanded(
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              backgroundColor: value == true ? AppColors.blue.withValues(alpha: 0.1) : null,
-              side: BorderSide(color: value == true ? AppColors.blue : Colors.grey.shade300),
+              backgroundColor: value == true
+                  ? AppColors.blue.withValues(alpha: 0.1)
+                  : null,
+              side: BorderSide(
+                color: value == true
+                    ? AppColors.blue
+                    : Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             onPressed: () => onChanged(true),
-            child: const Text('Sim'),
+            child: Text(context.l10n.sim),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: OutlinedButton(
             style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              backgroundColor: value == false ? AppColors.blue.withValues(alpha: 0.1) : null,
-              side: BorderSide(color: value == false ? AppColors.blue : Colors.grey.shade300),
+              backgroundColor: value == false
+                  ? AppColors.blue.withValues(alpha: 0.1)
+                  : null,
+              side: BorderSide(
+                color: value == false
+                    ? AppColors.blue
+                    : Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             onPressed: () => onChanged(false),
-            child: const Text('Não'),
+            child: Text(context.l10n.nao),
           ),
         ),
       ],

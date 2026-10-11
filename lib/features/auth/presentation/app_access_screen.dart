@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/app_config.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../../core/l10n/l10n.dart';
 import '../../../core/widgets/password_text_field.dart';
 import '../state/app_access_controller.dart';
 
@@ -25,7 +25,13 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
 
   @override
   void dispose() {
-    for (final c in [_phoneController, _emailController, _codeController, _passwordController, _confirmationController]) {
+    for (final c in [
+      _phoneController,
+      _emailController,
+      _codeController,
+      _passwordController,
+      _confirmationController,
+    ]) {
       c.dispose();
     }
     super.dispose();
@@ -37,7 +43,10 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
     final controller = ref.read(appAccessControllerProvider.notifier);
 
     // Cada passo com código começa com o campo limpo.
-    ref.listen(appAccessControllerProvider.select((s) => s.step), (_, _) => _codeController.clear());
+    ref.listen(
+      appAccessControllerProvider.select((s) => s.step),
+      (_, _) => _codeController.clear(),
+    );
 
     return Scaffold(
       body: SafeArea(
@@ -50,27 +59,47 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
                 alignment: Alignment.centerLeft,
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: state.loading ? null : () => Navigator.of(context).maybePop(),
+                  onPressed: state.loading
+                      ? null
+                      : () => Navigator.of(context).maybePop(),
                 ),
               ),
               const SizedBox(height: 8),
-              Text(_title(state.step), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(
+                _title(state.step),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 8),
               if (state.info != null) ...[
-                Text(state.info!),
+                Text(context.resolveMessage(state.info)!),
                 const SizedBox(height: 16),
               ],
               ..._stepBody(state, controller),
               if (state.error != null) ...[
                 const SizedBox(height: 16),
-                Text(state.error!, style: const TextStyle(color: AppColors.error)),
+                Text(
+                  context.resolveMessage(state.error)!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ],
               const SizedBox(height: 24),
               ElevatedButton(
-                onPressed: state.loading ? null : () => _submit(state, controller),
+                onPressed: state.loading
+                    ? null
+                    : () => _submit(state, controller),
                 child: state.loading
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Text(_primaryLabel(state.step)),
+                    ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.onSecondary,
+                        ),
+                      )
+                    : Text(_primaryLabel(context, state.step)),
               ),
               ..._secondaryActions(state, controller),
             ],
@@ -81,53 +110,50 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
   }
 
   String _title(AppAccessStep step) => switch (step) {
-        AppAccessStep.start => 'Acessar o app',
-        AppAccessStep.emailCode => 'Código do email',
-        AppAccessStep.phoneCode => 'Código do WhatsApp',
-        AppAccessStep.confirmEmail => 'Confirme seu email',
-        AppAccessStep.password => 'Crie sua senha',
-      };
+    AppAccessStep.start => context.l10n.appAccessTitle,
+    AppAccessStep.emailCode => context.l10n.appAccessEmailCodeTitle,
+    AppAccessStep.phoneCode => context.l10n.appAccessPhoneCodeTitle,
+    AppAccessStep.confirmEmail => context.l10n.appAccessConfirmEmailTitle,
+    AppAccessStep.password => context.l10n.appAccessPasswordTitle,
+  };
 
-  String _primaryLabel(AppAccessStep step) => switch (step) {
-        AppAccessStep.start => 'Continuar',
-        AppAccessStep.confirmEmail => 'Enviar código',
-        AppAccessStep.password => 'Salvar senha e entrar',
-        _ => 'Confirmar código',
-      };
+  String _primaryLabel(BuildContext ctx, AppAccessStep step) => switch (step) {
+    AppAccessStep.start => ctx.l10n.continuar,
+    AppAccessStep.confirmEmail => ctx.l10n.appAccessSendCodeAction,
+    AppAccessStep.password => ctx.l10n.appAccessSavePassword,
+    _ => ctx.l10n.appAccessConfirmCode,
+  };
 
   List<Widget> _stepBody(AppAccessState state, AppAccessController controller) {
     switch (state.step) {
       case AppAccessStep.start:
         return [
-          const Text('Informe o telefone que você usa no WhatsApp com o PersonalIA e o seu email.'),
+          Text(context.l10n.appAccessStartDesc),
           const SizedBox(height: 24),
           TextField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             autofillHints: const [AutofillHints.telephoneNumber],
-            decoration: const InputDecoration(hintText: 'Telefone com DDD'),
+            decoration: InputDecoration(hintText: context.l10n.appAccessPhoneHint),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
-            decoration: const InputDecoration(hintText: 'seuemail@exemplo.com'),
+            decoration: InputDecoration(hintText: context.l10n.onboardingEmailHint),
           ),
         ];
       case AppAccessStep.emailCode:
         return [_codeField()];
       case AppAccessStep.phoneCode:
         return [
-          const Text(
-            'Se você falou com o PersonalIA no WhatsApp nas últimas 24h, o código já deve ter chegado lá. '
-            'Se não chegou, toque em "Abrir WhatsApp" e envie a mensagem pronta — respondemos com o código.',
-          ),
+          Text(context.l10n.appAccessPhoneCodeDesc),
           const SizedBox(height: 16),
           OutlinedButton.icon(
             onPressed: state.loading ? null : _openWhatsApp,
             icon: const Icon(Icons.chat),
-            label: const Text('Abrir WhatsApp'),
+            label: Text(context.l10n.appAccessOpenWhatsApp),
           ),
           const SizedBox(height: 16),
           _codeField(),
@@ -135,27 +161,27 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
       case AppAccessStep.confirmEmail:
         if (_emailController.text.isEmpty) _emailController.text = state.email;
         return [
-          const Text('Número confirmado ✅ Confira seu email (corrija se precisar) — vamos enviar um código para ele.'),
+          Text(context.l10n.appAccessConfirmEmailDesc),
           const SizedBox(height: 16),
           TextField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(hintText: 'seuemail@exemplo.com'),
+            decoration: InputDecoration(hintText: context.l10n.onboardingEmailHint),
           ),
         ];
       case AppAccessStep.password:
         return [
-          const Text('Tudo confirmado ✅ Agora é só criar a senha para entrar com email e senha.'),
+          Text(context.l10n.appAccessPasswordDesc),
           const SizedBox(height: 16),
           PasswordTextField(
             controller: _passwordController,
-            hintText: 'Nova senha (mínimo 8 caracteres)',
+            hintText: context.l10n.forgotPasswordNewPasswordHint,
             autofillHints: const [AutofillHints.newPassword],
           ),
           const SizedBox(height: 12),
           PasswordTextField(
             controller: _confirmationController,
-            hintText: 'Repita a senha',
+            hintText: context.l10n.appAccessRepeatPasswordHint,
           ),
         ];
     }
@@ -167,27 +193,39 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
       keyboardType: TextInputType.number,
       maxLength: 6,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      decoration: const InputDecoration(hintText: 'Código de 6 dígitos', counterText: ''),
+      decoration: InputDecoration(
+        hintText: context.l10n.appAccessCodeHint,
+        counterText: '',
+      ),
     );
   }
 
-  List<Widget> _secondaryActions(AppAccessState state, AppAccessController controller) {
+  List<Widget> _secondaryActions(
+    AppAccessState state,
+    AppAccessController controller,
+  ) {
     final actions = <Widget>[];
     void add(String label, VoidCallback onPressed) {
       actions
         ..add(const SizedBox(height: 8))
-        ..add(TextButton(onPressed: state.loading ? null : onPressed, child: Text(label)));
+        ..add(
+          TextButton(
+            onPressed: state.loading ? null : onPressed,
+            child: Text(label),
+          ),
+        );
     }
 
     if (state.step == AppAccessStep.emailCode) {
       if (state.phoneVerified) {
-        add('Email errado? Corrigir', controller.editEmail);
+        add(context.l10n.appAccessFixEmail, controller.editEmail);
       } else {
-        add('Não recebi o email / email errado', controller.useWhatsApp);
+        add(context.l10n.appAccessNoEmail, controller.useWhatsApp);
       }
     }
-    if (state.step != AppAccessStep.start && state.step != AppAccessStep.password) {
-      add('Recomeçar', () {
+    if (state.step != AppAccessStep.start &&
+        state.step != AppAccessStep.password) {
+      add(context.l10n.appAccessRestart, () {
         _emailController.clear();
         controller.restart();
       });
@@ -198,19 +236,27 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
   void _submit(AppAccessState state, AppAccessController controller) {
     switch (state.step) {
       case AppAccessStep.start:
-        controller.start(_phoneController.text.trim(), _emailController.text.trim());
+        controller.start(
+          _phoneController.text.trim(),
+          _emailController.text.trim(),
+        );
       case AppAccessStep.emailCode:
       case AppAccessStep.phoneCode:
         controller.verifyCode(_codeController.text.trim());
       case AppAccessStep.confirmEmail:
         controller.confirmEmail(_emailController.text.trim());
       case AppAccessStep.password:
-        controller.complete(_passwordController.text, _confirmationController.text);
+        controller.complete(
+          _passwordController.text,
+          _confirmationController.text,
+        );
     }
   }
 
   Future<void> _openWhatsApp() async {
-    final uri = Uri.parse('https://wa.me/$whatsappBotNumber?text=${Uri.encodeComponent(appAccessWhatsAppMessage)}');
+    final uri = Uri.parse(
+      'https://wa.me/$whatsappBotNumber?text=${Uri.encodeComponent(appAccessWhatsAppMessage)}',
+    );
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
