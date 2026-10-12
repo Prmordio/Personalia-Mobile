@@ -12,6 +12,9 @@ extension AppLocalizationsX on BuildContext {
   String? resolveMessage(String? key) {
     if (key == null) return null;
     final l = l10n;
+    if (key == 'storeUnavailable') return l.storeUnavailable;
+    if (key == 'storeVerificationFailed') return l.storeVerificationFailed;
+    if (key == 'storeAlreadyActive') return l.storeAlreadyActive;
 
     // Parametrized keys: 'baseKey:param'
     final colon = key.indexOf(':');

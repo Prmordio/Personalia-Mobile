@@ -691,7 +691,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get subscriptionSignupPrompt =>
-      'Assine para continuar gerando treinos.';
+      'Escolha seu plano na loja do aparelho.';
 
   @override
   String get subscriptionButton => 'Assinar';
@@ -1434,4 +1434,39 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errLoadReferral => 'Não foi possível carregar.';
+
+  @override
+  String get storePlansTitle => 'Assinatura PersonaliA';
+
+  @override
+  String get storeUnavailable =>
+      'A loja não está disponível. Tente novamente mais tarde.';
+
+  @override
+  String get storeVerificationFailed =>
+      'Não foi possível confirmar a compra. Tente restaurar com a conta que fez a assinatura.';
+
+  @override
+  String get storeAlreadyActive =>
+      'Você já tem uma assinatura ativa. Aguarde seu término para mudar de canal.';
+
+  @override
+  String get storePurchaseConfirmed =>
+      'Assinatura confirmada! Seu acesso foi atualizado.';
+
+  @override
+  String get storeRestore => 'Restaurar compras';
+
+  @override
+  String get storeManage => 'Gerenciar assinatura na loja';
+
+  @override
+  String get storeAutoRenewalNotice =>
+      'A assinatura renova automaticamente. Confira o período e as condições na loja antes de confirmar.';
+
+  @override
+  String get storeTerms => 'Termos de uso';
+
+  @override
+  String get storePrivacy => 'Política de privacidade';
 }

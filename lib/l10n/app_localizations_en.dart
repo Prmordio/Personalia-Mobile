@@ -689,7 +689,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get subscriptionSignupPrompt =>
-      'Subscribe to keep generating workouts.';
+      'Choose your plan in your device store.';
 
   @override
   String get subscriptionButton => 'Subscribe';
@@ -1425,4 +1425,39 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errLoadReferral => 'Could not load.';
+
+  @override
+  String get storePlansTitle => 'PersonaliA subscription';
+
+  @override
+  String get storeUnavailable =>
+      'The store is unavailable. Please try again later.';
+
+  @override
+  String get storeVerificationFailed =>
+      'We could not verify the purchase. Restore it using the account that purchased the subscription.';
+
+  @override
+  String get storeAlreadyActive =>
+      'You already have an active subscription. Wait until it expires before switching payment channels.';
+
+  @override
+  String get storePurchaseConfirmed =>
+      'Subscription confirmed! Your access has been updated.';
+
+  @override
+  String get storeRestore => 'Restore purchases';
+
+  @override
+  String get storeManage => 'Manage store subscription';
+
+  @override
+  String get storeAutoRenewalNotice =>
+      'Your subscription renews automatically. Review the billing period and terms in the store before confirming.';
+
+  @override
+  String get storeTerms => 'Terms of use';
+
+  @override
+  String get storePrivacy => 'Privacy policy';
 }

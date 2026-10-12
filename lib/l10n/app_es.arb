@@ -259,7 +259,7 @@
   "@subscriptionNextCharge": {
     "placeholders": { "date": { "type": "String" } }
   },
-  "subscriptionSignupPrompt": "Suscríbete para continuar generando entrenamientos.",
+  "subscriptionSignupPrompt": "Elige tu plan en la tienda de tu dispositivo.",
   "subscriptionButton": "Suscribirse",
   "dailyTipTitle": "Consejo del día",
   "errLoadWorkout": "No se pudo cargar tu entrenamiento.",
@@ -574,5 +574,15 @@
   "referralNotEligible": "Necesitas una suscripción activa para referir amigos.",
   "referralYourCoupon": "Tu cupón",
   "referralShareLink": "Compartir enlace",
-  "errLoadReferral": "No se pudo cargar."
+  "errLoadReferral": "No se pudo cargar.",
+  "storePlansTitle": "Suscripción PersonaliA",
+  "storeUnavailable": "La tienda no está disponible. Inténtalo más tarde.",
+  "storeVerificationFailed": "No se pudo verificar la compra. Restáurala con la cuenta que realizó la suscripción.",
+  "storeAlreadyActive": "Ya tienes una suscripción activa. Espera a que finalice antes de cambiar de canal de pago.",
+  "storePurchaseConfirmed": "¡Suscripción confirmada! Tu acceso se ha actualizado.",
+  "storeRestore": "Restaurar compras",
+  "storeManage": "Gestionar suscripción en la tienda",
+  "storeAutoRenewalNotice": "La suscripción se renueva automáticamente. Revisa el período y las condiciones en la tienda antes de confirmar.",
+  "storeTerms": "Términos de uso",
+  "storePrivacy": "Política de privacidad"
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../home/presentation/subscription_checkout.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/providers.dart';
@@ -68,6 +69,11 @@ class MenuScreen extends ConsumerWidget {
             trailing: _LanguageDropdown(),
           ),
           const _BiometricToggle(),
+          ListTile(
+            leading: const Icon(Icons.subscriptions_outlined),
+            title: Text(context.l10n.storeManage),
+            onTap: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => const StoreSubscriptionSheet()),
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),

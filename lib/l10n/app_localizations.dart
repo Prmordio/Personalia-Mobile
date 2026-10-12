@@ -1333,7 +1333,7 @@ abstract class AppLocalizations {
   /// No description provided for @subscriptionSignupPrompt.
   ///
   /// In pt, this message translates to:
-  /// **'Assine para continuar gerando treinos.'**
+  /// **'Escolha seu plano na loja do aparelho.'**
   String get subscriptionSignupPrompt;
 
   /// No description provided for @subscriptionButton.
@@ -2697,6 +2697,66 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Não foi possível carregar.'**
   String get errLoadReferral;
+
+  /// No description provided for @storePlansTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Assinatura PersonaliA'**
+  String get storePlansTitle;
+
+  /// No description provided for @storeUnavailable.
+  ///
+  /// In pt, this message translates to:
+  /// **'A loja não está disponível. Tente novamente mais tarde.'**
+  String get storeUnavailable;
+
+  /// No description provided for @storeVerificationFailed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível confirmar a compra. Tente restaurar com a conta que fez a assinatura.'**
+  String get storeVerificationFailed;
+
+  /// No description provided for @storeAlreadyActive.
+  ///
+  /// In pt, this message translates to:
+  /// **'Você já tem uma assinatura ativa. Aguarde seu término para mudar de canal.'**
+  String get storeAlreadyActive;
+
+  /// No description provided for @storePurchaseConfirmed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Assinatura confirmada! Seu acesso foi atualizado.'**
+  String get storePurchaseConfirmed;
+
+  /// No description provided for @storeRestore.
+  ///
+  /// In pt, this message translates to:
+  /// **'Restaurar compras'**
+  String get storeRestore;
+
+  /// No description provided for @storeManage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerenciar assinatura na loja'**
+  String get storeManage;
+
+  /// No description provided for @storeAutoRenewalNotice.
+  ///
+  /// In pt, this message translates to:
+  /// **'A assinatura renova automaticamente. Confira o período e as condições na loja antes de confirmar.'**
+  String get storeAutoRenewalNotice;
+
+  /// No description provided for @storeTerms.
+  ///
+  /// In pt, this message translates to:
+  /// **'Termos de uso'**
+  String get storeTerms;
+
+  /// No description provided for @storePrivacy.
+  ///
+  /// In pt, this message translates to:
+  /// **'Política de privacidade'**
+  String get storePrivacy;
 }
 
 class _AppLocalizationsDelegate

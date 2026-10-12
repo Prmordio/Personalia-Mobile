@@ -259,7 +259,7 @@
   "@subscriptionNextCharge": {
     "placeholders": { "date": { "type": "String" } }
   },
-  "subscriptionSignupPrompt": "Subscribe to keep generating workouts.",
+  "subscriptionSignupPrompt": "Choose your plan in your device store.",
   "subscriptionButton": "Subscribe",
   "dailyTipTitle": "Tip of the day",
   "errLoadWorkout": "Could not load your workout.",
@@ -572,5 +572,15 @@
   "referralNotEligible": "You need an active subscription to refer friends.",
   "referralYourCoupon": "Your coupon",
   "referralShareLink": "Share link",
-  "errLoadReferral": "Could not load."
+  "errLoadReferral": "Could not load.",
+  "storePlansTitle": "PersonaliA subscription",
+  "storeUnavailable": "The store is unavailable. Please try again later.",
+  "storeVerificationFailed": "We could not verify the purchase. Restore it using the account that purchased the subscription.",
+  "storeAlreadyActive": "You already have an active subscription. Wait until it expires before switching payment channels.",
+  "storePurchaseConfirmed": "Subscription confirmed! Your access has been updated.",
+  "storeRestore": "Restore purchases",
+  "storeManage": "Manage store subscription",
+  "storeAutoRenewalNotice": "Your subscription renews automatically. Review the billing period and terms in the store before confirming.",
+  "storeTerms": "Terms of use",
+  "storePrivacy": "Privacy policy"
 }
