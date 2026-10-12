@@ -10,6 +10,7 @@ import 'core/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
+import 'core/billing/store_billing_controller.dart';
 import 'core/telemetry/app_telemetry.dart';
 import 'features/onboarding/data/onboarding_api.dart';
 import 'firebase_options.dart';
@@ -48,9 +49,29 @@ class PersonaliaApp extends ConsumerStatefulWidget {
 }
 
 class _PersonaliaAppState extends ConsumerState<PersonaliaApp> {
+  late final ValueNotifier<int> _billingAuth;
+
+  Future<void> _syncStoreBilling() async {
+    final token = await ref.read(tokenStorageProvider).read().catchError((_) => null);
+    if (!mounted) return;
+    if (token == null) {
+      ref.invalidate(storeBillingProvider);
+    } else {
+      await ref.read(storeBillingProvider.notifier).initialize();
+    }
+  }
+
+  @override
+  void dispose() {
+    _billingAuth.removeListener(_syncStoreBilling);
+    super.dispose();
+  }
   @override
   void initState() {
     super.initState();
+    _billingAuth = ref.read(authRefreshProvider);
+    _billingAuth.addListener(_syncStoreBilling);
+    _syncStoreBilling();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final router = ref.read(_routerProvider);
 
