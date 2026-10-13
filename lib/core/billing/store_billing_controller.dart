@@ -98,6 +98,7 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
 
   Future<void> buy(ProductDetails product) async {
     if (state.busy || !state.canPurchase || _userId == null) return;
+    state = StoreBillingState(products: state.products, busy: true);
     try {
       // Recheck access immediately before offering a second recurring payment.
       final config = (await _dio.post(
@@ -113,10 +114,32 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
         return;
       }
       if (!mounted) return;
-      state = StoreBillingState(products: state.products, busy: true);
+      final allowedIds = Set<String>.from(config['products'] as List);
+      if (config['enabled'] != true || !allowedIds.contains(product.id)) {
+        throw StateError('Product unavailable');
+      }
+      // ProductDetails and its offer may become stale while the sheet is open.
+      final response = await _store.queryProductDetails({product.id});
+      if (!mounted) return;
+      if (response.error != null || response.notFoundIDs.contains(product.id)) {
+        throw StateError('Product unavailable');
+      }
+      final freshProduct = response.productDetails.firstWhere(
+        (item) => item.id == product.id,
+      );
+      final products = state.products
+          .map((item) => item.id == product.id ? freshProduct : item)
+          .toList();
+      if (freshProduct.price != product.price ||
+          freshProduct.currencyCode != product.currencyCode) {
+        // Let the user review a changed price before opening the purchase flow.
+        state = StoreBillingState(products: products, canPurchase: true);
+        return;
+      }
+      state = StoreBillingState(products: products, busy: true);
       final launched = await _store.buyNonConsumable(
         purchaseParam: PurchaseParam(
-          productDetails: product,
+          productDetails: freshProduct,
           applicationUserName: _userId,
         ),
       );

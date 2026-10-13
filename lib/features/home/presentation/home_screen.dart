@@ -92,8 +92,7 @@ class HomeScreen extends ConsumerWidget {
                     child: CircularProgressIndicator(),
                   ),
                 ),
-                error: (error, stackTrace) =>
-                    Text(context.l10n.errLoadWorkout),
+                error: (error, stackTrace) => Text(context.l10n.errLoadWorkout),
               ),
             ],
           ),
@@ -125,11 +124,15 @@ class _SubscriptionCard extends StatelessWidget {
     if (subscription.isFreeTrial) {
       emoji = '🎁';
       title = l.subscriptionFreeTrial;
-      subtitle = dueDateLabel != null ? l.subscriptionValidUntil(dueDateLabel) : null;
+      subtitle = dueDateLabel != null
+          ? l.subscriptionValidUntil(dueDateLabel)
+          : null;
     } else if (subscription.isValid) {
       emoji = '✅';
       title = l.subscriptionActive;
-      subtitle = dueDateLabel != null ? l.subscriptionNextCharge(dueDateLabel) : null;
+      subtitle = dueDateLabel != null
+          ? l.subscriptionNextCharge(dueDateLabel)
+          : null;
     } else {
       emoji = '⚠️';
       title = l.subscriptionInactive;
@@ -139,33 +142,43 @@ class _SubscriptionCard extends StatelessWidget {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(emoji, style: const TextStyle(fontSize: 28)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.blue,
-                    ),
+            Row(
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 28)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.blue,
+                        ),
+                      ),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ],
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 4),
-                    Text(subtitle, style: const TextStyle(color: Colors.grey)),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
-            if (!subscription.isValid)
+            if (!subscription.isValid) ...[
+              const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: onSubscribe,
                 child: Text(l.subscriptionButton),
               ),
+            ],
           ],
         ),
       ),
@@ -355,13 +368,18 @@ class _StartWorkoutCard extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Text(
                 context.l10n.chooseWorkoutDayTitle,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
             for (final day in plan.days)
               ListTile(
                 title: Text(day.dayName),
-                subtitle: Text(context.l10n.exercisesCount(day.exercises.length)),
+                subtitle: Text(
+                  context.l10n.exercisesCount(day.exercises.length),
+                ),
                 trailing: day.dayName == current
                     ? const Icon(Icons.check, color: AppColors.orange)
                     : null,
@@ -523,8 +541,13 @@ class _StartWorkoutCard extends ConsumerWidget {
                   const SizedBox(width: 4),
                   Text(
                     completedInSession
-                        ? context.l10n.workoutExerciseCount(completed.completedCount, completed.totalCount)
-                        : context.l10n.exercisesCount(lastWorkout?.exercises.length ?? 0),
+                        ? context.l10n.workoutExerciseCount(
+                            completed.completedCount,
+                            completed.totalCount,
+                          )
+                        : context.l10n.exercisesCount(
+                            lastWorkout?.exercises.length ?? 0,
+                          ),
                     style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
@@ -532,8 +555,7 @@ class _StartWorkoutCard extends ConsumerWidget {
             ] else
               todayAsync.when(
                 data: (today) {
-                  if (today.isRest)
-                    return Text(context.l10n.workoutRestDay);
+                  if (today.isRest) return Text(context.l10n.workoutRestDay);
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -557,8 +579,7 @@ class _StartWorkoutCard extends ConsumerWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
-                error: (e, s) =>
-                    Text(context.l10n.errLoadTodayWorkout),
+                error: (e, s) => Text(context.l10n.errLoadTodayWorkout),
               ),
             const SizedBox(height: 16),
             if (isDoneToday)
@@ -574,7 +595,11 @@ class _StartWorkoutCard extends ConsumerWidget {
                 onPressed: !isActive || todayAsync.asData?.value.isRest == true
                     ? null
                     : () => context.push('/workout/today'),
-                child: Text(inProgress ? context.l10n.btnContinueWorkout : context.l10n.workoutStart),
+                child: Text(
+                  inProgress
+                      ? context.l10n.btnContinueWorkout
+                      : context.l10n.workoutStart,
+                ),
               ),
             if (plan.days.length > 1) ...[
               const SizedBox(height: 4),
@@ -698,9 +723,9 @@ class _ProgressCard extends ConsumerWidget {
       ref.invalidate(progressProvider);
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.errSaveMeasures)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.errSaveMeasures)));
       }
     }
   }
