@@ -9,7 +9,11 @@ import 'package:personalia_app/core/billing/store_billing_controller.dart';
 class _Store implements InAppPurchase {
   final events = StreamController<List<PurchaseDetails>>.broadcast(sync: true);
   int completed = 0;
+  int purchasesStarted = 0;
   String? account;
+  ProductDetails? purchasedProduct;
+  ProductDetails? refreshedProduct;
+  bool unavailable = false;
   final product = ProductDetails(
     id: 'monthly',
     title: 'Monthly',
@@ -25,10 +29,15 @@ class _Store implements InAppPurchase {
   @override
   Future<ProductDetailsResponse> queryProductDetails(
     Set<String> identifiers,
-  ) async => ProductDetailsResponse(productDetails: [product], notFoundIDs: []);
+  ) async => ProductDetailsResponse(
+    productDetails: unavailable ? [] : [refreshedProduct ?? product],
+    notFoundIDs: unavailable ? identifiers.toList() : [],
+  );
   @override
   Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) async {
+    purchasesStarted++;
     account = purchaseParam.applicationUserName;
+    purchasedProduct = purchaseParam.productDetails;
     return true;
   }
 
@@ -133,5 +142,48 @@ void main() {
     await controller.buy(store.product);
     expect(store.account, isNull);
     expect(controller.state.error, 'storeAlreadyActive');
+  });
+  test(
+    'uses fresh store details rather than the displayed cached object',
+    () async {
+      store.refreshedProduct = ProductDetails(
+        id: 'monthly',
+        title: 'Fresh Monthly',
+        description: 'Fresh offer',
+        price: store.product.price,
+        rawPrice: 24.9,
+        currencyCode: 'BRL',
+      );
+      await controller.buy(store.product);
+      expect(store.purchasedProduct, same(store.refreshedProduct));
+    },
+  );
+  test('does not launch a product the store no longer offers', () async {
+    store.unavailable = true;
+    await controller.buy(store.product);
+    expect(store.purchasedProduct, isNull);
+    expect(controller.state.error, 'storeUnavailable');
+  });
+  test('shows a changed price for review before purchase', () async {
+    store.refreshedProduct = ProductDetails(
+      id: 'monthly',
+      title: 'Monthly',
+      description: 'Subscription',
+      price: 'R\$ 29,90',
+      rawPrice: 29.9,
+      currencyCode: 'BRL',
+    );
+    await controller.buy(store.product);
+    expect(store.purchasedProduct, isNull);
+    expect(controller.state.products.single.price, 'R\$ 29,90');
+    expect(controller.state.canPurchase, true);
+  });
+  test('serializes taps while checking access and store details', () async {
+    final first = controller.buy(store.product);
+    final second = controller.buy(store.product);
+    await Future.wait([first, second]);
+    expect(store.purchasesStarted, 1);
+    expect(store.purchasedProduct, same(store.product));
+    expect(controller.state.busy, true);
   });
 }
