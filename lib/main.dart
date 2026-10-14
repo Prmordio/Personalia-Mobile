@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'core/locale/locale_controller.dart';
 import 'core/notifications/fcm_service.dart';
 import 'core/notifications/rest_alarm.dart';
 import 'core/providers.dart';
+import 'core/startup_task.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
@@ -17,10 +20,6 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await AppTelemetry.instance.initialize();
-  await LocalNotificationRestAlarm.instance.init();
-  await FcmService.instance.init();
   runApp(const ProviderScope(child: PersonaliaApp()));
 }
 
@@ -50,9 +49,60 @@ class PersonaliaApp extends ConsumerStatefulWidget {
 
 class _PersonaliaAppState extends ConsumerState<PersonaliaApp> {
   late final ValueNotifier<int> _billingAuth;
+  final _startupCancelled = Completer<void>();
+  bool _notificationsReady = false;
+
+  Future<void> _initializeServices() async {
+    final alarm = runStartupTask(
+      'rest_alarm',
+      LocalNotificationRestAlarm.instance.init,
+      cancelled: _startupCancelled.future,
+    );
+    final firebaseReady = await runStartupTask('firebase', () async {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }, cancelled: _startupCancelled.future);
+    if (!firebaseReady || !mounted) {
+      await alarm;
+      return;
+    }
+    await Future.wait([
+      runStartupTask(
+        'telemetry',
+        AppTelemetry.instance.initialize,
+        cancelled: _startupCancelled.future,
+      ),
+      runStartupTask(
+        'notifications',
+        _initializeNotifications,
+        cancelled: _startupCancelled.future,
+      ),
+    ]);
+    await alarm;
+  }
+
+  Future<void> _initializeNotifications() async {
+    await FcmService.instance.init();
+    if (!mounted) return;
+    _notificationsReady = true;
+    final pending = FcmService.instance.pendingRoute;
+    if (pending != null) {
+      FcmService.instance.clearPendingRoute();
+      ref.read(_routerProvider).go(pending);
+    }
+    unawaited(
+      FcmService.instance.registerToken(
+        ref.read(deviceTokenApiProvider).register,
+      ),
+    );
+  }
 
   Future<void> _syncStoreBilling() async {
-    final token = await ref.read(tokenStorageProvider).read().catchError((_) => null);
+    final token = await ref
+        .read(tokenStorageProvider)
+        .read()
+        .catchError((_) => null);
     if (!mounted) return;
     if (token == null) {
       ref.invalidate(storeBillingProvider);
@@ -63,9 +113,11 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp> {
 
   @override
   void dispose() {
+    _startupCancelled.complete();
     _billingAuth.removeListener(_syncStoreBilling);
     super.dispose();
   }
+
   @override
   void initState() {
     super.initState();
@@ -77,19 +129,15 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp> {
 
       // Habilita navegação via push notification a partir daqui
       FcmService.instance.onRoute = router.go;
-
-      // Notificação tocada com app encerrado: navega para rota capturada no init
-      final pending = FcmService.instance.pendingRoute;
-      if (pending != null) {
-        FcmService.instance.clearPendingRoute();
-        router.go(pending);
-      }
+      unawaited(_initializeServices());
     });
 
     // Registra (ou re-registra) o FCM token a cada mudança de estado de auth (login/logout)
     ref.listenManual(authRefreshProvider, (prev, next) {
-      final api = ref.read(deviceTokenApiProvider);
-      FcmService.instance.registerToken(api.register);
+      if (_notificationsReady) {
+        final api = ref.read(deviceTokenApiProvider);
+        unawaited(FcmService.instance.registerToken(api.register));
+      }
     }, fireImmediately: true);
   }
 
