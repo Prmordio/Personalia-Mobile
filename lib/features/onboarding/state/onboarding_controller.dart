@@ -1,3 +1,4 @@
+import '../../../core/validation/cpf_validator.dart';
 import 'dart:async';
 import '../../../core/telemetry/app_telemetry.dart';
 
@@ -146,15 +147,19 @@ class OnboardingState {
       mainGoal: mainGoal ?? this.mainGoal,
       hasDiseases: hasDiseases ?? this.hasDiseases,
       diseases: diseases ?? this.diseases,
-      hasPhysicalLimitations: hasPhysicalLimitations ?? this.hasPhysicalLimitations,
+      hasPhysicalLimitations:
+          hasPhysicalLimitations ?? this.hasPhysicalLimitations,
       physicalLimitations: physicalLimitations ?? this.physicalLimitations,
-      physicalActivityLevel: physicalActivityLevel ?? this.physicalActivityLevel,
+      physicalActivityLevel:
+          physicalActivityLevel ?? this.physicalActivityLevel,
       minTrainingDuration: minTrainingDuration ?? this.minTrainingDuration,
       maxTrainingDuration: maxTrainingDuration ?? this.maxTrainingDuration,
       trainingDaysPerWeek: trainingDaysPerWeek ?? this.trainingDaysPerWeek,
       wantsCardio: wantsCardio ?? this.wantsCardio,
       trainingFocus: trainingFocus ?? this.trainingFocus,
-      preferredGymTime: clearPreferredGymTime ? null : (preferredGymTime ?? this.preferredGymTime),
+      preferredGymTime: clearPreferredGymTime
+          ? null
+          : (preferredGymTime ?? this.preferredGymTime),
       generationTimedOut: generationTimedOut ?? this.generationTimedOut,
     );
   }
@@ -167,7 +172,8 @@ const _anamnesisOrder = [
 ];
 
 class OnboardingController extends StateNotifier<OnboardingState> {
-  OnboardingController(this._api, this._appApi) : super(const OnboardingState());
+  OnboardingController(this._api, this._appApi)
+    : super(const OnboardingState());
 
   final OnboardingApi _api;
   final AppApi _appApi;
@@ -240,17 +246,21 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   String _formatBrDate(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 
-  void clearError() => state = state.copyWith(error: null, fieldErrors: const {});
+  void clearError() =>
+      state = state.copyWith(error: null, fieldErrors: const {});
 
   void goTo(OnboardingStep step) => state = state.copyWith(step: step);
 
   // --- Nome → CPF → Disclaimer ---
 
-  void setName(String value) => state = state.copyWith(name: value, step: OnboardingStep.cpf);
+  void setName(String value) =>
+      state = state.copyWith(name: value, step: OnboardingStep.cpf);
 
-  void setCpf(String value) => state = state.copyWith(cpf: value, step: OnboardingStep.disclaimer);
+  void setCpf(String value) =>
+      state = state.copyWith(cpf: value, step: OnboardingStep.disclaimer);
 
-  void setDisclaimerAccepted(bool value) => state = state.copyWith(disclaimerAccepted: value);
+  void setDisclaimerAccepted(bool value) =>
+      state = state.copyWith(disclaimerAccepted: value);
 
   void confirmDisclaimer() {
     if (!state.disclaimerAccepted) return;
@@ -259,22 +269,27 @@ class OnboardingController extends StateNotifier<OnboardingState> {
 
   // --- Resto do perfil ---
 
-  void setGender(String value) => state = state.copyWith(gender: value, step: OnboardingStep.birthDate);
+  void setGender(String value) =>
+      state = state.copyWith(gender: value, step: OnboardingStep.birthDate);
 
   /// Só guarda a data escolhida no picker — o avanço de passo acontece em [confirmBirthDate],
   /// disparado pelo botão "Continuar" (o picker sozinho não deve pular de tela).
-  void pickBirthDate(DateTime value) => state = state.copyWith(birthDate: value);
+  void pickBirthDate(DateTime value) =>
+      state = state.copyWith(birthDate: value);
 
   void confirmBirthDate() {
     if (state.birthDate == null) return;
     state = state.copyWith(step: OnboardingStep.weight);
   }
 
-  void setWeight(num value) => state = state.copyWith(weight: value, step: OnboardingStep.height);
+  void setWeight(num value) =>
+      state = state.copyWith(weight: value, step: OnboardingStep.height);
 
-  void setHeight(num value) => state = state.copyWith(height: value, step: OnboardingStep.email);
+  void setHeight(num value) =>
+      state = state.copyWith(height: value, step: OnboardingStep.email);
 
-  void setEmail(String value) => state = state.copyWith(email: value, step: OnboardingStep.password);
+  void setEmail(String value) =>
+      state = state.copyWith(email: value, step: OnboardingStep.password);
 
   static const _minPasswordLength = 8;
 
@@ -287,12 +302,54 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       );
       return;
     }
-    state = state.copyWith(password: value, fieldErrors: const {}, step: OnboardingStep.profileConfirmation);
+    state = state.copyWith(
+      password: value,
+      fieldErrors: const {},
+      step: OnboardingStep.profileConfirmation,
+    );
   }
 
   /// Confirma perfil + CPF/disclaimer + senha juntos (telas separadas, mas um único ponto de
   /// envio, na revisão final). Ordem importa: o endpoint de disclaimer exige name/email já
   /// persistidos no backend, por isso perfil vai primeiro.
+  Future<bool> submitProfileForm({
+    required String name,
+    required String cpf,
+    required String gender,
+    required DateTime birthDate,
+    required num weight,
+    required num height,
+    required String email,
+    required String password,
+    required bool accepted,
+  }) async {
+    final errors = <String, String>{
+      if (!isValidCpf(cpf)) 'cpf': 'errProfileCpf',
+      if (!accepted) 'accepted': 'disclaimerCheckbox',
+      if (password.length < _minPasswordLength)
+        'password': 'errAuthPasswordTooShort',
+    };
+    if (errors.isNotEmpty) {
+      state = state.copyWith(fieldErrors: errors);
+      return false;
+    }
+    state = state.copyWith(
+      name: name,
+      cpf: cpf,
+      gender: gender,
+      birthDate: birthDate,
+      weight: weight,
+      height: height,
+      email: email,
+      password: password,
+      disclaimerAccepted: accepted,
+      fieldErrors: const {},
+      error: null,
+      step: OnboardingStep.profileConfirmation,
+    );
+    return submitProfile();
+  }
+
   Future<bool> submitProfile() async {
     if (state.birthDate == null || state.gender == null) return false;
     state = state.copyWith(loading: true, error: null, fieldErrors: const {});
@@ -306,34 +363,61 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         email: state.email,
       );
     } on OnboardingValidationException catch (e) {
-      state = state.copyWith(loading: false, fieldErrors: e.errors, step: OnboardingStep.name);
+      state = state.copyWith(
+        loading: false,
+        fieldErrors: e.errors,
+        step: OnboardingStep.name,
+      );
       return false;
     } on OnboardingConflictException catch (e) {
-      state = state.copyWith(loading: false, fieldErrors: {e.field: e.message}, step: OnboardingStep.email);
+      state = state.copyWith(
+        loading: false,
+        fieldErrors: {e.field: e.message},
+        step: OnboardingStep.email,
+      );
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'errOnboardingCannotSaveProfile');
+      state = state.copyWith(
+        loading: false,
+        error: 'errOnboardingCannotSaveProfile',
+      );
       return false;
     }
 
     try {
-      await _api.acceptDisclaimer(accepted: state.disclaimerAccepted, cpf: state.cpf);
+      await _api.acceptDisclaimer(
+        accepted: state.disclaimerAccepted,
+        cpf: state.cpf,
+      );
     } on OnboardingValidationException catch (e) {
-      final step = e.errors.containsKey('cpf') ? OnboardingStep.cpf : OnboardingStep.disclaimer;
+      final step = e.errors.containsKey('cpf')
+          ? OnboardingStep.cpf
+          : OnboardingStep.disclaimer;
       state = state.copyWith(loading: false, fieldErrors: e.errors, step: step);
       return false;
     } on OnboardingConflictException catch (e) {
-      state = state.copyWith(loading: false, fieldErrors: {e.field: e.message}, step: OnboardingStep.cpf);
+      state = state.copyWith(
+        loading: false,
+        fieldErrors: {e.field: e.message},
+        step: OnboardingStep.cpf,
+      );
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'errOnboardingCannotSaveTerms');
+      state = state.copyWith(
+        loading: false,
+        error: 'errOnboardingCannotSaveTerms',
+      );
       return false;
     }
 
     try {
       await _api.setPassword(state.password);
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'errOnboardingCannotSavePassword', step: OnboardingStep.password);
+      state = state.copyWith(
+        loading: false,
+        error: 'errOnboardingCannotSavePassword',
+        step: OnboardingStep.password,
+      );
       return false;
     }
 
@@ -343,25 +427,29 @@ class OnboardingController extends StateNotifier<OnboardingState> {
 
   // --- Anamnese ---
 
-  void setMainGoal(String value) => state = state.copyWith(mainGoal: value, step: OnboardingStep.healthConditions);
+  void setMainGoal(String value) => state = state.copyWith(
+    mainGoal: value,
+    step: OnboardingStep.healthConditions,
+  );
 
   // --- Doenças + limitações físicas (uma tela só, com campo de texto condicional) ---
 
   void setHasDiseases(bool value) => state = state.copyWith(
-        hasDiseases: value,
-        diseases: value ? state.diseases : '',
-        fieldErrors: const {},
-      );
+    hasDiseases: value,
+    diseases: value ? state.diseases : '',
+    fieldErrors: const {},
+  );
 
   void setDiseases(String value) => state = state.copyWith(diseases: value);
 
   void setHasLimitations(bool value) => state = state.copyWith(
-        hasPhysicalLimitations: value,
-        physicalLimitations: value ? state.physicalLimitations : '',
-        fieldErrors: const {},
-      );
+    hasPhysicalLimitations: value,
+    physicalLimitations: value ? state.physicalLimitations : '',
+    fieldErrors: const {},
+  );
 
-  void setLimitations(String value) => state = state.copyWith(physicalLimitations: value);
+  void setLimitations(String value) =>
+      state = state.copyWith(physicalLimitations: value);
 
   /// Valida as duas perguntas juntas antes de avançar: cada uma respondida, e com texto
   /// preenchido quando a resposta for "Sim" (mesma regra do backend, InputValidatorService).
@@ -374,18 +462,24 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     }
     if (state.hasPhysicalLimitations == null) {
       errors['hasLimitations'] = 'errOnboardingAnswerLimitation';
-    } else if (state.hasPhysicalLimitations == true && state.physicalLimitations.trim().length < 2) {
+    } else if (state.hasPhysicalLimitations == true &&
+        state.physicalLimitations.trim().length < 2) {
       errors['limitations'] = 'errOnboardingDescribeLimitation';
     }
     if (errors.isNotEmpty) {
       state = state.copyWith(fieldErrors: errors);
       return;
     }
-    state = state.copyWith(fieldErrors: const {}, step: OnboardingStep.activityLevel);
+    state = state.copyWith(
+      fieldErrors: const {},
+      step: OnboardingStep.activityLevel,
+    );
   }
 
-  void setActivityLevel(String value) =>
-      state = state.copyWith(physicalActivityLevel: value, step: OnboardingStep.anamnesisConfirmation);
+  void setActivityLevel(String value) => state = state.copyWith(
+    physicalActivityLevel: value,
+    step: OnboardingStep.anamnesisConfirmation,
+  );
 
   Future<bool> submitAnamnesis() async {
     state = state.copyWith(loading: true, error: null, fieldErrors: const {});
@@ -398,13 +492,23 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         physicalLimitations: state.physicalLimitations,
         physicalActivityLevel: state.physicalActivityLevel!,
       );
-      state = state.copyWith(loading: false, step: OnboardingStep.trainingDuration);
+      state = state.copyWith(
+        loading: false,
+        step: OnboardingStep.trainingDuration,
+      );
       return true;
     } on OnboardingValidationException catch (e) {
-      state = state.copyWith(loading: false, fieldErrors: e.errors, step: _anamnesisOrder.first);
+      state = state.copyWith(
+        loading: false,
+        fieldErrors: e.errors,
+        step: _anamnesisOrder.first,
+      );
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'errOnboardingCannotSaveAnamnesis');
+      state = state.copyWith(
+        loading: false,
+        error: 'errOnboardingCannotSaveAnamnesis',
+      );
       return false;
     }
   }
@@ -415,36 +519,53 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   /// automaticamente se o usuário sobe o mínimo além dele, e vice-versa.
   void setMinDurationDraft(int value) {
     final currentMax = state.maxTrainingDuration ?? 60;
-    state = state.copyWith(minTrainingDuration: value, maxTrainingDuration: currentMax < value ? value : currentMax);
+    state = state.copyWith(
+      minTrainingDuration: value,
+      maxTrainingDuration: currentMax < value ? value : currentMax,
+    );
   }
 
   void setMaxDurationDraft(int value) {
     final currentMin = state.minTrainingDuration ?? 45;
-    state = state.copyWith(maxTrainingDuration: value, minTrainingDuration: currentMin > value ? value : currentMin);
+    state = state.copyWith(
+      maxTrainingDuration: value,
+      minTrainingDuration: currentMin > value ? value : currentMin,
+    );
   }
 
   void confirmDurationRange() => state = state.copyWith(
-        minTrainingDuration: state.minTrainingDuration ?? 45,
-        maxTrainingDuration: state.maxTrainingDuration ?? 60,
-        step: OnboardingStep.trainingDays,
-      );
+    minTrainingDuration: state.minTrainingDuration ?? 45,
+    maxTrainingDuration: state.maxTrainingDuration ?? 60,
+    step: OnboardingStep.trainingDays,
+  );
 
-  void setTrainingDaysDraft(int value) => state = state.copyWith(trainingDaysPerWeek: value);
+  void setTrainingDaysDraft(int value) =>
+      state = state.copyWith(trainingDaysPerWeek: value);
 
-  void confirmTrainingDays() =>
-      state = state.copyWith(trainingDaysPerWeek: state.trainingDaysPerWeek ?? 3, step: OnboardingStep.gymTime);
+  void confirmTrainingDays() => state = state.copyWith(
+    trainingDaysPerWeek: state.trainingDaysPerWeek ?? 3,
+    step: OnboardingStep.gymTime,
+  );
 
   /// Só guarda o horário digitado — o avanço de passo acontece em [confirmGymTime] ou
   /// [skipGymTime] (o campo sozinho não deve pular de tela).
-  void pickGymTime(String value) => state = state.copyWith(preferredGymTime: value);
+  void pickGymTime(String value) =>
+      state = state.copyWith(preferredGymTime: value);
 
   void confirmGymTime() => state = state.copyWith(step: OnboardingStep.cardio);
 
-  void skipGymTime() => state = state.copyWith(clearPreferredGymTime: true, step: OnboardingStep.cardio);
+  void skipGymTime() => state = state.copyWith(
+    clearPreferredGymTime: true,
+    step: OnboardingStep.cardio,
+  );
 
-  void setWantsCardio(bool value) => state = state.copyWith(wantsCardio: value, step: OnboardingStep.trainingFocus);
+  void setWantsCardio(bool value) => state = state.copyWith(
+    wantsCardio: value,
+    step: OnboardingStep.trainingFocus,
+  );
 
-  void setTrainingFocus(String value) => state = state.copyWith(trainingFocus: value);
+  void setTrainingFocus(String value) =>
+      state = state.copyWith(trainingFocus: value);
 
   Future<bool> submitTrainingPreferences() async {
     state = state.copyWith(loading: true, error: null, fieldErrors: const {});
@@ -461,10 +582,17 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       AppTelemetry.instance.event('onboarding_completed');
       return true;
     } on OnboardingValidationException catch (e) {
-      state = state.copyWith(loading: false, fieldErrors: e.errors, step: OnboardingStep.trainingDuration);
+      state = state.copyWith(
+        loading: false,
+        fieldErrors: e.errors,
+        step: OnboardingStep.trainingDuration,
+      );
       return false;
     } catch (_) {
-      state = state.copyWith(loading: false, error: 'errOnboardingCannotSavePrefs');
+      state = state.copyWith(
+        loading: false,
+        error: 'errOnboardingCannotSavePrefs',
+      );
       return false;
     }
   }
@@ -476,7 +604,11 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   void proceedToGenerate() => unawaited(_startGenerating());
 
   Future<void> _startGenerating() async {
-    state = state.copyWith(step: OnboardingStep.generating, loading: true, generationTimedOut: false);
+    state = state.copyWith(
+      step: OnboardingStep.generating,
+      loading: true,
+      generationTimedOut: false,
+    );
     try {
       final started = await _appApi.generateWorkout();
       if (!started) {
@@ -505,6 +637,10 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   }
 }
 
-final onboardingControllerProvider = StateNotifierProvider<OnboardingController, OnboardingState>((ref) {
-  return OnboardingController(ref.watch(onboardingApiProvider), ref.watch(appApiProvider));
-});
+final onboardingControllerProvider =
+    StateNotifierProvider<OnboardingController, OnboardingState>((ref) {
+      return OnboardingController(
+        ref.watch(onboardingApiProvider),
+        ref.watch(appApiProvider),
+      );
+    });

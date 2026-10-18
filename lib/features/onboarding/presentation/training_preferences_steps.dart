@@ -53,7 +53,7 @@ class TrainingDaysStep extends ConsumerWidget {
       error: state.fieldErrors['trainingDaysPerWeek'],
       buttonLabel: l.continuar,
       onContinue: controller.confirmTrainingDays,
-      child: NumberSpinner(value: days, min: 1, max: 7, onChanged: controller.setTrainingDaysDraft, suffix: ' ${l.suffixDays(days)}'),
+      child: NumberSpinner(value: days, min: 1, max: 7, onChanged: controller.setTrainingDaysDraft, valueLabel: l.suffixDays(days)),
     );
   }
 }

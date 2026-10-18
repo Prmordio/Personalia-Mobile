@@ -2757,6 +2757,156 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Política de privacidade'**
   String get storePrivacy;
+
+  /// No description provided for @restStatusRest.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descanso'**
+  String get restStatusRest;
+
+  /// No description provided for @restStatusPaused.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descanso pausado'**
+  String get restStatusPaused;
+
+  /// No description provided for @restNextSet.
+  ///
+  /// In pt, this message translates to:
+  /// **'Próxima série'**
+  String get restNextSet;
+
+  /// No description provided for @restBetweenSets.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descanso entre séries'**
+  String get restBetweenSets;
+
+  /// No description provided for @restEndRest.
+  ///
+  /// In pt, this message translates to:
+  /// **'Encerrar descanso'**
+  String get restEndRest;
+
+  /// No description provided for @restNextNamed.
+  ///
+  /// In pt, this message translates to:
+  /// **'Próximo: {name}'**
+  String restNextNamed(String name);
+
+  /// No description provided for @restActiveRecord.
+  ///
+  /// In pt, this message translates to:
+  /// **'Em andamento: {name}. O registro deste exercício continua abaixo.'**
+  String restActiveRecord(String name);
+
+  /// No description provided for @restPause.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pausar'**
+  String get restPause;
+
+  /// No description provided for @restResume.
+  ///
+  /// In pt, this message translates to:
+  /// **'Continuar'**
+  String get restResume;
+
+  /// No description provided for @workoutSavedLocally.
+  ///
+  /// In pt, this message translates to:
+  /// **'Treino salvo no aparelho. O envio será tentado novamente quando houver conexão.'**
+  String get workoutSavedLocally;
+
+  /// No description provided for @cancelWorkoutLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar treino'**
+  String get cancelWorkoutLabel;
+
+  /// No description provided for @cancelWorkoutMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar este treino? Todo o progresso desta sessão será removido, inclusive os registros já enviados.'**
+  String get cancelWorkoutMessage;
+
+  /// No description provided for @cancelCompletedExerciseLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar exercício'**
+  String get cancelCompletedExerciseLabel;
+
+  /// No description provided for @cancelCompletedExerciseMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Remover o registro deste exercício concluído? Você poderá executá-lo novamente.'**
+  String get cancelCompletedExerciseMessage;
+
+  /// No description provided for @editExerciseLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Editar'**
+  String get editExerciseLabel;
+
+  /// No description provided for @workoutFeedbackLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Comentário sobre o treino (opcional)'**
+  String get workoutFeedbackLabel;
+
+  /// No description provided for @onboardingProfileFormTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Complete seu cadastro'**
+  String get onboardingProfileFormTitle;
+
+  /// No description provided for @onboardingProfileFormSubtitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Estes dados são necessários para finalizar seu cadastro e gerar seu treino.'**
+  String get onboardingProfileFormSubtitle;
+
+  /// No description provided for @onboardingCpfPrivacy.
+  ///
+  /// In pt, this message translates to:
+  /// **'Solicitamos o CPF para identificar o titular no registro de aceite dos termos. Ele não é usado para definir seu treino. Consulte nos termos como seus dados são tratados.'**
+  String get onboardingCpfPrivacy;
+
+  /// No description provided for @onboardingCpfLabel.
+  ///
+  /// In pt, this message translates to:
+  /// **'CPF'**
+  String get onboardingCpfLabel;
+
+  /// No description provided for @onboardingProfileFormError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Confira os campos destacados para continuar.'**
+  String get onboardingProfileFormError;
+
+  /// No description provided for @loginCreateAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar conta'**
+  String get loginCreateAccount;
+
+  /// No description provided for @onboardingBackToLogin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Voltar para o login'**
+  String get onboardingBackToLogin;
+
+  /// No description provided for @onboardingBodyFormTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dados para seu treino'**
+  String get onboardingBodyFormTitle;
+
+  /// No description provided for @onboardingProfileProgress.
+  ///
+  /// In pt, this message translates to:
+  /// **'Etapa {step} de 2'**
+  String onboardingProfileProgress(int step);
 }
 
 class _AppLocalizationsDelegate

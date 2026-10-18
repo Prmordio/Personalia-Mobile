@@ -1,3 +1,5 @@
+import '../../workout/presentation/workout_session_actions.dart';
+import '../../workout/state/workout_session_cache.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,6 +29,44 @@ class HomeScreen extends ConsumerWidget {
     final todayWorkoutAsync = ref.watch(effectiveTodayWorkoutProvider);
     final progressAsync = ref.watch(progressProvider);
     final subscriptionAsync = ref.watch(subscriptionProvider);
+    ref.watch(activeWorkoutSessionProvider);
+    final cachedSession = ref.read(workoutSessionCacheProvider).active;
+    final completedLocal = ref.watch(completedWorkoutSessionProvider);
+    final cachedToday = todayWorkoutAsync.asData?.value;
+    final Widget? offlineWorkoutCard =
+        cachedSession != null && cachedToday != null
+        ? Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(context.l10n.workoutInProgress),
+                  Text(
+                    cachedToday.dayName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: () => context.push('/workout/today'),
+                    child: Text(context.l10n.btnContinueWorkout),
+                  ),
+                  TextButton(
+                    onPressed: () => cancelWorkoutSession(context, ref),
+                    child: Text(context.l10n.cancelWorkoutLabel),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : completedLocal?.isToday() == true
+        ? Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Text(context.l10n.workoutDoneToday),
+            ),
+          )
+        : null;
 
     return BiometricOfferGate(
       child: Scaffold(
@@ -58,7 +98,7 @@ class HomeScreen extends ConsumerWidget {
                     orElse: () => true,
                   );
                   return workout == null
-                      ? const _NoWorkoutCard()
+                      ? offlineWorkoutCard ?? const _NoWorkoutCard()
                       : Column(
                           children: [
                             _StartWorkoutCard(
@@ -86,13 +126,16 @@ class HomeScreen extends ConsumerWidget {
                           ],
                         );
                 },
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (error, stackTrace) => Text(context.l10n.errLoadWorkout),
+                loading: () =>
+                    offlineWorkoutCard ??
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                error: (error, stackTrace) =>
+                    offlineWorkoutCard ?? Text(context.l10n.errLoadWorkout),
               ),
             ],
           ),
@@ -443,11 +486,10 @@ class _StartWorkoutCard extends ConsumerWidget {
     final completed = ref.watch(completedWorkoutSessionProvider);
     final lastWorkout = ref.watch(lastWorkoutProvider).asData?.value;
 
+    final cached = ref.read(workoutSessionCacheProvider).active;
     final inProgress =
-        today != null &&
-        !today.isRest &&
-        session != null &&
-        session.isFor(today.dayName, DateTime.now());
+        cached != null ||
+        (session != null && today != null && session.dayName == today.dayName);
     final completedInSession =
         completed != null &&
         completed.isToday() &&
@@ -601,7 +643,13 @@ class _StartWorkoutCard extends ConsumerWidget {
                       : context.l10n.workoutStart,
                 ),
               ),
-            if (plan.days.length > 1) ...[
+            if (inProgress)
+              TextButton.icon(
+                onPressed: () => cancelWorkoutSession(context, ref),
+                icon: const Icon(Icons.delete_outline),
+                label: Text(context.l10n.cancelWorkoutLabel),
+              ),
+            if (plan.days.length > 1 && !inProgress) ...[
               const SizedBox(height: 4),
               TextButton.icon(
                 onPressed: isActive ? () => _chooseDay(context, ref) : null,

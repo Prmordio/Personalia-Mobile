@@ -1460,4 +1460,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storePrivacy => 'Privacy policy';
+
+  @override
+  String get restStatusRest => 'Rest';
+
+  @override
+  String get restStatusPaused => 'Rest paused';
+
+  @override
+  String get restNextSet => 'Next set';
+
+  @override
+  String get restBetweenSets => 'Rest between sets';
+
+  @override
+  String get restEndRest => 'End rest';
+
+  @override
+  String restNextNamed(String name) {
+    return 'Next: $name';
+  }
+
+  @override
+  String restActiveRecord(String name) {
+    return 'In progress: $name. You can still edit this exercise below.';
+  }
+
+  @override
+  String get restPause => 'Pause';
+
+  @override
+  String get restResume => 'Resume';
+
+  @override
+  String get workoutSavedLocally =>
+      'Workout saved on this device. Upload will be retried when connected.';
+
+  @override
+  String get cancelWorkoutLabel => 'Cancel workout';
+
+  @override
+  String get cancelWorkoutMessage =>
+      'Cancel this workout? All progress in this session will be removed, including records already synced.';
+
+  @override
+  String get cancelCompletedExerciseLabel => 'Cancel exercise';
+
+  @override
+  String get cancelCompletedExerciseMessage =>
+      'Remove this completed exercise record? You can perform it again.';
+
+  @override
+  String get editExerciseLabel => 'Edit';
+
+  @override
+  String get workoutFeedbackLabel => 'Workout feedback (optional)';
+
+  @override
+  String get onboardingProfileFormTitle => 'Complete your profile';
+
+  @override
+  String get onboardingProfileFormSubtitle =>
+      'These details are required to complete your registration and generate your workout.';
+
+  @override
+  String get onboardingCpfPrivacy =>
+      'We request your CPF to identify the holder in the terms acceptance record. It is not used to design your workout. See the terms for details about how your data is handled.';
+
+  @override
+  String get onboardingCpfLabel => 'CPF';
+
+  @override
+  String get onboardingProfileFormError =>
+      'Check the highlighted fields to continue.';
+
+  @override
+  String get loginCreateAccount => 'Create account';
+
+  @override
+  String get onboardingBackToLogin => 'Back to login';
+
+  @override
+  String get onboardingBodyFormTitle => 'Your workout details';
+
+  @override
+  String onboardingProfileProgress(int step) {
+    return 'Step $step of 2';
+  }
 }

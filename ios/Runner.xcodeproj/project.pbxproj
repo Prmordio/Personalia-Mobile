@@ -15,6 +15,10 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		CA7314000000000000000004 = { isa = PBXBuildFile; fileRef = CA7314000000000000000001; };
+		CA7314000000000000000005 = { isa = PBXBuildFile; fileRef = CA7314000000000000000001; };
+		CA7314000000000000000006 = { isa = PBXBuildFile; fileRef = CA7314000000000000000002; };
+		CA7314000000000000000007 = { isa = PBXBuildFile; fileRef = CA7314000000000000000003; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,6 +29,7 @@
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
 		};
+		CA731400000000000000000D = { isa = PBXContainerItemProxy; containerPortal = 97C146E61CF9000F007C117D; proxyType = 1; remoteGlobalIDString = CA731400000000000000000F; remoteInfo = WorkoutLive; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -38,6 +43,7 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA731400000000000000000C = { isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (CA7314000000000000000007, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +64,10 @@
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1B2C3D4E5F60001A2B3C4D5 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
+		CA7314000000000000000001 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLive/WorkoutActivity.swift; sourceTree = SOURCE_ROOT; };
+		CA7314000000000000000002 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutLive/WorkoutLiveWidget.swift; sourceTree = SOURCE_ROOT; };
+		CA7314000000000000000003 = { isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WorkoutLive.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA7314000000000000000014 = { isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = WorkoutLive/WorkoutLive.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +78,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA731400000000000000000A = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -93,6 +104,7 @@
 		97C146E51CF9000F007C117D = {
 			isa = PBXGroup;
 			children = (
+				CA7314000000000000000008,
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
 				97C146EF1CF9000F007C117D /* Products */,
@@ -103,6 +115,7 @@
 		97C146EF1CF9000F007C117D /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				CA7314000000000000000003,
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
 			);
@@ -126,6 +139,7 @@
 			path = Runner;
 			sourceTree = "<group>";
 		};
+		CA7314000000000000000008 = { isa = PBXGroup; children = (CA7314000000000000000001, CA7314000000000000000002, ); name = WorkoutLive; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -150,6 +164,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
+				CA731400000000000000000C,
 				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
@@ -160,12 +175,14 @@
 			buildRules = (
 			);
 			dependencies = (
+				CA731400000000000000000E,
 			);
 			name = Runner;
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
 		};
+		CA731400000000000000000F = { isa = PBXNativeTarget; buildConfigurationList = CA7314000000000000000010; buildPhases = (CA7314000000000000000009, CA731400000000000000000A, CA731400000000000000000B, ); buildRules = (); dependencies = (); name = WorkoutLive; productName = WorkoutLive; productReference = CA7314000000000000000003; productType = "com.apple.product-type.app-extension"; };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -199,6 +216,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				CA731400000000000000000F,
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
 			);
@@ -224,6 +242,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA731400000000000000000B = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -273,12 +292,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CA7314000000000000000004,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CA7314000000000000000009 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (CA7314000000000000000005, CA7314000000000000000006, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -287,6 +308,7 @@
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
 		};
+		CA731400000000000000000E = { isa = PBXTargetDependency; target = CA731400000000000000000F; targetProxy = CA731400000000000000000D; };
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
@@ -590,6 +612,9 @@
 			};
 			name = Release;
 		};
+		CA7314000000000000000011 = { isa = XCBuildConfiguration; baseConfigurationReference = CA7314000000000000000014; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CLANG_ENABLE_MODULES = YES; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = W7XF3A5XJ7; CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"; MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)"; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_FILE = WorkoutLive/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", ); PRODUCT_BUNDLE_IDENTIFIER = "com.personalia.personalia-app.WorkoutLive"; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; SWIFT_OPTIMIZATION_LEVEL = "-Onone";}; name = Debug; };
+		CA7314000000000000000012 = { isa = XCBuildConfiguration; baseConfigurationReference = CA7314000000000000000014; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CLANG_ENABLE_MODULES = YES; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = W7XF3A5XJ7; CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"; MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)"; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_FILE = WorkoutLive/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", ); PRODUCT_BUNDLE_IDENTIFIER = "com.personalia.personalia-app.WorkoutLive"; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2";}; name = Release; };
+		CA7314000000000000000013 = { isa = XCBuildConfiguration; baseConfigurationReference = CA7314000000000000000014; buildSettings = {APPLICATION_EXTENSION_API_ONLY = YES; CLANG_ENABLE_MODULES = YES; CODE_SIGN_STYLE = Automatic; DEVELOPMENT_TEAM = W7XF3A5XJ7; CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)"; MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)"; GENERATE_INFOPLIST_FILE = YES; INFOPLIST_FILE = WorkoutLive/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", ); PRODUCT_BUNDLE_IDENTIFIER = "com.personalia.personalia-app.WorkoutLive"; PRODUCT_NAME = "$(TARGET_NAME)"; SKIP_INSTALL = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2";}; name = Profile; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -623,6 +648,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		CA7314000000000000000010 = { isa = XCConfigurationList; buildConfigurations = (CA7314000000000000000011, CA7314000000000000000012, CA7314000000000000000013, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = 97C146E61CF9000F007C117D /* Project object */;

@@ -210,15 +210,59 @@ class AppApi {
     required DateTime startedAt,
     required DateTime endedAt,
     String? mood,
+    String? sessionId,
+    String? ownerId,
     required List<Map<String, dynamic>> exercises,
   }) async {
-    await _dio.post('/app/workout/log', data: {
-      'dayName': dayName,
-      'startedAt': startedAt.toIso8601String(),
-      'endedAt': endedAt.toIso8601String(),
-      'mood': mood,
-      'exercises': exercises,
-    });
+    await _dio.post(
+      '/app/workout/log',
+      data: {
+        if (sessionId != null) 'sessionId': sessionId,
+        if (ownerId != null) 'ownerId': ownerId,
+        'dayName': dayName,
+        'startedAt': startedAt.toIso8601String(),
+        'endedAt': endedAt.toIso8601String(),
+        'mood': mood,
+        'exercises': exercises,
+      },
+    );
+  }
+
+  Future<void> syncCachedWorkout(Map<String, dynamic> payload) async {
+    final action = payload['_action'];
+    if (action == null) {
+      // Previously staged whole-workout payloads remain deliverable after upgrade.
+      await _dio.post('/app/workout/log', data: payload);
+      return;
+    }
+    final session = Uri.encodeComponent(payload['sessionId'] as String);
+    final path = '/app/workout/sessions/$session';
+    final body = Map<String, dynamic>.from(payload)..remove('_action');
+    switch (action) {
+      case 'start':
+        await _dio.post(path, data: body);
+      case 'exercise':
+        await _dio.put(
+          '$path/exercises/${Uri.encodeComponent(payload['logId'] as String)}',
+          data: body,
+        );
+      case 'removeExercise':
+        await _dio.delete(
+          '$path/exercises/${Uri.encodeComponent(payload['logId'] as String)}',
+        );
+      case 'finish':
+        // Also trim finish operations already queued by an earlier app version.
+        await _dio.patch(path, data: {
+          'ownerId': payload['ownerId'],
+          'endedAt': payload['endedAt'],
+          'mood': payload['mood'],
+          'feedback': payload['feedback'],
+        });
+      case 'cancel':
+        await _dio.delete(path);
+      default:
+        throw StateError('Unknown workout operation');
+    }
   }
 
   /// false quando o backend recusa por falta de assinatura (`reason: subscription_required`) —

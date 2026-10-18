@@ -1,3 +1,5 @@
+import '../state/workout_session_cache.dart';
+import '../state/workout_live_activity.dart';
 import '../../../core/telemetry/app_telemetry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,46 +25,69 @@ class WorkoutFinishScreen extends ConsumerStatefulWidget {
 class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
   String? _selectedEmoji;
   final _customEmojiController = TextEditingController();
+  final _feedbackController = TextEditingController();
   bool _saving = false;
 
   @override
   void dispose() {
     _customEmojiController.dispose();
+    _feedbackController.dispose();
     super.dispose();
   }
 
   String get _effectiveMood {
-    if (_customEmojiController.text.trim().isNotEmpty)
+    if (_customEmojiController.text.trim().isNotEmpty) {
       return _customEmojiController.text.trim();
+    }
     return _selectedEmoji ?? '💪';
   }
 
-  Future<void> _saveToBackend(String mood) async {
+  Future<bool> _saveToBackend(String mood) async {
     final s = widget.summary;
+    final cache = ref.read(workoutSessionCacheProvider);
+    final api = ref.read(appApiProvider);
+    final swaps = cache.active?['swaps'] as Map? ?? {};
+    String originalName(String name) {
+      for (final entry in swaps.entries) {
+        if (entry.value['nome'] == name) return entry.key as String;
+      }
+      return name;
+    }
+
+    final id = s.sessionId ?? cache.activeId;
+    if (id == null) throw StateError('Workout session missing');
+    // Persist the immutable payload before the first network attempt.
+    await cache.stage(id, {
+      'dayName': s.dayName,
+      'startedAt': s.startedAt.toUtc().toIso8601String(),
+      'endedAt': s.finishedAt.toUtc().toIso8601String(),
+      'mood': mood.isEmpty ? null : mood,
+      'feedback': _feedbackController.text.trim().isEmpty
+          ? null
+          : _feedbackController.text.trim(),
+      'totalCount': s.totalExercises,
+      'exercises': s.exercises
+          .where((e) => e.finished)
+          .map(
+            (e) => {
+              'name': e.nome,
+              'originalName': originalName(e.nome),
+              'weight': e.weight.isEmpty ? null : e.weight,
+              'observation': e.observation,
+            },
+          )
+          .toList(),
+    });
     try {
-      await ref
-          .read(appApiProvider)
-          .logWorkout(
-            dayName: s.dayName,
-            startedAt: s.startedAt,
-            endedAt: s.finishedAt,
-            mood: mood.isEmpty ? null : mood,
-            exercises: s.exercises
-                .where((e) => e.finished)
-                .map(
-                  (e) => {
-                    'name': e.nome,
-                    'weight': e.weight.isEmpty ? null : e.weight,
-                    'observation': e.observation,
-                  },
-                )
-                .toList(),
-          );
+      await cache.sync(api.syncCachedWorkout);
+      if (!mounted) return true;
       ref.invalidate(lastWorkoutProvider);
+      ref.invalidate(workoutHistoryProvider);
       AppTelemetry.instance.event('workout_completed');
+      return !cache.isPending(id);
     } catch (error, stack) {
       AppTelemetry.instance.recoverableError(error, stack, 'save_workout');
-      // best-effort — falha de rede não bloqueia o usuário
+      return false;
     }
   }
 
@@ -70,7 +95,21 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
     if (_saving) return;
     setState(() => _saving = true);
     final mood = _effectiveMood;
-    await _saveToBackend(mood);
+    bool synced;
+    try {
+      synced = await _saveToBackend(mood);
+    } catch (error, stack) {
+      AppTelemetry.instance.recoverableError(error, stack, 'cache_workout');
+      if (mounted) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(context.l10n.genericError)));
+      }
+      return;
+    }
+    if (!mounted) return;
+    await ref.read(workoutLiveProvider.notifier).end();
     if (!mounted) return;
     final s = widget.summary;
     ref
@@ -83,6 +122,11 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
       totalCount: s.totalExercises,
     );
     ref.read(activeWorkoutSessionProvider.notifier).state = null;
+    if (!synced) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(context.l10n.workoutSavedLocally)));
+    }
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
@@ -103,163 +147,194 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
         (_selectedEmoji != null ||
             _customEmojiController.text.trim().isNotEmpty);
 
-    return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.workoutFinishedTitle)),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.orange.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.orange.withValues(alpha: 0.25),
+    return PopScope(
+      canPop: !_saving,
+      child: Scaffold(
+        appBar: AppBar(title: Text(context.l10n.workoutFinishedTitle)),
+        body: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.orange.withValues(alpha: 0.25),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    context.l10n.workoutSummaryLabel(s.dayName),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 24,
+                    runSpacing: 8,
+                    children: [
+                      _SummaryItem(
+                        context.l10n.statDuration,
+                        s.durationFormatted,
+                      ),
+                      _SummaryItem(
+                        context.l10n.statExercisesCompleted,
+                        '${s.completedCount}/${s.totalExercises}',
+                      ),
+                      if (s.totalVolume > 0)
+                        _SummaryItem(
+                          context.l10n.statVolume,
+                          s.totalVolumeFormatted,
+                        ),
+                    ],
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.workoutSummaryLabel(s.dayName),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 24,
-                  runSpacing: 8,
-                  children: [
-                    _SummaryItem(context.l10n.statDuration, s.durationFormatted),
-                    _SummaryItem(
-                      context.l10n.statExercisesCompleted,
-                      '${s.completedCount}/${s.totalExercises}',
-                    ),
-                    if (s.totalVolume > 0)
-                      _SummaryItem(context.l10n.statVolume, s.totalVolumeFormatted),
-                  ],
-                ),
-              ],
+            const SizedBox(height: 28),
+            Text(
+              context.l10n.moodQuestion,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            context.l10n.moodQuestion,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-          ),
-          const SizedBox(height: 16),
-          Builder(builder: (context) {
-            final l = context.l10n;
-            final moodLabels = [l.moodExhausted, l.moodOk, l.moodGood, l.moodExcellent];
-            return GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 2.2,
-              children: List.generate(_moodEmojis.length, (i) {
-                final emoji = _moodEmojis[i];
-                final label = moodLabels[i];
-                final selected = _selectedEmoji == emoji;
-                return InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () => setState(() {
-                    _selectedEmoji = selected ? null : emoji;
-                    if (!selected) _customEmojiController.clear();
-                  }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? Theme.of(context).colorScheme.secondary
-                          : Theme.of(context).colorScheme.surfaceContainerHighest,
+            const SizedBox(height: 16),
+            Builder(
+              builder: (context) {
+                final l = context.l10n;
+                final moodLabels = [
+                  l.moodExhausted,
+                  l.moodOk,
+                  l.moodGood,
+                  l.moodExcellent,
+                ];
+                return GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 2.2,
+                  children: List.generate(_moodEmojis.length, (i) {
+                    final emoji = _moodEmojis[i];
+                    final label = moodLabels[i];
+                    final selected = _selectedEmoji == emoji;
+                    return InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: selected
-                            ? Theme.of(context).colorScheme.secondary
-                            : Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(emoji, style: const TextStyle(fontSize: 22)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            label,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                              color: selected
-                                  ? Theme.of(context).colorScheme.onSecondary
-                                  : Theme.of(context).colorScheme.onSurface,
-                            ),
+                      onTap: () => setState(() {
+                        _selectedEmoji = selected ? null : emoji;
+                        if (!selected) _customEmojiController.clear();
+                      }),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        decoration: BoxDecoration(
+                          color: selected
+                              ? Theme.of(context).colorScheme.secondary
+                              : Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: selected
+                                ? Theme.of(context).colorScheme.secondary
+                                : Theme.of(context).colorScheme.outlineVariant,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(emoji, style: const TextStyle(fontSize: 22)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                label,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: selected
+                                      ? Theme.of(
+                                          context,
+                                        ).colorScheme.onSecondary
+                                      : Theme.of(context).colorScheme.onSurface,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
                 );
-              }),
-            );
-          }),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _customEmojiController,
-            decoration: InputDecoration(
-              labelText: context.l10n.moodCustomLabel,
-              prefixText: '✏️ ',
-              border: const OutlineInputBorder(),
-              helperText: context.l10n.moodCustomHelper,
+              },
             ),
-            onChanged: (_) => setState(() => _selectedEmoji = null),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _customEmojiController,
+              decoration: InputDecoration(
+                labelText: context.l10n.moodCustomLabel,
+                prefixText: '✏️ ',
+                border: const OutlineInputBorder(),
+                helperText: context.l10n.moodCustomHelper,
               ),
-              icon: const Icon(Icons.photo_camera),
-              label: Text(
-                context.l10n.btnGenerateCard,
-                style: const TextStyle(fontSize: 15),
-              ),
-              onPressed: canProceed ? _goToCard : null,
+              onChanged: (_) => setState(() => _selectedEmoji = null),
             ),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _feedbackController,
+              enabled: !_saving,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: context.l10n.workoutFeedbackLabel,
+                border: const OutlineInputBorder(),
               ),
-              icon: _saving
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.check),
-              label: Text(
-                context.l10n.btnFinishWithoutCard,
-                style: const TextStyle(fontSize: 15),
-              ),
-              onPressed: _saving ? null : _finalize,
             ),
-          ),
-          const SizedBox(height: 24),
-        ],
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                icon: const Icon(Icons.photo_camera),
+                label: Text(
+                  context.l10n.btnGenerateCard,
+                  style: const TextStyle(fontSize: 15),
+                ),
+                onPressed: canProceed ? _goToCard : null,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                icon: _saving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check),
+                label: Text(
+                  context.l10n.btnFinishWithoutCard,
+                  style: const TextStyle(fontSize: 15),
+                ),
+                onPressed: _saving ? null : _finalize,
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

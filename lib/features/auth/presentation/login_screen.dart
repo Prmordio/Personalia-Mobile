@@ -6,7 +6,8 @@ import '../../../core/theme/app_theme.dart';
 import '../state/auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.isNewUser = false});
+  final bool isNewUser;
 
   @override
   ConsumerState<LoginScreen> createState() => _LoginScreenState();
@@ -29,7 +30,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   bool get _isNewUser {
     final extra = GoRouterState.of(context).extra;
-    return extra is Map && extra['isNewUser'] == true;
+    return widget.isNewUser || (extra is Map && extra['isNewUser'] == true);
   }
 
   @override
@@ -44,6 +45,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_isNewUser)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: state.loading
+                        ? null
+                        : () => context.go('/login'),
+                  ),
+                ),
               const SizedBox(height: 48),
               const _Logo(),
               const SizedBox(height: 40),
@@ -100,12 +111,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   List<Widget> _phoneStep(LoginState state, LoginController controller) {
     return [
       Text(
-        _isNewUser ? context.l10n.loginCreateProfileTitle : context.l10n.loginSyncTitle,
+        _isNewUser
+            ? context.l10n.loginCreateProfileTitle
+            : context.l10n.loginSyncTitle,
         style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
       ),
       const SizedBox(height: 8),
       Text(
-        _isNewUser ? context.l10n.loginCreateProfileDesc : context.l10n.loginSyncDesc,
+        _isNewUser
+            ? context.l10n.loginCreateProfileDesc
+            : context.l10n.loginSyncDesc,
       ),
       const SizedBox(height: 24),
       Row(
@@ -213,7 +228,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
       const SizedBox(height: 8),
       Text(
-        context.l10n.loginCodeSentVia(_channelLabel(state.selectedChannel ?? 'whatsapp')),
+        context.l10n.loginCodeSentVia(
+          _channelLabel(state.selectedChannel ?? 'whatsapp'),
+        ),
       ),
       const SizedBox(height: 24),
       TextField(

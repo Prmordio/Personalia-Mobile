@@ -12,6 +12,8 @@
     <dict>
         <key>com.personalia.personalia-app</key>
         <string>PersonaliA AppStore</string>
+        <key>com.personalia.personalia-app.WorkoutLive</key>
+        <string>PersonaliA WorkoutLive AppStore</string>
     </dict>
     <key>uploadBitcode</key>
     <false/>

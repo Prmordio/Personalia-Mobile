@@ -122,6 +122,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             email: widget.profile.email ?? '',
             cpf: _cpf.text.replaceAll(RegExp(r'\D'), ''),
           );
+      if (!mounted) return;
       ref.invalidate(accountStatusProvider);
       ref.invalidate(progressProvider);
       messenger.showSnackBar(
@@ -129,8 +130,10 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       );
       navigator.maybePop();
     } on OnboardingValidationException catch (e) {
+      if (!mounted) return;
       setState(() => _errors = e.errors);
     } on OnboardingConflictException catch (e) {
+      if (!mounted) return;
       setState(() => _errors = {e.field: e.message});
     } catch (_) {
       if (mounted) {

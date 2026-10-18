@@ -11,10 +11,19 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <application
         android:label="personalia_app"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <receiver android:name=".WorkoutLiveReceiver" android:exported="false" />
+        <service android:name=".WorkoutRestService" android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-started workout rest countdown with lock-screen controls; stops when rest ends or is paused." />
+        </service>
         <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
         <meta-data android:name="firebase_performance_collection_enabled" android:value="false" />
         <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />

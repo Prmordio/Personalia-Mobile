@@ -2,11 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/onboarding_controller.dart';
 import 'anamnesis_steps.dart';
-import 'create_password_step.dart';
-import 'disclaimer_cpf_steps.dart';
 import 'free_trial_step.dart';
 import 'generating_workout_screen.dart';
-import 'profile_steps.dart';
+import 'profile_form_step.dart';
 import 'training_preferences_steps.dart';
 
 /// Wizard de cadastro do app mobile — espelha o funil de conversa do WhatsApp (perfil →
@@ -39,25 +37,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     switch (state.step) {
       case OnboardingStep.name:
-        return const NameStep();
       case OnboardingStep.cpf:
-        return const CpfStep();
       case OnboardingStep.disclaimer:
-        return const DisclaimerStep();
       case OnboardingStep.gender:
-        return const GenderStep();
       case OnboardingStep.birthDate:
-        return const BirthDateStep();
       case OnboardingStep.weight:
-        return const WeightStep();
       case OnboardingStep.height:
-        return const HeightStep();
       case OnboardingStep.email:
-        return const EmailStep();
       case OnboardingStep.password:
-        return const CreatePasswordStep();
       case OnboardingStep.profileConfirmation:
-        return const ProfileConfirmationStep();
+        return const ProfileFormStep();
       case OnboardingStep.mainGoal:
         return const MainGoalStep();
       case OnboardingStep.healthConditions:
