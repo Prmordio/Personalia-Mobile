@@ -77,6 +77,7 @@ class AppTelemetry {
     const routes = {
       '/login',
       '/login/phone',
+      '/login/register',
       '/login/password',
       '/login/password/forgot',
       '/login/access',

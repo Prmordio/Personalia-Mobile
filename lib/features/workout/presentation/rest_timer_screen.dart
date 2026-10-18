@@ -1,13 +1,18 @@
+import '../state/workout_session_cache.dart';
+import '../state/workout_live_labels.dart';
 import '../../../core/telemetry/app_telemetry.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/notifications/rest_alarm.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../home/data/app_api.dart';
 import '../data/exercise_image_provider.dart';
 import '../state/active_workout_session.dart';
+import '../state/workout_live_activity.dart';
+import 'widgets/workout_execution_controls.dart';
 import 'swap_exercise_screen.dart';
 import 'widgets/exercise_list.dart';
 import 'widgets/exercise_video_sheet.dart';
@@ -35,7 +40,7 @@ int parseSetsCount(String? series, {int fallback = 1}) {
   if (series == null || series.trim().isEmpty) return fallback;
   final match = RegExp(r'(\d+)').firstMatch(series);
   if (match == null) return fallback;
-  return int.tryParse(match.group(1)!) ?? fallback;
+  return (int.tryParse(match.group(1)!) ?? fallback).clamp(1, 100);
 }
 
 class RestTimerArgs {
@@ -44,8 +49,10 @@ class RestTimerArgs {
     this.lastWeight,
     this.lastObservation,
     this.dayName,
+    this.upcomingExercises = const [],
   });
   final WorkoutExercise exercise;
+  final List<WorkoutExercise> upcomingExercises;
   final String? lastWeight;
   final String? lastObservation;
 
@@ -70,6 +77,27 @@ class RestTimerState {
   final String observation;
   final bool finished;
   final int elapsed;
+
+  Map<String, dynamic> toCache() => {
+    'remaining': remaining,
+    'completedSets': completedSets,
+    'running': false,
+    'weight': weight,
+    'observation': observation,
+    'finished': finished,
+    'elapsed': elapsed,
+  };
+  factory RestTimerState.fromCache(Map<String, dynamic> data) => RestTimerState(
+    remaining: (data['remaining'] as num?)?.toInt() ?? 0,
+    completedSets: (data['completedSets'] as num?)?.toInt() ?? 0,
+    running: false,
+    weight: data['weight'] as String? ?? '',
+    observation: data['observation'] as String? ?? '',
+    finished:
+        data['finished'] == true &&
+        (data['weight'] as String? ?? '').trim().isNotEmpty,
+    elapsed: (data['elapsed'] as num?)?.toInt() ?? 0,
+  );
 
   RestTimerState copyWith({
     int? remaining,
@@ -97,12 +125,14 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     this.exerciseName = '',
     this.alarm,
     this.onSetStarted,
+    RestTimerState? initialState,
   }) : super(
-         RestTimerState(
-           remaining: totalSeconds,
-           completedSets: 0,
-           running: false,
-         ),
+         initialState ??
+             RestTimerState(
+               remaining: totalSeconds,
+               completedSets: 0,
+               running: false,
+             ),
        );
 
   final int totalSeconds;
@@ -221,7 +251,19 @@ class RestTimerNotifier extends StateNotifier<RestTimerState> {
     state = state.copyWith(completedSets: totalSets);
   }
 
-  void setWeight(String value) => state = state.copyWith(weight: value);
+  void syncExecution(int completedSets, {bool finished = false}) {
+    final isFinished =
+        state.weight.trim().isNotEmpty && (state.finished || finished);
+    if (state.completedSets == completedSets && state.finished == isFinished) {
+      return;
+    }
+    state = state.copyWith(completedSets: completedSets, finished: isFinished);
+  }
+
+  void setWeight(String value) => state = state.copyWith(
+    weight: value,
+    finished: state.finished && value.trim().isNotEmpty,
+  );
   void setObservation(String value) =>
       state = state.copyWith(observation: value);
 
@@ -328,12 +370,23 @@ final restTimerProvider =
       (String, int, int)
     >((ref, key) {
       final (exerciseName, totalSeconds, totalSets) = key;
-      return RestTimerNotifier(
+      final cache = ref.read(workoutSessionCacheProvider);
+      final stored = cache.record(key);
+      final notifier = RestTimerNotifier(
+        initialState: stored == null ? null : RestTimerState.fromCache(stored),
         totalSeconds: totalSeconds,
         totalSets: totalSets,
         exerciseName: exerciseName,
         alarm: ref.read(restAlarmProvider),
       );
+      final cacheOwner = cache.owner;
+      final cacheSession = cache.activeId;
+      notifier.addListener((state) {
+        if (cache.owner == cacheOwner && cache.activeId == cacheSession) {
+          cache.capture(key, state.toCache());
+        }
+      }, fireImmediately: false);
+      return notifier;
     });
 
 class RestTimerScreen extends ConsumerStatefulWidget {
@@ -347,15 +400,9 @@ class RestTimerScreen extends ConsumerStatefulWidget {
 
 class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
     with WidgetsBindingObserver {
+  late final bool _recordOnly;
   late final TextEditingController _weightController;
   late final TextEditingController _observationController;
-
-  // Timer visível por padrão apenas se já estava rodando ao entrar na tela.
-  bool _timerVisible = false;
-  // Fase de descanso entre exercícios (após confirmar a última série).
-  bool _inInterExerciseRest = false;
-  // Evita abrir dois diálogos simultâneos.
-  bool _alertInFlight = false;
 
   (String, int, int) get _key {
     final exercise = widget.args.exercise;
@@ -371,12 +418,69 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     final current = ref.read(restTimerProvider(_key));
+    _recordOnly = current.finished;
     _weightController = TextEditingController(text: current.weight);
     _observationController = TextEditingController(text: current.observation);
-    _timerVisible = current.running;
     // Sincroniza o tempo real ao reentrar na tela (ex: voltou do 2° plano ou de outra tela).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted || _recordOnly) return;
+      final cache = ref.read(workoutSessionCacheProvider);
+      if (cache.ignoresNative(widget.args.exercise.nome)) {
+        await ref
+            .read(workoutLiveProvider.notifier)
+            .resetCompleted(widget.args.exercise.nome);
+        if (!mounted) return;
+        await cache.allowNative(widget.args.exercise.nome);
+        if (!mounted) return;
+      }
       ref.read(restTimerProvider(_key).notifier).syncOnResume();
+      if (!isCardioExercise(widget.args.exercise)) {
+        final queue = [widget.args.exercise, ...widget.args.upcomingExercises];
+        ref
+            .read(workoutLiveProvider.notifier)
+            .prepare(
+              day: widget.args.dayName ?? '',
+              startedAt: ref.read(activeWorkoutSessionProvider)?.startedAt,
+              labels: workoutLiveLabels(context.l10n),
+              weights: {
+                for (final e in queue)
+                  e.nome: ref
+                      .read(
+                        restTimerProvider((
+                          e.nome,
+                          parseRestSeconds(e.descanso),
+                          parseSetsCount(e.series),
+                        )),
+                      )
+                      .weight,
+              },
+              completed: queue
+                  .map(
+                    (e) => ref
+                        .read(
+                          restTimerProvider((
+                            e.nome,
+                            parseRestSeconds(e.descanso),
+                            parseSetsCount(e.series),
+                          )),
+                        )
+                        .completedSets,
+                  )
+                  .toList(),
+              exercises: queue
+                  .map(
+                    (e) => <String, dynamic>{
+                      'name': e.nome,
+                      'sets': parseSetsCount(e.series),
+                      'reps': e.repeticoes ?? '',
+                      'restSeconds': parseRestSeconds(e.descanso),
+                    },
+                  )
+                  .toList(),
+            );
+      } else {
+        ref.read(workoutLiveProvider.notifier).end();
+      }
     });
   }
 
@@ -395,12 +499,6 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
     super.dispose();
   }
 
-  String _format(int seconds) {
-    final m = (seconds ~/ 60).toString().padLeft(2, '0');
-    final s = (seconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-
   String _formatElapsed(int seconds) {
     final m = (seconds ~/ 60).toString().padLeft(2, '0');
     final s = (seconds % 60).toString().padLeft(2, '0');
@@ -415,103 +513,11 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
     }
   }
 
-  void _handleRestEnded() {
-    if (_alertInFlight || !mounted) return;
-    setState(() => _alertInFlight = true);
-
-    final l = context.l10n;
-    if (_inInterExerciseRest) {
-      ref.read(restTimerProvider(_key).notifier).finish();
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => AlertDialog(
-          title: Text(l.restFinishedTitle),
-          content: Text(l.restInterExerciseMsg),
-          actions: [
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.orange),
-              onPressed: () {
-                Navigator.of(context).pop(); // fecha dialog
-                Navigator.of(context).pop(); // volta à lista de exercícios
-              },
-              child: Text(l.restBtnNextExercise),
-            ),
-          ],
-        ),
-      ).then((_) {
-        if (mounted) setState(() => _alertInFlight = false);
-      });
-    } else {
-      showDialog<void>(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(l.restFinishedTitle),
-          content: Text(l.restSetFinishedMsg),
-          actions: [
-            FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: AppColors.orange),
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text(l.restBtnLetsGo),
-            ),
-          ],
-        ),
-      ).then((_) {
-        if (mounted)
-          setState(() {
-            _timerVisible = false;
-            _alertInFlight = false;
-          });
-      });
-    }
-  }
-
-  Widget _buildRestButton({
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
-          color: AppColors.orange,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.orange.withValues(alpha: 0.35),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.timer_outlined, color: Colors.white, size: 22),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final args = widget.args;
     final exercise = args.exercise;
     final key = _key;
-    final totalSeconds = key.$2;
-    final totalSets = key.$3;
     final state = ref.watch(restTimerProvider(key));
     final notifier = ref.read(restTimerProvider(key).notifier);
     final isCardio = isCardioExercise(exercise);
@@ -520,33 +526,35 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
       return _buildCardioScreen(context, exercise, state, notifier);
     }
 
-    // Detecta fim do descanso e exibe alerta em tela.
-    ref.listen<RestTimerState>(restTimerProvider(key), (prev, next) {
-      if (prev == null) return;
-      if (prev.remaining > 0 &&
-          next.remaining <= 0 &&
-          !next.running &&
-          _timerVisible) {
-        ref.read(appApiProvider).fireRestTimerPush();
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) _handleRestEnded();
-        });
+    ref.listen<WorkoutLiveState?>(workoutLiveProvider, (previous, next) {
+      if (_recordOnly ||
+          next == null ||
+          previous == null ||
+          previous.name != exercise.nome ||
+          next.name == exercise.nome ||
+          previous.data['id'] != next.data['id']) {
+        return;
       }
+      final queue = [args.exercise, ...args.upcomingExercises];
+      final index = queue.indexWhere((e) => e.nome == next.name);
+      if (index < 0) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.pushReplacement(
+          '/workout/rest-timer',
+          extra: RestTimerArgs(
+            exercise: queue[index],
+            dayName: args.dayName,
+            upcomingExercises: queue.skip(index + 1).toList(),
+          ),
+        );
+      });
     });
-
-    final done = state.remaining <= 0;
-    // N séries = N-1 descansos. Após o último descanso, o usuário ainda faz a série final.
-    final allSetsDone = totalSets <= 1
-        ? state.completedSets >= 1
-        : state.completedSets >= totalSets - 1;
-    final lastSetReady = allSetsDone && done && state.completedSets < totalSets;
-    final allFinished = state.completedSets >= totalSets;
 
     final imageBytes = ref
         .watch(exerciseImageProvider(exercise.nome))
         .asData
         ?.value;
-    final showTimer = _timerVisible || state.running;
 
     return Scaffold(
       appBar: AppBar(title: Text(exercise.nome)),
@@ -569,7 +577,8 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
             spacing: 24,
             runSpacing: 8,
             children: [
-              if (exercise.series != null) _Stat(context.l10n.restStatSeries, exercise.series!),
+              if (exercise.series != null)
+                _Stat(context.l10n.restStatSeries, exercise.series!),
               if (exercise.repeticoes != null)
                 _Stat(context.l10n.restStatReps, exercise.repeticoes!),
               if (exercise.descanso != null)
@@ -610,6 +619,9 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
                         ),
                       );
                   if (alt != null) {
+                    if (ref.read(workoutLiveProvider)?.name == exercise.nome) {
+                      ref.read(workoutLiveProvider.notifier).end();
+                    }
                     notifier.resetForNewSession();
                     if (context.mounted) Navigator.of(context).pop(alt);
                   }
@@ -619,146 +631,12 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
           ),
           const SizedBox(height: 16),
 
-          // Indicadores de série — ocultos durante o descanso entre exercícios.
-          if (!_inInterExerciseRest) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 1; i <= totalSets; i++) ...[
-                  _SetIndicator(index: i, done: i <= state.completedSets),
-                  if (i != totalSets) const SizedBox(width: 12),
-                ],
-              ],
+          if (!_recordOnly)
+            WorkoutExecutionControls(
+              exerciseName: exercise.nome,
+              onStart: () => _ensureSession(ref, args.dayName),
             ),
-            const SizedBox(height: 24),
-          ] else
-            const SizedBox(height: 8),
 
-          // --- Seção do cronômetro ou botões de ação ---
-          if (showTimer) ...[
-            // Cronômetro circular
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 220,
-                  height: 220,
-                  child: CircularProgressIndicator(
-                    value: totalSeconds == 0
-                        ? 1
-                        : 1 - (state.remaining / totalSeconds),
-                    strokeWidth: 10,
-                    color: done ? Colors.green : AppColors.orange,
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                  ),
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      done ? context.l10n.restTimerDone : _format(state.remaining),
-                      style: const TextStyle(
-                        fontSize: 56,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    IconButton(
-                      iconSize: 56,
-                      color: done ? Colors.green : AppColors.orange,
-                      icon: Icon(
-                        done
-                            ? Icons.replay_circle_filled
-                            : (state.running
-                                  ? Icons.pause_circle_filled
-                                  : Icons.play_circle_fill),
-                      ),
-                      onPressed: done
-                          ? () {
-                              notifier.reset();
-                              _ensureSession(ref, args.dayName);
-                              notifier.toggle();
-                            }
-                          : () {
-                              _ensureSession(ref, args.dayName);
-                              notifier.toggle();
-                            },
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () => notifier.addSeconds(15),
-                  child: const Text('+15s'),
-                ),
-                const SizedBox(width: 12),
-                TextButton(
-                  onPressed: notifier.reset,
-                  child: Text(context.l10n.restBtnReset),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ] else if (_inInterExerciseRest) ...[
-            // Descanso entre exercícios: timer ainda não iniciado.
-            _buildRestButton(
-              label: context.l10n.restBtnStartInterExercise,
-              onTap: () {
-                setState(() => _timerVisible = true);
-                _ensureSession(ref, args.dayName);
-                notifier.toggle();
-              },
-            ),
-            const SizedBox(height: 24),
-          ] else if (lastSetReady && !_inInterExerciseRest) ...[
-            // Última série concluída — confirmar e iniciar descanso entre exercícios.
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: const BorderSide(color: AppColors.orange, width: 2),
-                  foregroundColor: AppColors.orange,
-                ),
-                icon: const Icon(Icons.flag_circle, size: 24),
-                label: Text(
-                  context.l10n.restBtnConfirmLastSet,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-                ),
-                onPressed: () {
-                  notifier.confirmLastSet();
-                  notifier.reset();
-                  setState(() {
-                    _inInterExerciseRest = true;
-                    _timerVisible = false;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-          ] else if (!allFinished && !state.finished) ...[
-            // Botão estilizado "Iniciar descanso" para exibir o cronômetro.
-            _buildRestButton(
-              label: context.l10n.restBtnStartRest,
-              onTap: () {
-                setState(() => _timerVisible = true);
-                // reset garante partida do tempo cheio se o descanso anterior zerou.
-                notifier.reset();
-                _ensureSession(ref, args.dayName);
-                notifier.toggle();
-              },
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // --- Seção de peso / observação / finalizar ---
           if (state.finished) ...[
             Container(
               padding: const EdgeInsets.all(16),
@@ -773,13 +651,18 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
                   const SizedBox(width: 12),
                   Text(
                     context.l10n.restExerciseDone,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                    style: TextStyle(
+                      color: Colors.green.shade900,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-          ] else ...[
+          ],
+          ...[
             TextField(
               controller: _weightController,
               keyboardType: const TextInputType.numberWithOptions(
@@ -790,7 +673,12 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
                 prefixIcon: const Icon(Icons.fitness_center),
                 border: const OutlineInputBorder(),
               ),
-              onChanged: notifier.setWeight,
+              onChanged: (value) {
+                notifier.setWeight(value);
+                ref
+                    .read(workoutLiveProvider.notifier)
+                    .recordWeight(exercise.nome, value);
+              },
             ),
             const SizedBox(height: 12),
             TextField(
@@ -827,6 +715,11 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
                 onPressed: state.weight.trim().isEmpty
                     ? null
                     : () {
+                        if (!_recordOnly &&
+                            ref.read(workoutLiveProvider)?.name ==
+                                exercise.nome) {
+                          ref.read(workoutLiveProvider.notifier).end();
+                        }
                         notifier.finish();
                         Navigator.of(context).pop();
                       },
@@ -868,7 +761,9 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
     } else if (state.running) {
       statusLabel = l.restCardioRunning;
     } else {
-      statusLabel = state.elapsed == 0 ? l.restCardioTapToStart : l.restCardioPaused;
+      statusLabel = state.elapsed == 0
+          ? l.restCardioTapToStart
+          : l.restCardioPaused;
     }
 
     return Scaffold(
@@ -915,6 +810,9 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
                         ),
                       );
                   if (alt != null) {
+                    if (ref.read(workoutLiveProvider)?.name == exercise.nome) {
+                      ref.read(workoutLiveProvider.notifier).end();
+                    }
                     notifier.resetForNewSession();
                     if (context.mounted) Navigator.of(context).pop(alt);
                   }
@@ -1049,35 +947,6 @@ class _ActionButton extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SetIndicator extends StatelessWidget {
-  const _SetIndicator({required this.index, required this.done});
-  final int index;
-  final bool done;
-
-  @override
-  Widget build(BuildContext context) {
-    if (done) {
-      return const Icon(Icons.highlight_off, size: 32, color: AppColors.orange);
-    }
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        '$index',
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
         ),
       ),
     );

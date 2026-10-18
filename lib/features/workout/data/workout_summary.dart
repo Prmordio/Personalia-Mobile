@@ -18,9 +18,13 @@ class ExerciseSummary {
   final String? reps;
   final String? observation;
 
-  double get weightValue => double.tryParse(weight.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
-  int get repsValue => int.tryParse(RegExp(r'(\d+)').firstMatch(reps ?? '')?.group(1) ?? '0') ?? 0;
-  double get volume => weightValue * completedSets * (repsValue > 0 ? repsValue : 1);
+  double get weightValue =>
+      double.tryParse(weight.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
+  int get repsValue =>
+      int.tryParse(RegExp(r'(\d+)').firstMatch(reps ?? '')?.group(1) ?? '0') ??
+      0;
+  double get volume =>
+      weightValue * completedSets * (repsValue > 0 ? repsValue : 1);
 }
 
 class WorkoutSummary {
@@ -29,7 +33,9 @@ class WorkoutSummary {
     required this.startedAt,
     required this.finishedAt,
     required this.exercises,
+    this.sessionId,
   });
+  final String? sessionId;
   final String dayName;
   final DateTime startedAt;
   final DateTime finishedAt;
@@ -48,7 +54,8 @@ class WorkoutSummary {
   int get totalExercises => exercises.length;
   int get completedCount => exercises.where((e) => e.finished).length;
 
-  double get totalVolume => exercises.fold(0.0, (sum, e) => sum + (e.finished ? e.volume : 0));
+  double get totalVolume =>
+      exercises.fold(0.0, (sum, e) => sum + (e.finished ? e.volume : 0));
 
   String get totalVolumeFormatted {
     final v = totalVolume;
@@ -60,8 +67,12 @@ class WorkoutSummary {
   /// Constrói o summary a partir dos providers de cada exercício.
   static WorkoutSummary fromProviders({
     required String dayName,
+    String? sessionId,
     required DateTime startedAt,
-    required List<({String nome, String? series, String? repeticoes, String? descanso})> exercises,
+    required List<
+      ({String nome, String? series, String? repeticoes, String? descanso})
+    >
+    exercises,
     required RestTimerState Function((String, int, int)) readState,
   }) {
     final now = DateTime.now();
@@ -79,6 +90,12 @@ class WorkoutSummary {
         observation: state.observation.isEmpty ? null : state.observation,
       );
     }).toList();
-    return WorkoutSummary(dayName: dayName, startedAt: startedAt, finishedAt: now, exercises: summaries);
+    return WorkoutSummary(
+      sessionId: sessionId,
+      dayName: dayName,
+      startedAt: startedAt,
+      finishedAt: now,
+      exercises: summaries,
+    );
   }
 }

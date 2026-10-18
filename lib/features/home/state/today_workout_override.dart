@@ -1,3 +1,4 @@
+import '../../workout/state/workout_session_cache.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/app_api.dart';
 
@@ -8,20 +9,55 @@ class TodayDayOverride {
   final String dayName;
   final DateTime date;
 
-  bool isFor(DateTime now) => date.year == now.year && date.month == now.month && date.day == now.day;
+  bool isFor(DateTime now) =>
+      date.year == now.year && date.month == now.month && date.day == now.day;
 }
 
-final todayDayOverrideProvider = StateProvider<TodayDayOverride?>((ref) => null);
+final todayDayOverrideProvider = StateProvider<TodayDayOverride?>(
+  (ref) => null,
+);
 
 /// Treino de hoje considerando a troca: se o usuário escolheu outro dia do plano, usa esse
 /// dia; senão, o sugerido pelo backend (GET /app/workout/today).
-final effectiveTodayWorkoutProvider = FutureProvider.autoDispose<TodayWorkout>((ref) async {
+final effectiveTodayWorkoutProvider = FutureProvider.autoDispose<TodayWorkout>((
+  ref,
+) async {
   final override = ref.watch(todayDayOverrideProvider);
+  final cache = ref.watch(workoutSessionCacheProvider);
+  try {
+    await cache.bind();
+  } catch (_) {
+    /* Keep the normal API path if storage is unavailable. */
+  }
+  final cached = cache.active;
+  if (cached != null &&
+      (override == null ||
+          !override.isFor(DateTime.now()) ||
+          override.dayName == cached['day'])) {
+    return TodayWorkout(
+      isRest: false,
+      dayName: cached['day'] as String,
+      focusLabel: '',
+      exercises: ((cached['originalPlan'] ?? cached['plan']) as List)
+          .map(
+            (e) =>
+                WorkoutExercise.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList(),
+    );
+  }
   final suggested = await ref.watch(todayWorkoutProvider.future);
   if (override == null || !override.isFor(DateTime.now())) return suggested;
 
   final plan = await ref.watch(currentWorkoutProvider.future);
-  final chosen = plan?.days.where((d) => d.dayName == override.dayName).firstOrNull;
+  final chosen = plan?.days
+      .where((d) => d.dayName == override.dayName)
+      .firstOrNull;
   if (chosen == null) return suggested;
-  return TodayWorkout(isRest: false, dayName: chosen.dayName, focusLabel: '', exercises: chosen.exercises);
+  return TodayWorkout(
+    isRest: false,
+    dayName: chosen.dayName,
+    focusLabel: '',
+    exercises: chosen.exercises,
+  );
 });

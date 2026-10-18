@@ -4,11 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../../features/account/presentation/edit_profile_screen.dart';
 import '../../features/assistant/presentation/assistant_chat_screen.dart';
 import '../../features/account/presentation/edit_training_preferences_screen.dart';
-import '../../features/auth/presentation/app_access_screen.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/password_login_screen.dart';
-import '../../features/auth/presentation/welcome_screen.dart';
 import '../../features/coming_soon/presentation/coming_soon_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/menu/presentation/menu_screen.dart';
@@ -71,52 +69,115 @@ GoRouter buildRouter({
       return null;
     },
     routes: [
-      GoRoute(path: '/login', builder: (context, state) => const WelcomeScreen()),
-      GoRoute(path: '/login/phone', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/login/password', builder: (context, state) => const PasswordLoginScreen()),
-      // Reset só por email: apenas contas criadas direto no app (Fase 2). Conta do WhatsApp usa /login/access.
-      GoRoute(path: '/login/password/forgot', builder: (context, state) => const ForgotPasswordScreen()),
-      GoRoute(path: '/login/access', builder: (context, state) => const AppAccessScreen()),
-      GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const PasswordLoginScreen(),
+      ),
+      GoRoute(
+        path: '/login/register',
+        builder: (context, state) => const LoginScreen(isNewUser: true),
+      ),
+      // Keep old paths valid without restoring the removed choice/migration screens.
+      GoRoute(
+        path: '/login/phone',
+        redirect: (context, state) => '/login/register',
+      ),
+      GoRoute(path: '/login/password', redirect: (context, state) => '/login'),
+      GoRoute(path: '/login/access', redirect: (context, state) => '/login'),
+      GoRoute(
+        path: '/login/password/forgot',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen(),
+      ),
       ShellRoute(
-        builder: (context, state, child) => AppShell(currentLocation: state.matchedLocation, child: child),
+        builder: (context, state, child) =>
+            AppShell(currentLocation: state.matchedLocation, child: child),
         routes: [
-          GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
-          GoRoute(path: '/reports', builder: (context, state) => const ReportsScreen()),
-          GoRoute(path: '/referral', builder: (context, state) => const ReferralScreen()),
-          GoRoute(path: '/menu', builder: (context, state) => const MenuScreen()),
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: '/reports',
+            builder: (context, state) => const ReportsScreen(),
+          ),
+          GoRoute(
+            path: '/referral',
+            builder: (context, state) => const ReferralScreen(),
+          ),
+          GoRoute(
+            path: '/menu',
+            builder: (context, state) => const MenuScreen(),
+          ),
         ],
       ),
       // Histórico saiu do rodapé (virou item do Menu): tela cheia com voltar.
-      GoRoute(path: '/workout/last', builder: (context, state) => const LastWorkoutScreen()),
+      GoRoute(
+        path: '/workout/last',
+        builder: (context, state) => const LastWorkoutScreen(),
+      ),
       // Chat de dúvidas (botão flutuante). ?machine=1 = atalho "Pesquisar máquina" (abre a câmera).
       GoRoute(
         path: '/assistant',
-        builder: (context, state) => AssistantChatScreen(openCameraOnStart: state.uri.queryParameters['machine'] == '1'),
+        builder: (context, state) => AssistantChatScreen(
+          openCameraOnStart: state.uri.queryParameters['machine'] == '1',
+        ),
       ),
-      GoRoute(path: '/reports/load-evolution', builder: (context, state) => const LoadEvolutionReportScreen()),
-      GoRoute(path: '/reports/body', builder: (context, state) => const BodyReportScreen()),
-      GoRoute(path: '/reports/volume', builder: (context, state) => const VolumeReportScreen()),
-      GoRoute(path: '/reports/frequency', builder: (context, state) => const FrequencyReportScreen()),
-      GoRoute(path: '/account/profile', builder: (context, state) => const EditProfileScreen()),
-      GoRoute(path: '/account/preferences', builder: (context, state) => const EditTrainingPreferencesScreen()),
-      GoRoute(path: '/workout/current', builder: (context, state) => const CurrentWorkoutScreen()),
-      GoRoute(path: '/workout/today', builder: (context, state) => const TodayWorkoutScreen()),
+      GoRoute(
+        path: '/reports/load-evolution',
+        builder: (context, state) => const LoadEvolutionReportScreen(),
+      ),
+      GoRoute(
+        path: '/reports/body',
+        builder: (context, state) => const BodyReportScreen(),
+      ),
+      GoRoute(
+        path: '/reports/volume',
+        builder: (context, state) => const VolumeReportScreen(),
+      ),
+      GoRoute(
+        path: '/reports/frequency',
+        builder: (context, state) => const FrequencyReportScreen(),
+      ),
+      GoRoute(
+        path: '/account/profile',
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/account/preferences',
+        builder: (context, state) => const EditTrainingPreferencesScreen(),
+      ),
+      GoRoute(
+        path: '/workout/current',
+        builder: (context, state) => const CurrentWorkoutScreen(),
+      ),
+      GoRoute(
+        path: '/workout/today',
+        builder: (context, state) => const TodayWorkoutScreen(),
+      ),
       GoRoute(
         path: '/workout/day',
-        builder: (context, state) => WorkoutDayDetailScreen(day: state.extra as WorkoutDay),
+        builder: (context, state) =>
+            WorkoutDayDetailScreen(day: state.extra as WorkoutDay),
       ),
       GoRoute(
         path: '/workout/rest-timer',
-        builder: (context, state) => RestTimerScreen(args: state.extra as RestTimerArgs),
+        builder: (context, state) =>
+            RestTimerScreen(args: state.extra as RestTimerArgs),
       ),
       GoRoute(
         path: '/workout/swap-exercise',
-        builder: (context, state) => SwapExerciseScreen(args: state.extra as SwapExerciseArgs),
+        builder: (context, state) =>
+            SwapExerciseScreen(args: state.extra as SwapExerciseArgs),
       ),
       GoRoute(
         path: '/coming-soon/:section',
-        builder: (context, state) => ComingSoonScreen(title: _sectionTitle(state.pathParameters['section'])),
+        builder: (context, state) => ComingSoonScreen(
+          title: _sectionTitle(state.pathParameters['section']),
+        ),
       ),
     ],
   );

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="48dp"
+    android:orientation="horizontal" android:gravity="center_vertical">
+    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+        android:layout_weight="1" android:orientation="vertical" android:paddingEnd="8dp">
+        <TextView android:id="@+id/workout_name" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textSize="13sp" android:textStyle="bold"
+            android:textAppearance="@android:style/TextAppearance.Material.Notification.Title" android:maxLines="1" android:ellipsize="end" />
+        <TextView android:id="@+id/workout_status" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:textSize="11sp"
+            android:textAppearance="@android:style/TextAppearance.Material.Notification" android:maxLines="2" android:ellipsize="end" />
+    </LinearLayout>
+    <FrameLayout android:id="@+id/workout_action" android:layout_width="96dp"
+        android:layout_height="48dp" android:background="@drawable/workout_notification_action_background">
+        <TextView android:id="@+id/workout_action_label" android:layout_width="match_parent"
+            android:layout_height="match_parent" android:gravity="center" android:textSize="12sp"
+            android:maxLines="2" android:padding="4dp" android:textColor="#FFFFFFFF" />
+    </FrameLayout>
+</LinearLayout>

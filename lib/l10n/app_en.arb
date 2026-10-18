@@ -1,8 +1,6 @@
 {
   "@@locale": "en",
-
   "appTitle": "PersonalIA",
-
   "continuar": "Continue",
   "confirmar": "Confirm",
   "pular": "Skip",
@@ -15,14 +13,12 @@
   "agoraNao": "Not now",
   "voltar": "Back",
   "genericError": "Could not complete. Please try again.",
-
   "welcomeBiometricButton": "Sign in with biometrics",
   "welcomeEmailButton": "Sign in with email and password",
   "welcomeWhatsAppButton": "I already use PersonalIA on WhatsApp",
   "welcomeNewUserButton": "I don't use PersonalIA yet — create profile",
   "errAuthBiometricExpired": "Your biometrics expired or were disabled. Sign in with email and password.",
   "errAuthBiometricFailed": "Could not sign in right now. Please try again.",
-
   "loginCreateProfileTitle": "Create profile",
   "loginSyncTitle": "Sync account",
   "loginCreateProfileDesc": "Enter your phone number with country code and area code to create your profile and receive an access code.",
@@ -30,27 +26,32 @@
   "loginHowToReceive": "How do you want to receive the code?",
   "loginReceiveVia": "Receive via {channel}",
   "@loginReceiveVia": {
-    "placeholders": { "channel": { "type": "String" } }
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
   },
   "loginEnterCode": "Enter the code",
   "loginCodeSentVia": "We sent a 6-digit code via {channel}.",
   "@loginCodeSentVia": {
-    "placeholders": { "channel": { "type": "String" } }
+    "placeholders": {
+      "channel": {
+        "type": "String"
+      }
+    }
   },
   "loginResendCode": "Resend code",
   "loginUseOtherPhone": "Use another number",
-
   "errAuthCannotVerifyPhone": "Could not verify this number.",
   "errAuthCannotSendCode": "Could not send the code. Please try again.",
   "infoAuthCodeResent": "Code resent.",
   "errAuthCannotResendCode": "Could not resend the code. Please try again.",
   "errAuthInvalidCode": "Invalid or expired code.",
   "errAuthLoginFailed": "Could not sign in. Please try again.",
-
   "passwordLoginTitle": "Sign in with email",
   "passwordHint": "Password",
   "forgotPasswordLink": "Forgot password",
-
   "forgotPasswordTitle": "Reset password",
   "forgotPasswordEnterCodeDesc": "Enter the code you received by email and choose a new password.",
   "forgotPasswordEnterEmailDesc": "Enter your account email. We'll send you a code to create a new password.",
@@ -61,9 +62,12 @@
   "forgotPasswordNoCode": "Didn't receive the code / change email",
   "forgotPasswordCodeSentFor": "If an account with {email} exists, we sent a 6-digit code. Also check your spam folder.",
   "@forgotPasswordCodeSentFor": {
-    "placeholders": { "email": { "type": "String" } }
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
   },
-
   "appAccessTitle": "Access the app",
   "appAccessEmailCodeTitle": "Email code",
   "appAccessPhoneCodeTitle": "WhatsApp code",
@@ -87,20 +91,26 @@
   "appAccessInfoEmailConfirmed": "Email confirmed ✅ Now confirm your number via WhatsApp.",
   "appAccessInfoPhoneConfirmed": "Number confirmed ✅ Enter the code we sent to {email}.",
   "@appAccessInfoPhoneConfirmed": {
-    "placeholders": { "email": { "type": "String" } }
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
   },
   "appAccessInfoCodeSentTo": "We sent a code to {email}.",
   "@appAccessInfoCodeSentTo": {
-    "placeholders": { "email": { "type": "String" } }
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
   },
-
   "errAppAccessPhone": "Enter your phone number with area code.",
   "errAppAccessEmail": "Enter a valid email address.",
   "errAuthCodeLength": "The code is 6 digits.",
   "errAuthPasswordTooShort": "Password must be at least 8 characters.",
   "errAuthPasswordMismatch": "Passwords do not match.",
   "errPasswordMismatch": "Passwords do not match.",
-
   "biometricOfferTitle": "Sign in with biometrics?",
   "biometricOfferDesc": "Next time, sign in with your fingerprint or face, without typing your password.",
   "biometricEnabled": "Biometrics enabled ✅",
@@ -110,7 +120,6 @@
   "errBiometricToggleFailed": "Could not activate biometrics. Please try again.",
   "biometricConfirmPrompt": "Confirm to activate biometric login",
   "biometricLoginPrompt": "Sign in to PersonalIA",
-
   "menuTitle": "Menu",
   "menuCurrentWorkout": "My Current Workout",
   "menuHistory": "History",
@@ -130,7 +139,6 @@
   "langEnglish": "English",
   "langSpanish": "Español",
   "errLanguageSave": "Could not save language. Please try again.",
-
   "onboardingNameTitle": "What is your full name?",
   "onboardingNameHint": "First and last name",
   "onboardingGenderTitle": "What is your gender?",
@@ -147,7 +155,6 @@
   "onboardingConfirmDataTitle": "Review your details",
   "onboardingCpfTitle": "What is your CPF?",
   "onboardingCpfHint": "000.000.000-00",
-
   "summaryName": "Name",
   "summaryCpf": "CPF",
   "summaryTerms": "Terms of use",
@@ -160,23 +167,28 @@
   "summaryNotAccepted": "Not accepted",
   "unitKg": "{weight} kg",
   "@unitKg": {
-    "placeholders": { "weight": { "type": "String" } }
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      }
+    }
   },
   "unitCm": "{height} cm",
   "@unitCm": {
-    "placeholders": { "height": { "type": "String" } }
+    "placeholders": {
+      "height": {
+        "type": "String"
+      }
+    }
   },
-
   "disclaimerTitle": "Before you continue",
   "disclaimerSubtitle": "Do you declare you are physically fit to train and accept our terms of use?",
   "disclaimerCheckbox": "I declare I am physically fit to train and accept the terms of use.",
   "disclaimerReadTerms": "Read the full terms of use",
-
   "onboardingCreatePasswordTitle": "Create a password",
   "onboardingCreatePasswordSubtitle": "This way you can also sign in with email and password, without needing a new code every time.",
   "onboardingPasswordHint": "Password (at least 8 characters)",
   "onboardingConfirmPasswordHint": "Confirm password",
-
   "onboardingMainGoalTitle": "What is your main goal?",
   "goalMassGain": "Muscle gain",
   "goalWeightLoss": "Weight loss",
@@ -198,7 +210,6 @@
   "summaryDiseases": "Conditions",
   "summaryPhysicalLimitations": "Physical limitations",
   "summaryActivityLevel": "Activity level",
-
   "onboardingDurationTitle": "Workout duration",
   "onboardingDurationSubtitle": "Between 30 and 180 minutes.",
   "onboardingDurationMin": "Minimum duration (minutes)",
@@ -207,7 +218,11 @@
   "onboardingTrainingDaysSubtitle": "Between 1 and 7 days.",
   "suffixDays": "{count} days",
   "@suffixDays": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "onboardingGymTimeTitle": "What is your preferred workout time?",
   "onboardingGymTimeSubtitle": "Optional — you can skip this step.",
@@ -217,14 +232,16 @@
   "focusUpper": "Upper body",
   "focusLower": "Lower body",
   "focusFullBody": "Full body",
-
   "freeTrialTitle": "🎁 7 free days unlocked, {name}!",
   "@freeTrialTitle": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "freeTrialSubtitle": "Take the time to get your workout ready and explore the app freely.",
   "generateWorkoutButton": "Generate my workout",
-
   "generatingWorkoutWait": "This may take a few minutes.",
   "generatingWorkoutTimeout": "This is taking longer than usual.",
   "generatingWorkoutTimeoutDesc": "You can go to the home screen — your workout will appear there as soon as it's ready.",
@@ -236,7 +253,6 @@
   "thinkingStep4": "Adjusting training volume...",
   "thinkingStep5": "Aligning with your goal...",
   "thinkingStep6": "Finalizing the details...",
-
   "errOnboardingCannotSaveProfile": "Could not save your profile. Please try again.",
   "errOnboardingCannotSaveTerms": "Could not accept the terms. Please try again.",
   "errOnboardingCannotSavePassword": "Could not save your password. Please try again.",
@@ -246,24 +262,30 @@
   "errOnboardingDescribeDisease": "Describe your conditions (or go back and answer No).",
   "errOnboardingAnswerLimitation": "Answer whether you have any physical limitations.",
   "errOnboardingDescribeLimitation": "Describe your physical limitations (or go back and answer No).",
-
   "homeAppBarTitle": "PersonalIA",
   "subscriptionFreeTrial": "Free trial active",
   "subscriptionActive": "Subscription active",
   "subscriptionInactive": "No active subscription",
   "subscriptionValidUntil": "Valid until {date}",
   "@subscriptionValidUntil": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "subscriptionNextCharge": "Next charge on {date}",
   "@subscriptionNextCharge": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "subscriptionSignupPrompt": "Choose your plan in your device store.",
   "subscriptionButton": "Subscribe",
   "dailyTipTitle": "Tip of the day",
   "errLoadWorkout": "Could not load your workout.",
-
   "noWorkoutIdleTitle": "You don't have an active workout yet.",
   "noWorkoutGeneratingTitle": "Generating your workout...",
   "noWorkoutGeneratingSubtitle": "This may take a few minutes. It will appear here as soon as it's ready.",
@@ -276,7 +298,6 @@
   "btnRetry": "Try again",
   "btnCheckAgain": "Check again",
   "errCannotStartGeneration": "Could not start generation. Please try again.",
-
   "workoutDoneToday": "Workout completed today! ✅",
   "workoutInProgress": "Workout in progress",
   "workoutStart": "Start Workout",
@@ -284,8 +305,12 @@
   "workoutExerciseCount": "{count}/{total} exercises",
   "@workoutExerciseCount": {
     "placeholders": {
-      "count": { "type": "int" },
-      "total": { "type": "int" }
+      "count": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "workoutRestDay": "Today is a rest day. 😴",
@@ -295,14 +320,16 @@
   "chooseWorkoutDayTitle": "Which workout do you want to do today?",
   "exercisesCount": "{n} exercises",
   "@exercisesCount": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "errLoadTodayWorkout": "Could not load today's workout.",
-
   "viewPlanTitle": "View Plan",
   "viewPlanDesc": "See all days of your workout and the exercises for each.",
   "viewPlanButton": "View plan",
-
   "progressTitle": "Your Progress",
   "progressAddMeasures": "Tap to enter your weight and height.",
   "progressWeight": "Weight",
@@ -315,35 +342,49 @@
   "heightHint": "e.g.: 175",
   "errSaveMeasures": "Could not save measurements. Please try again.",
   "errLoadProgress": "Could not load your progress.",
-
   "subscriptionAlreadyActive": "Your subscription is already active ✅",
   "errOpenPaymentPage": "Could not open payment page.",
   "errGeneratePayment": "Could not generate payment. Please try again.",
   "subscriptionRequiredTitle": "Subscription required",
   "subscriptionRequiredDesc": "Your free trial or subscription has ended. Subscribe to PersonalIA to generate your workout — after paying, come back here and tap \"Generate my workout\" again.",
   "btnNotNow": "Not now",
-
   "todayWorkoutTitle": "Today's Workout",
   "todayNoExercises": "No exercises found for today.",
   "showCompleted": "Show completed ({n})",
   "@showCompleted": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "hideCompleted": "Hide completed ({n})",
   "@hideCompleted": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "exerciseSwapped": "Swapped: {name}",
   "@exerciseSwapped": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "exerciseCompleted": "Completed",
   "exerciseRunning": "In progress",
   "exerciseSetsProgress": "{done}/{total} sets",
   "@exerciseSetsProgress": {
     "placeholders": {
-      "done": { "type": "int" },
-      "total": { "type": "int" }
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "statGoal": "Goal",
@@ -364,8 +405,12 @@
   "exerciseInProgressMsg": "\"{current}\" is still in progress.\n\nDo you want to abandon it and start \"{next}\"?",
   "@exerciseInProgressMsg": {
     "placeholders": {
-      "current": { "type": "String" },
-      "next": { "type": "String" }
+      "current": {
+        "type": "String"
+      },
+      "next": {
+        "type": "String"
+      }
     }
   },
   "btnYesSwap": "Yes, swap",
@@ -373,18 +418,25 @@
   "makePermanentMsg": "Do you want to replace \"{original}\" with \"{replacement}\" in your workout plan?",
   "@makePermanentMsg": {
     "placeholders": {
-      "original": { "type": "String" },
-      "replacement": { "type": "String" }
+      "original": {
+        "type": "String"
+      },
+      "replacement": {
+        "type": "String"
+      }
     }
   },
   "btnThisTimeOnly": "This time only",
   "btnYesChangePlan": "Yes, change plan",
   "errChangePlan": "Could not change the plan. Please try again.",
-
   "workoutFinishedTitle": "Workout finished! 🎉",
   "workoutSummaryLabel": "📊 Summary — {dayName}",
   "@workoutSummaryLabel": {
-    "placeholders": { "dayName": { "type": "String" } }
+    "placeholders": {
+      "dayName": {
+        "type": "String"
+      }
+    }
   },
   "statDuration": "⏱️ Duration",
   "statExercisesCompleted": "🏆 Exercises",
@@ -398,44 +450,59 @@
   "moodCustomHelper": "E.g.: 🥵 Destroyed!",
   "btnGenerateCard": "Generate workout card",
   "btnFinishWithoutCard": "Finish without card",
-
   "currentWorkoutTitle": "My Current Workout",
   "currentWorkoutNoWorkout": "No active workout.",
   "currentWorkoutPlanLabel": "Your plan",
   "currentWorkoutDaysExercises": "{days} training days · {exercises} exercises",
   "@currentWorkoutDaysExercises": {
     "placeholders": {
-      "days": { "type": "int" },
-      "exercises": { "type": "int" }
+      "days": {
+        "type": "int"
+      },
+      "exercises": {
+        "type": "int"
+      }
     }
   },
   "errLoadCurrentWorkout": "Could not load your workout.",
-
   "dayRecovery": "Recovery day",
   "exercisesCountLabel": "{n} exercises",
   "@exercisesCountLabel": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
   "exercisesCountWithCardio": "{n} exercises · with cardio",
   "@exercisesCountWithCardio": {
-    "placeholders": { "n": { "type": "int" } }
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   },
-
   "swapExerciseTitle": "Swap Exercise",
   "swapExerciseSearching": "Looking for alternatives for\n{name}...",
   "@swapExerciseSearching": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "swapExerciseError": "Could not find alternatives.\nPlease try again later.",
   "swapExerciseRetry": "Try again",
   "swapNoAlternatives": "No alternatives found for this exercise.",
   "swapAltSeries": "{n} sets",
   "@swapAltSeries": {
-    "placeholders": { "n": { "type": "String" } }
+    "placeholders": {
+      "n": {
+        "type": "String"
+      }
+    }
   },
-
   "lastWorkoutTitle": "History",
-
   "reportsTitle": "Reports",
   "reportsYourReports": "Your reports",
   "reportLoadEvolution": "Load progression",
@@ -454,13 +521,20 @@
   "statTonnage": "Tonnage",
   "tonnageEvolutionUp": "📈 +{pct}% tonnage vs. last week",
   "@tonnageEvolutionUp": {
-    "placeholders": { "pct": { "type": "String" } }
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
   },
   "tonnageEvolutionDown": "📉 {pct}% tonnage vs. last week",
   "@tonnageEvolutionDown": {
-    "placeholders": { "pct": { "type": "String" } }
+    "placeholders": {
+      "pct": {
+        "type": "String"
+      }
+    }
   },
-
   "assistantCameraError": "Could not access camera/gallery. Check permissions.",
   "assistantTakePhoto": "Take a photo of the equipment",
   "assistantChooseGallery": "Choose from gallery",
@@ -471,7 +545,6 @@
   "assistantInputHint": "Write your question...",
   "assistantVideoBtn": "See exercise videos",
   "assistantWelcome": "Hi! 👋 I'm the PersonalIA assistant. Ask me about training, exercises, nutrition or recovery — or send a photo of a gym machine and I'll tell you what exercise to do on it. 📸",
-
   "editProfileTitle": "Update my profile",
   "editTrainingPrefsTitle": "Training Preferences",
   "errLoadProfile": "Could not load your profile.",
@@ -508,7 +581,6 @@
   "errOnboardingDurationRange": "Maximum duration must be greater than or equal to minimum.",
   "errOnboardingChooseFocus": "Choose your training focus.",
   "errOnboardingGymTime": "Invalid time. Use HH:MM (e.g.: 18:30).",
-
   "restStatSeries": "Sets",
   "restStatReps": "Reps",
   "restStatRest": "Rest",
@@ -539,17 +611,14 @@
   "restCardioGoalReached": "Goal reached! 🎉",
   "restBtnFinishCardio": "Finish cardio",
   "restBtnCardioDone": "Cardio done!",
-
   "historyEmpty": "You haven't finished any workout yet.",
   "errLoadHistory": "Could not load history.",
   "historyToday": "Today",
-
   "daySummaryExercises": "exercises",
   "daySummarySeries": "sets",
   "daySummaryCardio": "cardio",
   "dayHintTapForVideos": "Tap an exercise to see execution videos.",
   "dayRecoveryMsg": "Recovery day — no exercises.",
-
   "cardTitle": "Workout Card",
   "cardBtnRemovePhoto": "Remove photo",
   "cardBtnAddPhoto": "Add photo",
@@ -558,16 +627,18 @@
   "cardBtnShare": "Share",
   "cardShareText": "Workout {dayName} done! 💪 #PersonaliA",
   "@cardShareText": {
-    "placeholders": { "dayName": { "type": "String" } }
+    "placeholders": {
+      "dayName": {
+        "type": "String"
+      }
+    }
   },
   "cardStatExercises": "Exercises",
-
   "navHome": "Home",
   "navReports": "Reports",
   "navReferral": "Refer",
   "navMenu": "Menu",
   "navAssistantTooltip": "Ask questions",
-
   "referralTitle": "Refer a Friend",
   "referralNotEligible": "You need an active subscription to refer friends.",
   "referralYourCoupon": "Your coupon",
@@ -582,5 +653,51 @@
   "storeManage": "Manage store subscription",
   "storeAutoRenewalNotice": "Your subscription renews automatically. Review the billing period and terms in the store before confirming.",
   "storeTerms": "Terms of use",
-  "storePrivacy": "Privacy policy"
+  "storePrivacy": "Privacy policy",
+  "restStatusRest": "Rest",
+  "restStatusPaused": "Rest paused",
+  "restNextSet": "Next set",
+  "restBetweenSets": "Rest between sets",
+  "restEndRest": "End rest",
+  "restNextNamed": "Next: {name}",
+  "@restNextNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "restActiveRecord": "In progress: {name}. You can still edit this exercise below.",
+  "@restActiveRecord": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "restPause": "Pause",
+  "restResume": "Resume",
+  "workoutSavedLocally": "Workout saved on this device. Upload will be retried when connected.",
+  "cancelWorkoutLabel": "Cancel workout",
+  "cancelWorkoutMessage": "Cancel this workout? All progress in this session will be removed, including records already synced.",
+  "cancelCompletedExerciseLabel": "Cancel exercise",
+  "cancelCompletedExerciseMessage": "Remove this completed exercise record? You can perform it again.",
+  "editExerciseLabel": "Edit",
+  "workoutFeedbackLabel": "Workout feedback (optional)",
+  "onboardingProfileFormTitle": "Complete your profile",
+  "onboardingProfileFormSubtitle": "These details are required to complete your registration and generate your workout.",
+  "onboardingCpfPrivacy": "We request your CPF to identify the holder in the terms acceptance record. It is not used to design your workout. See the terms for details about how your data is handled.",
+  "onboardingCpfLabel": "CPF",
+  "onboardingProfileFormError": "Check the highlighted fields to continue.",
+  "loginCreateAccount": "Create account",
+  "onboardingBackToLogin": "Back to login",
+  "onboardingBodyFormTitle": "Your workout details",
+  "onboardingProfileProgress": "Step {step} of 2",
+  "@onboardingProfileProgress": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      }
+    }
+  }
 }

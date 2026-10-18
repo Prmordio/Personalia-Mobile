@@ -22,9 +22,8 @@ class EditTrainingPreferencesScreen extends ConsumerWidget {
       body: statusAsync.when(
         data: (status) => _PreferencesForm(current: status.trainingPreferences),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Text(context.l10n.errLoadPrefs),
-        ),
+        error: (error, stackTrace) =>
+            Center(child: Text(context.l10n.errLoadPrefs)),
       ),
     );
   }
@@ -101,12 +100,12 @@ class _PreferencesFormState extends ConsumerState<_PreferencesForm> {
             trainingFocus: _focus!,
             preferredGymTime: gymTime,
           );
+      if (!mounted) return;
       ref.invalidate(accountStatusProvider);
-      messenger.showSnackBar(
-        SnackBar(content: Text(context.l10n.prefsSaved)),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(context.l10n.prefsSaved)));
       navigator.maybePop();
     } on OnboardingValidationException catch (e) {
+      if (!mounted) return;
       setState(() => _errors = e.errors);
     } catch (_) {
       if (mounted) {
@@ -163,7 +162,7 @@ class _PreferencesFormState extends ConsumerState<_PreferencesForm> {
             value: _days,
             min: 1,
             max: 7,
-            suffix: ' ${l.suffixDays(_days)}',
+            valueLabel: l.suffixDays(_days),
             onChanged: (v) => setState(() => _days = v),
           ),
         ),

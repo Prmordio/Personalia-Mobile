@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Treino do dia já começado (primeira série iniciada no cronômetro). A Home mostra
-/// "Continuar treino" em vez de "Iniciar treino". Vale só para a data em que começou.
+/// Horário de início da sessão. O cache mantém o treino ativo até concluir
+/// ou cancelar; isFor também permite consultas limitadas ao dia de início.
 class ActiveWorkoutSession {
   const ActiveWorkoutSession({required this.dayName, required this.startedAt});
   final String dayName;
@@ -14,4 +14,6 @@ class ActiveWorkoutSession {
       startedAt.day == now.day;
 }
 
-final activeWorkoutSessionProvider = StateProvider<ActiveWorkoutSession?>((ref) => null);
+final activeWorkoutSessionProvider = StateProvider<ActiveWorkoutSession?>(
+  (ref) => null,
+);

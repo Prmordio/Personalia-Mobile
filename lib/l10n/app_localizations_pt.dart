@@ -1469,4 +1469,91 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get storePrivacy => 'Política de privacidade';
+
+  @override
+  String get restStatusRest => 'Descanso';
+
+  @override
+  String get restStatusPaused => 'Descanso pausado';
+
+  @override
+  String get restNextSet => 'Próxima série';
+
+  @override
+  String get restBetweenSets => 'Descanso entre séries';
+
+  @override
+  String get restEndRest => 'Encerrar descanso';
+
+  @override
+  String restNextNamed(String name) {
+    return 'Próximo: $name';
+  }
+
+  @override
+  String restActiveRecord(String name) {
+    return 'Em andamento: $name. O registro deste exercício continua abaixo.';
+  }
+
+  @override
+  String get restPause => 'Pausar';
+
+  @override
+  String get restResume => 'Continuar';
+
+  @override
+  String get workoutSavedLocally =>
+      'Treino salvo no aparelho. O envio será tentado novamente quando houver conexão.';
+
+  @override
+  String get cancelWorkoutLabel => 'Cancelar treino';
+
+  @override
+  String get cancelWorkoutMessage =>
+      'Cancelar este treino? Todo o progresso desta sessão será removido, inclusive os registros já enviados.';
+
+  @override
+  String get cancelCompletedExerciseLabel => 'Cancelar exercício';
+
+  @override
+  String get cancelCompletedExerciseMessage =>
+      'Remover o registro deste exercício concluído? Você poderá executá-lo novamente.';
+
+  @override
+  String get editExerciseLabel => 'Editar';
+
+  @override
+  String get workoutFeedbackLabel => 'Comentário sobre o treino (opcional)';
+
+  @override
+  String get onboardingProfileFormTitle => 'Complete seu cadastro';
+
+  @override
+  String get onboardingProfileFormSubtitle =>
+      'Estes dados são necessários para finalizar seu cadastro e gerar seu treino.';
+
+  @override
+  String get onboardingCpfPrivacy =>
+      'Solicitamos o CPF para identificar o titular no registro de aceite dos termos. Ele não é usado para definir seu treino. Consulte nos termos como seus dados são tratados.';
+
+  @override
+  String get onboardingCpfLabel => 'CPF';
+
+  @override
+  String get onboardingProfileFormError =>
+      'Confira os campos destacados para continuar.';
+
+  @override
+  String get loginCreateAccount => 'Criar conta';
+
+  @override
+  String get onboardingBackToLogin => 'Voltar para o login';
+
+  @override
+  String get onboardingBodyFormTitle => 'Dados para seu treino';
+
+  @override
+  String onboardingProfileProgress(int step) {
+    return 'Etapa $step de 2';
+  }
 }

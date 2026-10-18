@@ -16,6 +16,7 @@ class StepScaffold extends StatelessWidget {
     this.loading = false,
     this.error,
     this.onBack,
+    this.backLabel,
   });
 
   final String title;
@@ -26,6 +27,7 @@ class StepScaffold extends StatelessWidget {
   final bool loading;
   final String? error;
   final VoidCallback? onBack;
+  final String? backLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +41,16 @@ class StepScaffold extends StatelessWidget {
               if (onBack != null)
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: loading ? null : onBack,
-                  ),
+                  child: backLabel == null
+                      ? IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: loading ? null : onBack,
+                        )
+                      : TextButton.icon(
+                          icon: const Icon(Icons.arrow_back),
+                          label: Text(backLabel!),
+                          onPressed: loading ? null : onBack,
+                        ),
                 ),
               const SizedBox(height: 8),
               Text(
@@ -202,14 +210,14 @@ class NumberSpinner extends StatelessWidget {
     required this.max,
     required this.onChanged,
     this.step = 1,
-    this.suffix = '',
+    this.valueLabel,
   });
 
   final int value;
   final int min;
   final int max;
   final int step;
-  final String suffix;
+  final String? valueLabel;
   final ValueChanged<int> onChanged;
 
   @override
@@ -221,12 +229,14 @@ class NumberSpinner extends StatelessWidget {
           onPressed: value - step >= min ? () => onChanged(value - step) : null,
           icon: const Icon(Icons.remove),
         ),
-        SizedBox(
-          width: 96,
-          child: Text(
-            '$value$suffix',
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+        Flexible(
+          child: SizedBox(
+            width: 140,
+            child: Text(
+              valueLabel ?? '$value',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
         IconButton.filledTonal(
