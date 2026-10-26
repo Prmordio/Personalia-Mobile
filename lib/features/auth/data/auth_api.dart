@@ -5,23 +5,43 @@ class AuthApi {
 
   final Dio _dio;
 
-  Future<List<String>> getChannels(String phoneNumber) async {
-    final response = await _dio.get('/auth/otp/channels', queryParameters: {'phoneNumber': phoneNumber});
-    return List<String>.from(response.data['channels'] as List);
+  // --- Cadastro por email ---
+
+  /// Envia o código de confirmação para o email. Devolve o id da sessão de cadastro.
+  /// 409 = email já tem conta; 429 = pediu outro código cedo demais.
+  Future<String> startSignup(String email) async {
+    final response = await _dio.post('/auth/signup/start', data: {'email': email});
+    return response.data['sessionId'] as String;
   }
 
-  Future<void> requestOtp(String phoneNumber, String channel) async {
-    await _dio.post('/auth/otp/request', data: {'phoneNumber': phoneNumber, 'channel': channel});
+  /// Confirma o código do email. Devolve `true` quando o email é de uma conta do WhatsApp: o
+  /// telefone dela passa a ser obrigatório, para o cadastro trazer o histórico.
+  Future<bool> verifySignupCode(String sessionId, String code) async {
+    final response = await _dio.post('/auth/signup/verify', data: {'sessionId': sessionId, 'code': code});
+    return response.data['linkAccount'] == true;
   }
 
-  /// Retorna o JWT.
-  Future<String> verifyOtp(String phoneNumber, String code) async {
-    final response = await _dio.post('/auth/otp/verify', data: {'phoneNumber': phoneNumber, 'code': code});
+  /// Envia o SMS que confirma o telefone, ainda dentro do cadastro (antes de a conta existir).
+  /// 400 = telefone inválido ou, na conta do WhatsApp, diferente do número dela.
+  Future<void> requestSignupPhoneCode(String sessionId, String phone) async {
+    await _dio.post('/auth/signup/phone', data: {'sessionId': sessionId, 'phone': phone});
+  }
+
+  Future<void> verifySignupPhone(String sessionId, String code) async {
+    await _dio.post('/auth/signup/phone-verify', data: {'sessionId': sessionId, 'code': code});
+  }
+
+  /// Cria a conta (ou assume a conta do WhatsApp, com email e telefone confirmados) já com a
+  /// senha. Retorna o JWT.
+  Future<String> completeSignup(String sessionId, String password) async {
+    final response = await _dio.post(
+      '/auth/signup/complete',
+      data: {'sessionId': sessionId, 'password': password},
+    );
     return response.data['token'] as String;
   }
 
-  /// Login alternativo por email+senha (pra quem já definiu senha no onboarding), sem OTP.
-  /// Retorna o mesmo formato de JWT que o login por OTP.
+  /// Login por email+senha. Retorna o JWT.
   Future<String> loginWithPassword(String email, String password) async {
     final response = await _dio.post('/auth/login', data: {'email': email, 'password': password});
     return response.data['token'] as String;

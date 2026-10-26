@@ -153,12 +153,6 @@ class OnboardingApi {
     await _handle(() => _dio.put('/app/onboarding/disclaimer', data: {'accepted': accepted, 'cpf': cpf}));
   }
 
-  /// Define a senha pra login alternativo (email+senha, sem OTP) — usado por quem criou
-  /// perfil só pelo app, sem WhatsApp.
-  Future<void> setPassword(String password) async {
-    await _handle(() => _dio.put('/app/onboarding/password', data: {'password': password}));
-  }
-
   Future<void> saveAnamnesis({
     required String mainGoal,
     required bool hasDiseases,

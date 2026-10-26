@@ -25,6 +25,7 @@ extension AppLocalizationsX on BuildContext {
         'forgotPasswordCodeSent' => l.forgotPasswordCodeSentFor(param),
         'appAccessInfoPhoneConfirmed' => l.appAccessInfoPhoneConfirmed(param),
         'appAccessInfoCodeSentTo' => l.appAccessInfoCodeSentTo(param),
+        'signupPhoneCodeSentTo' => l.signupPhoneCodeSentTo(param),
         _ => key,
       };
     }
@@ -46,6 +47,8 @@ extension AppLocalizationsX on BuildContext {
       // App access
       'errAppAccessPhone' => l.errAppAccessPhone,
       'errAppAccessEmail' => l.errAppAccessEmail,
+      'errSignupPhoneInvalid' => l.errSignupPhoneInvalid,
+      'errSignupPhoneRequired' => l.errSignupPhoneRequired,
       'appAccessInfoCodeRequested' => l.appAccessInfoCodeRequested,
       'appAccessInfoEmailConfirmed' => l.appAccessInfoEmailConfirmed,
       // Biometric

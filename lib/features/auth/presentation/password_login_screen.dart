@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/password_text_field.dart';
-import '../state/auth_controller.dart';
 import '../state/biometric_login_service.dart';
 import '../state/password_login_controller.dart';
 
@@ -175,10 +174,7 @@ class _PasswordLoginScreenState extends ConsumerState<PasswordLoginScreen> {
               OutlinedButton(
                 onPressed: loading
                     ? null
-                    : () {
-                        ref.invalidate(loginControllerProvider);
-                        context.push('/login/register');
-                      },
+                    : () => context.push('/login/register'),
                 child: Text(l.loginCreateAccount),
               ),
             ],

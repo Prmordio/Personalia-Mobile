@@ -36,9 +36,18 @@ class HealthConditionsStep extends ConsumerStatefulWidget {
 }
 
 class _HealthConditionsStepState extends ConsumerState<HealthConditionsStep> {
-  late final _diseasesController = TextEditingController(text: ref.read(onboardingControllerProvider).diseases);
-  late final _limitationsController =
-      TextEditingController(text: ref.read(onboardingControllerProvider).physicalLimitations);
+  // Criados no initState, não com `late` preguiçoso: os campos só aparecem quando a resposta é
+  // "Sim", e um controller nunca usado seria criado no dispose() — lendo `ref` já descartado.
+  late final TextEditingController _diseasesController;
+  late final TextEditingController _limitationsController;
+
+  @override
+  void initState() {
+    super.initState();
+    final state = ref.read(onboardingControllerProvider);
+    _diseasesController = TextEditingController(text: state.diseases);
+    _limitationsController = TextEditingController(text: state.physicalLimitations);
+  }
 
   @override
   void dispose() {

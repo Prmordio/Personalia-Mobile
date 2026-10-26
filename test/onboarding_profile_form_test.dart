@@ -37,11 +37,6 @@ class _Api extends OnboardingApi {
     this.cpf = cpf;
     if (rejectCpf) throw OnboardingValidationException({'cpf': 'Invalid CPF'});
   }
-
-  @override
-  Future<void> setPassword(String password) async {
-    calls.add('password');
-  }
 }
 
 void main() {
@@ -60,7 +55,6 @@ void main() {
               weight: 80,
               height: 180,
               email: 'test@example.com',
-              password: 'password123',
               accepted: accepted,
             );
         expect(await submit('', true), isFalse);
@@ -77,7 +71,7 @@ void main() {
         expect(await submit('52998224725', false), isFalse);
         expect(api.calls, isEmpty);
         expect(await submit('52998224725', true), isTrue);
-        expect(api.calls, ['profile', 'terms', 'password']);
+        expect(api.calls, ['profile', 'terms']);
         expect(api.accepted, isTrue);
         expect(api.cpf, '52998224725');
         expect(controller.state.step, OnboardingStep.mainGoal);
@@ -100,7 +94,6 @@ void main() {
           weight: 80,
           height: 180,
           email: 'test@example.com',
-          password: 'password123',
           resumed: true,
         ).copyWith(birthDate: DateTime(1990, 3, 15));
         final container = ProviderContainer(
@@ -201,7 +194,7 @@ void main() {
           await tester.pumpAndSettle();
           await tester.tap(button);
           await tester.pumpAndSettle();
-          expect(api.calls, ['profile', 'terms', 'password']);
+          expect(api.calls, ['profile', 'terms']);
           expect(api.accepted, isTrue);
           expect(controller.state.step, OnboardingStep.mainGoal);
         } finally {

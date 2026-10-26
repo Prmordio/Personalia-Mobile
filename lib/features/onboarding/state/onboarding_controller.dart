@@ -14,8 +14,6 @@ enum OnboardingStep {
   birthDate,
   weight,
   height,
-  email,
-  password,
   profileConfirmation,
   mainGoal,
   healthConditions,
@@ -44,7 +42,6 @@ class OnboardingState {
     this.weight,
     this.height,
     this.email = '',
-    this.password = '',
     this.disclaimerAccepted = false,
     this.cpf = '',
     this.mainGoal,
@@ -75,7 +72,6 @@ class OnboardingState {
   final num? weight;
   final num? height;
   final String email;
-  final String password;
 
   // Disclaimer + CPF
   final bool disclaimerAccepted;
@@ -111,7 +107,6 @@ class OnboardingState {
     num? weight,
     num? height,
     String? email,
-    String? password,
     bool? disclaimerAccepted,
     String? cpf,
     String? mainGoal,
@@ -141,7 +136,6 @@ class OnboardingState {
       weight: weight ?? this.weight,
       height: height ?? this.height,
       email: email ?? this.email,
-      password: password ?? this.password,
       disclaimerAccepted: disclaimerAccepted ?? this.disclaimerAccepted,
       cpf: cpf ?? this.cpf,
       mainGoal: mainGoal ?? this.mainGoal,
@@ -285,32 +279,13 @@ class OnboardingController extends StateNotifier<OnboardingState> {
   void setWeight(num value) =>
       state = state.copyWith(weight: value, step: OnboardingStep.height);
 
-  void setHeight(num value) =>
-      state = state.copyWith(height: value, step: OnboardingStep.email);
+  void setHeight(num value) => state = state.copyWith(
+    height: value,
+    step: OnboardingStep.profileConfirmation,
+  );
 
-  void setEmail(String value) =>
-      state = state.copyWith(email: value, step: OnboardingStep.password);
-
-  static const _minPasswordLength = 8;
-
-  /// Senha pra login alternativo (email+senha, sem OTP) — obrigatória pra quem cria perfil
-  /// só pelo app. Validação local, o backend não expõe leitura desse campo em lugar nenhum.
-  void confirmPassword(String value) {
-    if (value.length < _minPasswordLength) {
-      state = state.copyWith(
-        fieldErrors: {'password': 'errAuthPasswordTooShort'},
-      );
-      return;
-    }
-    state = state.copyWith(
-      password: value,
-      fieldErrors: const {},
-      step: OnboardingStep.profileConfirmation,
-    );
-  }
-
-  /// Confirma perfil + CPF/disclaimer + senha juntos (telas separadas, mas um único ponto de
-  /// envio, na revisão final). Ordem importa: o endpoint de disclaimer exige name/email já
+  /// Confirma perfil + CPF/disclaimer juntos (telas separadas, mas um único ponto de
+  /// envio, na revisão final). A senha já foi criada no cadastro por email. Ordem importa: o endpoint de disclaimer exige name/email já
   /// persistidos no backend, por isso perfil vai primeiro.
   Future<bool> submitProfileForm({
     required String name,
@@ -320,14 +295,11 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     required num weight,
     required num height,
     required String email,
-    required String password,
     required bool accepted,
   }) async {
     final errors = <String, String>{
       if (!isValidCpf(cpf)) 'cpf': 'errProfileCpf',
       if (!accepted) 'accepted': 'disclaimerCheckbox',
-      if (password.length < _minPasswordLength)
-        'password': 'errAuthPasswordTooShort',
     };
     if (errors.isNotEmpty) {
       state = state.copyWith(fieldErrors: errors);
@@ -341,7 +313,6 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       weight: weight,
       height: height,
       email: email,
-      password: password,
       disclaimerAccepted: accepted,
       fieldErrors: const {},
       error: null,
@@ -373,7 +344,7 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       state = state.copyWith(
         loading: false,
         fieldErrors: {e.field: e.message},
-        step: OnboardingStep.email,
+        step: OnboardingStep.name,
       );
       return false;
     } catch (_) {
@@ -406,17 +377,6 @@ class OnboardingController extends StateNotifier<OnboardingState> {
       state = state.copyWith(
         loading: false,
         error: 'errOnboardingCannotSaveTerms',
-      );
-      return false;
-    }
-
-    try {
-      await _api.setPassword(state.password);
-    } catch (_) {
-      state = state.copyWith(
-        loading: false,
-        error: 'errOnboardingCannotSavePassword',
-        step: OnboardingStep.password,
       );
       return false;
     }

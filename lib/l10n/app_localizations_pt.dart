@@ -79,6 +79,61 @@ class AppLocalizationsPt extends AppLocalizations {
       'Digite seu telefone com DDI e DDD pra criar seu perfil e receber um código de acesso.';
 
   @override
+  String get signupTitle => 'Criar conta';
+
+  @override
+  String get signupEmailDesc =>
+      'Informe seu email. Vamos enviar um código de 6 dígitos para confirmar que ele é seu.';
+
+  @override
+  String get signupPasswordDesc =>
+      'Email confirmado ✅ Agora crie sua senha — você vai entrar no app com email e senha.';
+
+  @override
+  String get signupPhoneOptionalHint => 'Telefone com DDD (opcional)';
+
+  @override
+  String get signupPhoneOptionalHelp =>
+      'Opcional. Vamos confirmar por SMS — usamos só para contato, não para entrar no app.';
+
+  @override
+  String get signupCreateAccount => 'Criar conta';
+
+  @override
+  String get signupGoToLogin => 'Já tenho conta — entrar';
+
+  @override
+  String get signupPhoneCodeDesc =>
+      'Digite o código que enviamos por SMS para confirmar seu telefone.';
+
+  @override
+  String signupPhoneCodeSentTo(String phone) {
+    return 'Enviamos um código por SMS para $phone. Digite-o para confirmar seu telefone.';
+  }
+
+  @override
+  String get signupPhoneSkip => 'Pular por agora';
+
+  @override
+  String get errSignupPhoneInvalid =>
+      'Telefone inválido. Informe DDD + número.';
+
+  @override
+  String get signupLinkAccountDesc =>
+      'Email confirmado ✅ Encontramos sua conta do WhatsApp com este email. Crie sua senha e confirme o telefone do WhatsApp para trazer seu histórico de treinos.';
+
+  @override
+  String get signupLinkPhoneHint => 'Telefone do seu WhatsApp, com DDD';
+
+  @override
+  String get signupLinkPhoneHelp =>
+      'Vamos confirmar por SMS que o número é seu.';
+
+  @override
+  String get errSignupPhoneRequired =>
+      'Informe o telefone do seu WhatsApp para continuar.';
+
+  @override
   String get loginSyncDesc =>
       'Digite o telefone da sua conta PersonalIA no WhatsApp pra receber um código de acesso.';
 

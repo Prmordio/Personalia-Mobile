@@ -34,11 +34,10 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
     text: _initial.height?.toString() ?? '',
   );
   late final _email = TextEditingController(text: _initial.email);
-  late final _password = TextEditingController(text: _initial.password);
-  late final _confirmPassword = TextEditingController(text: _initial.password);
+  /// Email já comprovado no cadastro não pode ser trocado aqui; sessão antiga sem email digita.
+  late final bool _emailLocked = _initial.email.isNotEmpty;
   late String? _gender = _initial.gender;
   late bool _accepted = _initial.disclaimerAccepted;
-  bool _hidePassword = true;
   bool _showValidationHint = false;
   bool _leaving = false;
   bool _logoutFailed = false;
@@ -122,7 +121,6 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
           weight: num.parse(_weight.text.replaceAll(',', '.')),
           height: num.parse(_height.text.replaceAll(',', '.')),
           email: _email.text.trim(),
-          password: _password.text,
           accepted: _accepted,
         );
     if (!saved && mounted) {
@@ -131,7 +129,6 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
         'name',
         'cpf',
         'email',
-        'password',
         'accepted',
       ].any(errors.containsKey)) {
         _previous();
@@ -148,8 +145,6 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
       _weight,
       _height,
       _email,
-      _password,
-      _confirmPassword,
     ]) {
       controller.dispose();
     }
@@ -166,7 +161,6 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
           hintText: hint,
           errorText: switch (state.fieldErrors[key]) {
             'errProfileCpf' => l.errProfileCpf,
-            'errAuthPasswordTooShort' => l.errAuthPasswordTooShort,
             'disclaimerCheckbox' => l.disclaimerCheckbox,
             final message => message,
           },
@@ -343,6 +337,7 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _email,
+                  readOnly: _emailLocked,
                   keyboardType: TextInputType.emailAddress,
                   textInputAction: TextInputAction.next,
                   autofillHints: const [AutofillHints.email],
@@ -350,6 +345,10 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
                     l.profileFieldEmail,
                     'email',
                     hint: l.onboardingEmailHint,
+                  ).copyWith(
+                    suffixIcon: _emailLocked
+                        ? const Icon(Icons.verified_outlined)
+                        : null,
                   ),
                   validator: (v) =>
                       !RegExp(
@@ -357,38 +356,6 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
                       ).hasMatch((v ?? '').trim())
                       ? l.errAppAccessEmail
                       : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _password,
-                  obscureText: _hidePassword,
-                  textInputAction: TextInputAction.next,
-                  autofillHints: const [AutofillHints.newPassword],
-                  decoration: decoration(l.onboardingPasswordHint, 'password')
-                      .copyWith(
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _hidePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                          onPressed: () =>
-                              setState(() => _hidePassword = !_hidePassword),
-                        ),
-                      ),
-                  validator: (v) =>
-                      (v ?? '').length < 8 ? l.errAuthPasswordTooShort : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _confirmPassword,
-                  obscureText: _hidePassword,
-                  decoration: decoration(
-                    l.onboardingConfirmPasswordHint,
-                    'confirmPassword',
-                  ),
-                  validator: (v) =>
-                      v != _password.text ? l.errPasswordMismatch : null,
                 ),
                 const SizedBox(height: 20),
                 TextButton(
