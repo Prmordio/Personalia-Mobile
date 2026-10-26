@@ -80,10 +80,15 @@ class _StoreSubscriptionSheetState
                     title: Text(product.title),
                     subtitle: Text(product.description),
                     trailing: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                      ),
                       onPressed: !state.busy && state.canPurchase
                           ? () => controller.buy(product)
                           : null,
-                      child: Text(product.price),
+                      child: Text(
+                        _priceWithPeriod(l, product.id, product.price),
+                      ),
                     ),
                   ),
                 const SizedBox(height: 12),
@@ -128,6 +133,13 @@ class _StoreSubscriptionSheetState
       ),
     );
   }
+}
+
+/// A Apple exige o período junto do preço (3.1.2); os IDs dos produtos indicam o plano.
+String _priceWithPeriod(AppLocalizations l, String productId, String price) {
+  if (productId.contains('yearly')) return l.storePricePerYear(price);
+  if (productId.contains('monthly')) return l.storePricePerMonth(price);
+  return price;
 }
 
 /// Mostrado quando o "Gerar meu treino" é recusado por falta de assinatura.

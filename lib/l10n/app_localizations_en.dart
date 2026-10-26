@@ -1509,6 +1509,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storeManage => 'Manage store subscription';
 
   @override
+  String storePricePerMonth(String price) {
+    return '$price/month';
+  }
+
+  @override
+  String storePricePerYear(String price) {
+    return '$price/year';
+  }
+
+  @override
   String get storeAutoRenewalNotice =>
       'Your subscription renews automatically. Review the billing period and terms in the store before confirming.';
 
