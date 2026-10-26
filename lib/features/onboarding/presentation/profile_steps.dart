@@ -178,44 +178,6 @@ class _HeightStepState extends ConsumerState<HeightStep> {
   }
 }
 
-class EmailStep extends ConsumerStatefulWidget {
-  const EmailStep({super.key});
-
-  @override
-  ConsumerState<EmailStep> createState() => _EmailStepState();
-}
-
-class _EmailStepState extends ConsumerState<EmailStep> {
-  late final _controller = TextEditingController(text: ref.read(onboardingControllerProvider).email);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final state = ref.watch(onboardingControllerProvider);
-    final controller = ref.read(onboardingControllerProvider.notifier);
-    return StepScaffold(
-      title: context.l10n.onboardingEmailTitle,
-      error: state.fieldErrors['email'],
-      onBack: () => controller.goTo(OnboardingStep.height),
-      buttonLabel: context.l10n.continuar,
-      onContinue: () {
-        if (_controller.text.trim().isEmpty) return;
-        controller.setEmail(_controller.text.trim());
-      },
-      child: TextField(
-        controller: _controller,
-        keyboardType: TextInputType.emailAddress,
-        decoration: InputDecoration(hintText: context.l10n.onboardingEmailHint),
-      ),
-    );
-  }
-}
-
 class ProfileConfirmationStep extends ConsumerWidget {
   const ProfileConfirmationStep({super.key});
 
@@ -226,7 +188,7 @@ class ProfileConfirmationStep extends ConsumerWidget {
     final l = context.l10n;
     return StepScaffold(
       title: l.onboardingConfirmDataTitle,
-      onBack: () => controller.goTo(OnboardingStep.password),
+      onBack: () => controller.goTo(OnboardingStep.height),
       loading: state.loading,
       error: state.error,
       buttonLabel: l.confirmar,

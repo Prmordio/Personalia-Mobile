@@ -232,6 +232,96 @@ abstract class AppLocalizations {
   /// **'Digite seu telefone com DDI e DDD pra criar seu perfil e receber um código de acesso.'**
   String get loginCreateProfileDesc;
 
+  /// No description provided for @signupTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar conta'**
+  String get signupTitle;
+
+  /// No description provided for @signupEmailDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Informe seu email. Vamos enviar um código de 6 dígitos para confirmar que ele é seu.'**
+  String get signupEmailDesc;
+
+  /// No description provided for @signupPasswordDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Email confirmado ✅ Agora crie sua senha — você vai entrar no app com email e senha.'**
+  String get signupPasswordDesc;
+
+  /// No description provided for @signupPhoneOptionalHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Telefone com DDD (opcional)'**
+  String get signupPhoneOptionalHint;
+
+  /// No description provided for @signupPhoneOptionalHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Opcional. Vamos confirmar por SMS — usamos só para contato, não para entrar no app.'**
+  String get signupPhoneOptionalHelp;
+
+  /// No description provided for @signupCreateAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Criar conta'**
+  String get signupCreateAccount;
+
+  /// No description provided for @signupGoToLogin.
+  ///
+  /// In pt, this message translates to:
+  /// **'Já tenho conta — entrar'**
+  String get signupGoToLogin;
+
+  /// No description provided for @signupPhoneCodeDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Digite o código que enviamos por SMS para confirmar seu telefone.'**
+  String get signupPhoneCodeDesc;
+
+  /// No description provided for @signupPhoneCodeSentTo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Enviamos um código por SMS para {phone}. Digite-o para confirmar seu telefone.'**
+  String signupPhoneCodeSentTo(String phone);
+
+  /// No description provided for @signupPhoneSkip.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pular por agora'**
+  String get signupPhoneSkip;
+
+  /// No description provided for @errSignupPhoneInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'Telefone inválido. Informe DDD + número.'**
+  String get errSignupPhoneInvalid;
+
+  /// No description provided for @signupLinkAccountDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Email confirmado ✅ Encontramos sua conta do WhatsApp com este email. Crie sua senha e confirme o telefone do WhatsApp para trazer seu histórico de treinos.'**
+  String get signupLinkAccountDesc;
+
+  /// No description provided for @signupLinkPhoneHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Telefone do seu WhatsApp, com DDD'**
+  String get signupLinkPhoneHint;
+
+  /// No description provided for @signupLinkPhoneHelp.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vamos confirmar por SMS que o número é seu.'**
+  String get signupLinkPhoneHelp;
+
+  /// No description provided for @errSignupPhoneRequired.
+  ///
+  /// In pt, this message translates to:
+  /// **'Informe o telefone do seu WhatsApp para continuar.'**
+  String get errSignupPhoneRequired;
+
   /// No description provided for @loginSyncDesc.
   ///
   /// In pt, this message translates to:

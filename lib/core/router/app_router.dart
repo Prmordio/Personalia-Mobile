@@ -5,7 +5,7 @@ import '../../features/account/presentation/edit_profile_screen.dart';
 import '../../features/assistant/presentation/assistant_chat_screen.dart';
 import '../../features/account/presentation/edit_training_preferences_screen.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
-import '../../features/auth/presentation/login_screen.dart';
+import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/presentation/password_login_screen.dart';
 import '../../features/coming_soon/presentation/coming_soon_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
@@ -75,7 +75,7 @@ GoRouter buildRouter({
       ),
       GoRoute(
         path: '/login/register',
-        builder: (context, state) => const LoginScreen(isNewUser: true),
+        builder: (context, state) => const SignupScreen(),
       ),
       // Keep old paths valid without restoring the removed choice/migration screens.
       GoRoute(

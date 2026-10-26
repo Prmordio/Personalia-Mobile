@@ -22,6 +22,28 @@
   "loginCreateProfileTitle": "Criar perfil",
   "loginSyncTitle": "Sincronizar conta",
   "loginCreateProfileDesc": "Digite seu telefone com DDI e DDD pra criar seu perfil e receber um código de acesso.",
+  "signupTitle": "Criar conta",
+  "signupEmailDesc": "Informe seu email. Vamos enviar um código de 6 dígitos para confirmar que ele é seu.",
+  "signupPasswordDesc": "Email confirmado ✅ Agora crie sua senha — você vai entrar no app com email e senha.",
+  "signupPhoneOptionalHint": "Telefone com DDD (opcional)",
+  "signupPhoneOptionalHelp": "Opcional. Vamos confirmar por SMS — usamos só para contato, não para entrar no app.",
+  "signupCreateAccount": "Criar conta",
+  "signupGoToLogin": "Já tenho conta — entrar",
+  "signupPhoneCodeDesc": "Digite o código que enviamos por SMS para confirmar seu telefone.",
+  "signupPhoneCodeSentTo": "Enviamos um código por SMS para {phone}. Digite-o para confirmar seu telefone.",
+  "@signupPhoneCodeSentTo": {
+    "placeholders": {
+      "phone": {
+        "type": "String"
+      }
+    }
+  },
+  "signupPhoneSkip": "Pular por agora",
+  "errSignupPhoneInvalid": "Telefone inválido. Informe DDD + número.",
+  "signupLinkAccountDesc": "Email confirmado ✅ Encontramos sua conta do WhatsApp com este email. Crie sua senha e confirme o telefone do WhatsApp para trazer seu histórico de treinos.",
+  "signupLinkPhoneHint": "Telefone do seu WhatsApp, com DDD",
+  "signupLinkPhoneHelp": "Vamos confirmar por SMS que o número é seu.",
+  "errSignupPhoneRequired": "Informe o telefone do seu WhatsApp para continuar.",
   "loginSyncDesc": "Digite o telefone da sua conta PersonalIA no WhatsApp pra receber um código de acesso.",
   "loginHowToReceive": "Como você quer receber o código?",
   "loginReceiveVia": "Receber por {channel}",

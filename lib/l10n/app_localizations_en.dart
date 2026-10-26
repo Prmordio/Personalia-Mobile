@@ -79,6 +79,63 @@ class AppLocalizationsEn extends AppLocalizations {
       'Enter your phone number with country code and area code to create your profile and receive an access code.';
 
   @override
+  String get signupTitle => 'Create account';
+
+  @override
+  String get signupEmailDesc =>
+      'Enter your email. We\'ll send a 6-digit code to confirm it\'s yours.';
+
+  @override
+  String get signupPasswordDesc =>
+      'Email confirmed ✅ Now create your password — you\'ll sign in to the app with email and password.';
+
+  @override
+  String get signupPhoneOptionalHint =>
+      'Phone number with area code (optional)';
+
+  @override
+  String get signupPhoneOptionalHelp =>
+      'Optional. We\'ll confirm it by SMS — used only to contact you, not to sign in.';
+
+  @override
+  String get signupCreateAccount => 'Create account';
+
+  @override
+  String get signupGoToLogin => 'I already have an account — sign in';
+
+  @override
+  String get signupPhoneCodeDesc =>
+      'Enter the code we sent by SMS to confirm your phone number.';
+
+  @override
+  String signupPhoneCodeSentTo(String phone) {
+    return 'We sent an SMS code to $phone. Enter it to confirm your phone number.';
+  }
+
+  @override
+  String get signupPhoneSkip => 'Skip for now';
+
+  @override
+  String get errSignupPhoneInvalid =>
+      'Invalid phone number. Enter area code + number.';
+
+  @override
+  String get signupLinkAccountDesc =>
+      'Email confirmed ✅ We found your WhatsApp account with this email. Create your password and confirm your WhatsApp phone number to bring your workout history.';
+
+  @override
+  String get signupLinkPhoneHint =>
+      'Your WhatsApp phone number, with area code';
+
+  @override
+  String get signupLinkPhoneHelp =>
+      'We\'ll confirm by SMS that the number is yours.';
+
+  @override
+  String get errSignupPhoneRequired =>
+      'Enter your WhatsApp phone number to continue.';
+
+  @override
   String get loginSyncDesc =>
       'Enter the phone number of your PersonalIA WhatsApp account to receive an access code.';
 

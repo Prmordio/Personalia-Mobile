@@ -78,6 +78,63 @@ class AppLocalizationsEs extends AppLocalizations {
       'Ingresa tu teléfono con código de país y área para crear tu perfil y recibir un código de acceso.';
 
   @override
+  String get signupTitle => 'Crear cuenta';
+
+  @override
+  String get signupEmailDesc =>
+      'Ingresa tu email. Te enviaremos un código de 6 dígitos para confirmar que es tuyo.';
+
+  @override
+  String get signupPasswordDesc =>
+      'Email confirmado ✅ Ahora crea tu contraseña — entrarás a la app con email y contraseña.';
+
+  @override
+  String get signupPhoneOptionalHint =>
+      'Teléfono con código de área (opcional)';
+
+  @override
+  String get signupPhoneOptionalHelp =>
+      'Opcional. Lo confirmaremos por SMS — solo para contactarte, no para entrar a la app.';
+
+  @override
+  String get signupCreateAccount => 'Crear cuenta';
+
+  @override
+  String get signupGoToLogin => 'Ya tengo cuenta — entrar';
+
+  @override
+  String get signupPhoneCodeDesc =>
+      'Ingresa el código que enviamos por SMS para confirmar tu teléfono.';
+
+  @override
+  String signupPhoneCodeSentTo(String phone) {
+    return 'Enviamos un código por SMS a $phone. Ingrésalo para confirmar tu teléfono.';
+  }
+
+  @override
+  String get signupPhoneSkip => 'Omitir por ahora';
+
+  @override
+  String get errSignupPhoneInvalid =>
+      'Teléfono inválido. Ingresa código de área + número.';
+
+  @override
+  String get signupLinkAccountDesc =>
+      'Email confirmado ✅ Encontramos tu cuenta de WhatsApp con este email. Crea tu contraseña y confirma tu teléfono de WhatsApp para traer tu historial de entrenamientos.';
+
+  @override
+  String get signupLinkPhoneHint =>
+      'Teléfono de tu WhatsApp, con código de área';
+
+  @override
+  String get signupLinkPhoneHelp =>
+      'Confirmaremos por SMS que el número es tuyo.';
+
+  @override
+  String get errSignupPhoneRequired =>
+      'Ingresa el teléfono de tu WhatsApp para continuar.';
+
+  @override
   String get loginSyncDesc =>
       'Ingresa el teléfono de tu cuenta PersonalIA en WhatsApp para recibir un código de acceso.';
 

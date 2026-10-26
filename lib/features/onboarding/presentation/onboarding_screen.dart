@@ -43,8 +43,6 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       case OnboardingStep.birthDate:
       case OnboardingStep.weight:
       case OnboardingStep.height:
-      case OnboardingStep.email:
-      case OnboardingStep.password:
       case OnboardingStep.profileConfirmation:
         return const ProfileFormStep();
       case OnboardingStep.mainGoal:

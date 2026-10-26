@@ -150,7 +150,7 @@ void main() {
           expect(find.byType(TextField), findsNWidgets(2));
           await tester.tap(find.text(l.loginCreateAccount));
           await tester.pumpAndSettle();
-          expect(find.text(l.loginCreateProfileTitle), findsOneWidget);
+          expect(find.text(l.signupTitle), findsOneWidget);
           expect(find.text(l.loginSyncTitle), findsNothing);
           await tester.tap(find.byIcon(Icons.arrow_back));
           await tester.pumpAndSettle();
@@ -170,7 +170,7 @@ void main() {
             router.routeInformationProvider.value.uri.path,
             '/login/register',
           );
-          expect(find.text(l.loginCreateProfileTitle), findsOneWidget);
+          expect(find.text(l.signupTitle), findsOneWidget);
           expect(tester.takeException(), isNull);
         } finally {
           await tester.pumpWidget(const SizedBox.shrink());
@@ -221,7 +221,7 @@ void main() {
       biometrics.pending!.complete(true);
       await tester.pumpAndSettle();
       expect(biometrics.calls, 0);
-      expect(find.text(l.loginCreateProfileTitle), findsOneWidget);
+      expect(find.text(l.signupTitle), findsOneWidget);
     } finally {
       await tester.pumpWidget(const SizedBox.shrink());
       router.dispose();
