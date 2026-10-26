@@ -666,6 +666,8 @@
   "storePurchaseConfirmed": "¡Suscripción confirmada! Tu acceso se ha actualizado.",
   "storeRestore": "Restaurar compras",
   "storeManage": "Gestionar suscripción en la tienda",
+  "storePricePerMonth": "{price}/mes",
+  "storePricePerYear": "{price}/año",
   "storeAutoRenewalNotice": "La suscripción se renueva automáticamente. Revisa el período y las condiciones en la tienda antes de confirmar.",
   "storeTerms": "Términos de uso",
   "storePrivacy": "Política de privacidad",

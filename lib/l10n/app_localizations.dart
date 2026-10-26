@@ -2830,6 +2830,18 @@ abstract class AppLocalizations {
   /// **'Gerenciar assinatura na loja'**
   String get storeManage;
 
+  /// No description provided for @storePricePerMonth.
+  ///
+  /// In pt, this message translates to:
+  /// **'{price}/mês'**
+  String storePricePerMonth(String price);
+
+  /// No description provided for @storePricePerYear.
+  ///
+  /// In pt, this message translates to:
+  /// **'{price}/ano'**
+  String storePricePerYear(String price);
+
   /// No description provided for @storeAutoRenewalNotice.
   ///
   /// In pt, this message translates to:

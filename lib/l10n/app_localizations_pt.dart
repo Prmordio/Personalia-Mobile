@@ -1516,6 +1516,16 @@ class AppLocalizationsPt extends AppLocalizations {
   String get storeManage => 'Gerenciar assinatura na loja';
 
   @override
+  String storePricePerMonth(String price) {
+    return '$price/mês';
+  }
+
+  @override
+  String storePricePerYear(String price) {
+    return '$price/ano';
+  }
+
+  @override
   String get storeAutoRenewalNotice =>
       'A assinatura renova automaticamente. Confira o período e as condições na loja antes de confirmar.';
 
