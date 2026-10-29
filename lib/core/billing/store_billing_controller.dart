@@ -242,10 +242,19 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
               products: state.products,
               success: result['isValid'] == true,
             );
-        } catch (_) {
+        } catch (error, stack) {
+          _report('verify', error, stack);
+          // Recusa definitiva (outra conta, ambiente ou produto inválido) nunca será aceita:
+          // finalizar só tira a transação da fila do StoreKit, que senão bloqueia novas compras
+          // do produto (storekit_duplicate_product_object). O acesso continua decidido pelo backend.
+          if (_isDefinitiveRejection(error) &&
+              purchase.pendingCompletePurchase) {
+            await _store.completePurchase(purchase);
+          }
           if (mounted)
             state = StoreBillingState(
               products: state.products,
+              canPurchase: _isDefinitiveRejection(error),
               error: 'storeVerificationFailed',
             );
         }
@@ -253,11 +262,25 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
     }
   }
 
+  /// 4xx do backend, exceto sessão expirada, timeout e rate limit, que podem dar certo depois.
+  static bool _isDefinitiveRejection(Object error) {
+    final status = error is DioException ? error.response?.statusCode : null;
+    return status != null &&
+        status >= 400 &&
+        status < 500 &&
+        !const {401, 408, 429}.contains(status);
+  }
+
   /// Só código e mensagem do erro da loja (sem token): ex. `storekit_duplicate_product_object`.
   void _report(String stage, Object error, StackTrace stack) {
     final (code, message) = switch (error) {
       PlatformException e => (e.code, e.message),
       IAPError e => (e.code, e.message),
+      // Mensagens do payment são fixas (ex. "Purchase belongs to a different account").
+      DioException e => (
+        'http_${e.response?.statusCode ?? e.type.name}',
+        _backendMessage(e.response?.data),
+      ),
       StateError e => (e.message, null),
       _ => (error.runtimeType.toString(), null),
     };
@@ -265,6 +288,11 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
         ? ''
         : ': ${message.length > 120 ? message.substring(0, 120) : message}';
     _reportError(error, stack, 'store_billing_${stage}_$code$detail');
+  }
+
+  static String? _backendMessage(Object? data) {
+    final message = data is Map ? data['message'] : null;
+    return message is String ? message : null;
   }
 
   @override
