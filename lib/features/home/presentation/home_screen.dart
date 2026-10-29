@@ -13,6 +13,7 @@ import '../../auth/presentation/biometric_offer_gate.dart';
 import '../../workout/presentation/rest_timer_screen.dart';
 import '../../workout/state/active_workout_session.dart';
 import '../../workout/state/completed_workout_session.dart';
+import '../state/feature_access.dart';
 import '../state/today_workout_override.dart';
 import '../state/workout_generation_controller.dart';
 import 'subscription_checkout.dart';
@@ -93,10 +94,7 @@ class HomeScreen extends ConsumerWidget {
               const SizedBox(height: 16),
               workoutAsync.when(
                 data: (workout) {
-                  final isActive = subscriptionAsync.maybeWhen(
-                    data: (s) => s.isValid,
-                    orElse: () => true,
-                  );
+                  final isActive = ref.watch(featureAccessProvider);
                   return workout == null
                       ? offlineWorkoutCard ?? const _NoWorkoutCard()
                       : Column(

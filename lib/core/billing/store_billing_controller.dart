@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../providers.dart';
+import '../telemetry/app_telemetry.dart';
 import '../../features/home/data/app_api.dart';
 
 class StoreBillingState {
@@ -21,13 +23,22 @@ class StoreBillingState {
   final bool success;
 }
 
+typedef StoreErrorReporter =
+    void Function(Object error, StackTrace stack, String operation);
+
 class StoreBillingController extends StateNotifier<StoreBillingState> {
-  StoreBillingController(this._dio, this._onVerified, {InAppPurchase? store})
-    : _store = store ?? InAppPurchase.instance,
-      super(const StoreBillingState());
+  StoreBillingController(
+    this._dio,
+    this._onVerified, {
+    InAppPurchase? store,
+    StoreErrorReporter? reportError,
+  }) : _store = store ?? InAppPurchase.instance,
+       _reportError = reportError ?? AppTelemetry.instance.recoverableError,
+       super(const StoreBillingState());
   final Dio _dio;
   final void Function() _onVerified;
   final InAppPurchase _store;
+  final StoreErrorReporter _reportError;
   StreamSubscription<List<PurchaseDetails>>? _listener;
   String? _userId;
   String? termsUrl;
@@ -99,6 +110,8 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
   Future<void> buy(ProductDetails product) async {
     if (state.busy || !state.canPurchase || _userId == null) return;
     state = StoreBillingState(products: state.products, busy: true);
+    // Etapa da falha, para o Crashlytics dizer onde a loja recusou a compra.
+    var stage = 'config';
     try {
       // Recheck access immediately before offering a second recurring payment.
       final config = (await _dio.post(
@@ -118,6 +131,7 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
       if (config['enabled'] != true || !allowedIds.contains(product.id)) {
         throw StateError('Product unavailable');
       }
+      stage = 'product';
       // ProductDetails and its offer may become stale while the sheet is open.
       final response = await _store.queryProductDetails({product.id});
       if (!mounted) return;
@@ -137,19 +151,24 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
         return;
       }
       state = StoreBillingState(products: products, busy: true);
+      stage = 'launch';
       final launched = await _store.buyNonConsumable(
         purchaseParam: PurchaseParam(
           productDetails: freshProduct,
           applicationUserName: _userId,
         ),
       );
+      if (!launched) {
+        _report('buy_$stage', StateError('not_launched'), StackTrace.current);
+      }
       if (!launched && mounted)
         state = StoreBillingState(
           products: state.products,
           canPurchase: true,
           error: 'storeUnavailable',
         );
-    } catch (_) {
+    } catch (error, stack) {
+      _report('buy_$stage', error, stack);
       if (mounted)
         state = StoreBillingState(
           products: state.products,
@@ -188,6 +207,13 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
         state = StoreBillingState(products: state.products, busy: true);
       } else if (purchase.status == PurchaseStatus.error ||
           purchase.status == PurchaseStatus.canceled) {
+        if (purchase.status == PurchaseStatus.error) {
+          _report(
+            'purchase',
+            purchase.error ?? StateError('unknown'),
+            StackTrace.current,
+          );
+        }
         state = StoreBillingState(
           products: state.products,
           canPurchase: true,
@@ -225,6 +251,20 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
         }
       }
     }
+  }
+
+  /// Só código e mensagem do erro da loja (sem token): ex. `storekit_duplicate_product_object`.
+  void _report(String stage, Object error, StackTrace stack) {
+    final (code, message) = switch (error) {
+      PlatformException e => (e.code, e.message),
+      IAPError e => (e.code, e.message),
+      StateError e => (e.message, null),
+      _ => (error.runtimeType.toString(), null),
+    };
+    final detail = message == null || message.isEmpty
+        ? ''
+        : ': ${message.length > 120 ? message.substring(0, 120) : message}';
+    _reportError(error, stack, 'store_billing_${stage}_$code$detail');
   }
 
   @override

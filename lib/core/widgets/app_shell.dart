@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/l10n/l10n.dart';
-import '../../features/home/data/app_api.dart';
+import '../../features/home/state/feature_access.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({
@@ -22,7 +22,9 @@ class AppShell extends ConsumerWidget {
   ];
 
   int get _currentIndex {
-    final index = _tabRoutes.indexWhere((t) => currentLocation.startsWith(t.$1));
+    final index = _tabRoutes.indexWhere(
+      (t) => currentLocation.startsWith(t.$1),
+    );
     return index == -1 ? 0 : index;
   }
 
@@ -31,12 +33,7 @@ class AppShell extends ConsumerWidget {
     final l = context.l10n;
     final tabLabels = [l.navHome, l.navReports, l.navReferral, l.navMenu];
 
-    final subscriptionAsync = ref.watch(subscriptionProvider);
-    // Considera ativa enquanto carrega (evita piscar de bloqueado para liberado).
-    final isActive = subscriptionAsync.maybeWhen(
-      data: (s) => s.isValid,
-      orElse: () => true,
-    );
+    final isActive = ref.watch(featureAccessProvider);
 
     return Scaffold(
       body: child,
