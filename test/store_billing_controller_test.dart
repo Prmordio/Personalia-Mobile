@@ -158,6 +158,23 @@ void main() {
       'store_billing_purchase_storekit2_purchase_failed: failed',
     ]);
   });
+  test('finishes a purchase the backend definitively rejected', () async {
+    backend.verifyStatus = 409;
+    store.events.add([purchase()]);
+    await controller.pendingVerification;
+    expect(store.completed, 1);
+    expect(verified, false);
+    expect(controller.state.error, 'storeVerificationFailed');
+    expect(controller.state.canPurchase, true);
+    expect(reported, ['store_billing_verify_http_409']);
+  });
+  test('keeps the purchase pending when the session expired', () async {
+    backend.verifyStatus = 401;
+    store.events.add([purchase()]);
+    await controller.pendingVerification;
+    expect(store.completed, 0);
+    expect(controller.state.error, 'storeVerificationFailed');
+  });
   test('does not finish an unverified purchase', () async {
     backend.verifyStatus = 500;
     store.events.add([purchase()]);
