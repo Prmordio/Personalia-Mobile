@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:personalia_app/core/billing/store_billing_controller.dart';
@@ -14,6 +15,7 @@ class _Store implements InAppPurchase {
   ProductDetails? purchasedProduct;
   ProductDetails? refreshedProduct;
   bool unavailable = false;
+  Object? buyError;
   final product = ProductDetails(
     id: 'monthly',
     title: 'Monthly',
@@ -35,6 +37,7 @@ class _Store implements InAppPurchase {
   );
   @override
   Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) async {
+    if (buyError != null) throw buyError!;
     purchasesStarted++;
     account = purchaseParam.applicationUserName;
     purchasedProduct = purchaseParam.productDetails;
@@ -87,7 +90,9 @@ void main() {
   late _Backend backend;
   late StoreBillingController controller;
   late bool verified;
+  late List<String> reported;
   setUp(() async {
+    reported = [];
     store = _Store();
     backend = _Backend();
     verified = false;
@@ -97,6 +102,7 @@ void main() {
       dio,
       () => verified = true,
       store: store,
+      reportError: (_, _, operation) => reported.add(operation),
     );
     await controller.initialize();
   });
@@ -115,6 +121,43 @@ void main() {
     transactionDate: '0',
     status: PurchaseStatus.purchased,
   )..pendingCompletePurchase = true;
+  test('reports the store code when the purchase cannot start', () async {
+    store.buyError = PlatformException(
+      code: 'storekit_duplicate_product_object',
+      message:
+          'There is a pending transaction for the same product identifier.',
+    );
+    await controller.buy(store.product);
+    expect(controller.state.error, 'storeUnavailable');
+    expect(reported, [
+      'store_billing_buy_launch_storekit_duplicate_product_object: '
+          'There is a pending transaction for the same product identifier.',
+    ]);
+  });
+  test('reports the store code of a failed purchase', () async {
+    store.events.add([
+      PurchaseDetails(
+          productID: 'monthly',
+          verificationData: PurchaseVerificationData(
+            localVerificationData: '',
+            serverVerificationData: '',
+            source: 'app_store',
+          ),
+          transactionDate: '0',
+          status: PurchaseStatus.error,
+        )
+        ..error = IAPError(
+          source: 'app_store',
+          code: 'storekit2_purchase_failed',
+          message: 'failed',
+        ),
+    ]);
+    await controller.pendingVerification;
+    expect(controller.state.error, 'storeUnavailable');
+    expect(reported, [
+      'store_billing_purchase_storekit2_purchase_failed: failed',
+    ]);
+  });
   test('does not finish an unverified purchase', () async {
     backend.verifyStatus = 500;
     store.events.add([purchase()]);
