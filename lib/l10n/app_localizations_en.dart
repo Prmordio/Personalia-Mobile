@@ -1614,4 +1614,131 @@ class AppLocalizationsEn extends AppLocalizations {
   String onboardingProfileProgress(int step) {
     return 'Step $step of 2';
   }
+
+  @override
+  String get execBtnAnalyze => 'Analyze';
+
+  @override
+  String get execTitle => 'Form check';
+
+  @override
+  String get execConsentTitle => 'Before recording';
+
+  @override
+  String get execConsentBody =>
+      'Your set video stays only on your phone and is deleted after 7 days. To generate the feedback we send only the measured result and a few frames of the recording for AI analysis — they are not stored.';
+
+  @override
+  String get execConsentAccept => 'Got it, continue';
+
+  @override
+  String get execFramingHint =>
+      'Place your phone to your side, about 2–3 m away, with your whole body in frame.';
+
+  @override
+  String get execFramingOk => 'Framing ok! You can record.';
+
+  @override
+  String get execFramingBad =>
+      'I can\'t see your whole body from the side yet.';
+
+  @override
+  String get execStart => 'Record set';
+
+  @override
+  String get execStop => 'Stop';
+
+  @override
+  String execCountdown(int seconds) {
+    return 'Starting in $seconds…';
+  }
+
+  @override
+  String get execRecording => 'Recording — do your set';
+
+  @override
+  String execLiveReps(int count) {
+    return '$count reps';
+  }
+
+  @override
+  String get execAnalyzing => 'Analyzing your form…';
+
+  @override
+  String get execNoRepsTitle => 'I couldn\'t count any reps';
+
+  @override
+  String get execNoRepsBody =>
+      'Record from the side, with your whole body in frame, doing full squats.';
+
+  @override
+  String get execTryAgain => 'Record again';
+
+  @override
+  String execScore(int score) {
+    return 'Score $score';
+  }
+
+  @override
+  String execRepsCount(int count) {
+    return '$count reps';
+  }
+
+  @override
+  String get execAiLoading => 'Your virtual coach is reviewing the frames…';
+
+  @override
+  String get execAiUnavailable =>
+      'Couldn\'t get the AI comment right now — see the measured points below.';
+
+  @override
+  String get execIssuesTitle => 'Points to fix';
+
+  @override
+  String get execNoIssues => 'No issues measured. Great job! 💪';
+
+  @override
+  String get execSee => 'View';
+
+  @override
+  String execRepsList(String reps) {
+    return 'Reps $reps';
+  }
+
+  @override
+  String execMeasured(String measured, String target) {
+    return 'Measured: $measured · target $target';
+  }
+
+  @override
+  String execUnclear(String reps) {
+    return 'I couldn\'t see reps $reps clearly. Film from the side with your whole body in frame.';
+  }
+
+  @override
+  String execFatigue(int pct, int rep) {
+    return 'Range of motion dropped $pct% from rep $rep — a sign of fatigue.';
+  }
+
+  @override
+  String get execIssueDepth => 'Depth';
+
+  @override
+  String get execIssueTrunkLean => 'Torso leaning forward';
+
+  @override
+  String get execIssueHeelLift => 'Heels lifting';
+
+  @override
+  String get execIssueTempo => 'Fast descent';
+
+  @override
+  String get execExtraIssue => 'Spotted by AI';
+
+  @override
+  String get execCameraError =>
+      'Couldn\'t open the camera. Check the app\'s camera permission.';
+
+  @override
+  String get execSwitchCamera => 'Switch camera';
 }

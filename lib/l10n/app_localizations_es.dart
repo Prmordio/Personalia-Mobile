@@ -1622,4 +1622,131 @@ class AppLocalizationsEs extends AppLocalizations {
   String onboardingProfileProgress(int step) {
     return 'Paso $step de 2';
   }
+
+  @override
+  String get execBtnAnalyze => 'Analizar';
+
+  @override
+  String get execTitle => 'Análisis de ejecución';
+
+  @override
+  String get execConsentTitle => 'Antes de grabar';
+
+  @override
+  String get execConsentBody =>
+      'El video de tu serie queda solo en tu celular y se borra en 7 días. Para generar el comentario enviamos solo el resultado medido y algunos cuadros de la grabación para análisis por IA — no se guardan.';
+
+  @override
+  String get execConsentAccept => 'Entendido, continuar';
+
+  @override
+  String get execFramingHint =>
+      'Apoya el celular de lado, a unos 2–3 m, con todo el cuerpo en el cuadro.';
+
+  @override
+  String get execFramingOk => '¡Encuadre ok! Puedes grabar.';
+
+  @override
+  String get execFramingBad => 'Aún no veo todo tu cuerpo de lado.';
+
+  @override
+  String get execStart => 'Grabar serie';
+
+  @override
+  String get execStop => 'Detener';
+
+  @override
+  String execCountdown(int seconds) {
+    return 'Comenzando en $seconds…';
+  }
+
+  @override
+  String get execRecording => 'Grabando — haz tu serie';
+
+  @override
+  String execLiveReps(int count) {
+    return '$count reps';
+  }
+
+  @override
+  String get execAnalyzing => 'Analizando tu ejecución…';
+
+  @override
+  String get execNoRepsTitle => 'No pude contar repeticiones';
+
+  @override
+  String get execNoRepsBody =>
+      'Graba de lado, con todo el cuerpo en el cuadro, haciendo la sentadilla completa.';
+
+  @override
+  String get execTryAgain => 'Grabar de nuevo';
+
+  @override
+  String execScore(int score) {
+    return 'Nota $score';
+  }
+
+  @override
+  String execRepsCount(int count) {
+    return '$count repeticiones';
+  }
+
+  @override
+  String get execAiLoading =>
+      'Tu entrenador virtual está revisando los cuadros…';
+
+  @override
+  String get execAiUnavailable =>
+      'No pude obtener el comentario de la IA ahora — mira abajo los puntos medidos.';
+
+  @override
+  String get execIssuesTitle => 'Puntos a corregir';
+
+  @override
+  String get execNoIssues => 'Ningún problema medido. ¡Muy bien! 💪';
+
+  @override
+  String get execSee => 'Ver';
+
+  @override
+  String execRepsList(String reps) {
+    return 'Reps $reps';
+  }
+
+  @override
+  String execMeasured(String measured, String target) {
+    return 'Medido: $measured · objetivo $target';
+  }
+
+  @override
+  String execUnclear(String reps) {
+    return 'No pude ver bien las reps $reps. Graba de lado con todo el cuerpo en el cuadro.';
+  }
+
+  @override
+  String execFatigue(int pct, int rep) {
+    return 'La amplitud cayó $pct% a partir de la rep $rep — señal de cansancio.';
+  }
+
+  @override
+  String get execIssueDepth => 'Profundidad';
+
+  @override
+  String get execIssueTrunkLean => 'Tronco inclinado';
+
+  @override
+  String get execIssueHeelLift => 'Talón levantándose';
+
+  @override
+  String get execIssueTempo => 'Bajada rápida';
+
+  @override
+  String get execExtraIssue => 'Observado por la IA';
+
+  @override
+  String get execCameraError =>
+      'No se pudo abrir la cámara. Verifica el permiso de cámara de la app.';
+
+  @override
+  String get execSwitchCamera => 'Cambiar cámara';
 }

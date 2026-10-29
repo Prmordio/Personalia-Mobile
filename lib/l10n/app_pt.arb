@@ -675,8 +675,20 @@
   "storeManage": "Gerenciar assinatura na loja",
   "storePricePerMonth": "{price}/mês",
   "storePricePerYear": "{price}/ano",
-  "@storePricePerMonth": { "placeholders": { "price": { "type": "String" } } },
-  "@storePricePerYear": { "placeholders": { "price": { "type": "String" } } },
+  "@storePricePerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "@storePricePerYear": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
   "storeAutoRenewalNotice": "A assinatura renova automaticamente. Confira o período e as condições na loja antes de confirmar.",
   "storeTerms": "Termos de uso",
   "storePrivacy": "Política de privacidade",
@@ -725,5 +737,102 @@
         "type": "int"
       }
     }
-  }
+  },
+  "execBtnAnalyze": "Analisar",
+  "execTitle": "Análise de execução",
+  "execConsentTitle": "Antes de gravar",
+  "execConsentBody": "O vídeo da sua série fica só no seu celular e é apagado em 7 dias. Para gerar o comentário, enviamos apenas o resultado medido e alguns quadros da gravação para análise por IA — eles não ficam guardados.",
+  "execConsentAccept": "Entendi, continuar",
+  "execFramingHint": "Apoie o celular de lado para você, a uns 2–3 m, com o corpo inteiro aparecendo.",
+  "execFramingOk": "Enquadramento ok! Pode gravar.",
+  "execFramingBad": "Ainda não vejo seu corpo inteiro de lado.",
+  "execStart": "Gravar série",
+  "execStop": "Parar",
+  "execCountdown": "Começando em {seconds}…",
+  "@execCountdown": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "execRecording": "Gravando — faça sua série",
+  "execLiveReps": "{count} reps",
+  "@execLiveReps": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "execAnalyzing": "Analisando sua execução…",
+  "execNoRepsTitle": "Não consegui contar repetições",
+  "execNoRepsBody": "Grave de lado, com o corpo inteiro no quadro, fazendo o agachamento completo.",
+  "execTryAgain": "Gravar de novo",
+  "execScore": "Nota {score}",
+  "@execScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "execRepsCount": "{count} repetições",
+  "@execRepsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "execAiLoading": "Seu personal virtual está revendo os quadros…",
+  "execAiUnavailable": "Não consegui o comentário da IA agora — veja abaixo os pontos medidos.",
+  "execIssuesTitle": "Pontos a corrigir",
+  "execNoIssues": "Nenhum problema medido. Mandou bem! 💪",
+  "execSee": "Ver",
+  "execRepsList": "Reps {reps}",
+  "@execRepsList": {
+    "placeholders": {
+      "reps": {
+        "type": "String"
+      }
+    }
+  },
+  "execMeasured": "Medido: {measured} · alvo {target}",
+  "@execMeasured": {
+    "placeholders": {
+      "measured": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "execUnclear": "Não consegui ver bem as reps {reps}. Filme de lado com o corpo todo no quadro.",
+  "@execUnclear": {
+    "placeholders": {
+      "reps": {
+        "type": "String"
+      }
+    }
+  },
+  "execFatigue": "A amplitude caiu {pct}% a partir da rep {rep} — sinal de cansaço.",
+  "@execFatigue": {
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      },
+      "rep": {
+        "type": "int"
+      }
+    }
+  },
+  "execIssueDepth": "Profundidade",
+  "execIssueTrunkLean": "Tronco inclinado",
+  "execIssueHeelLift": "Calcanhar saindo do chão",
+  "execIssueTempo": "Descida rápida",
+  "execExtraIssue": "Observado pela IA",
+  "execCameraError": "Não foi possível abrir a câmera. Verifique a permissão de câmera do app.",
+  "execSwitchCamera": "Trocar câmera"
 }

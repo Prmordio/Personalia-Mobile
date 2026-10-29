@@ -3009,6 +3009,216 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Etapa {step} de 2'**
   String onboardingProfileProgress(int step);
+
+  /// No description provided for @execBtnAnalyze.
+  ///
+  /// In pt, this message translates to:
+  /// **'Analisar'**
+  String get execBtnAnalyze;
+
+  /// No description provided for @execTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Análise de execução'**
+  String get execTitle;
+
+  /// No description provided for @execConsentTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Antes de gravar'**
+  String get execConsentTitle;
+
+  /// No description provided for @execConsentBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'O vídeo da sua série fica só no seu celular e é apagado em 7 dias. Para gerar o comentário, enviamos apenas o resultado medido e alguns quadros da gravação para análise por IA — eles não ficam guardados.'**
+  String get execConsentBody;
+
+  /// No description provided for @execConsentAccept.
+  ///
+  /// In pt, this message translates to:
+  /// **'Entendi, continuar'**
+  String get execConsentAccept;
+
+  /// No description provided for @execFramingHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Apoie o celular de lado para você, a uns 2–3 m, com o corpo inteiro aparecendo.'**
+  String get execFramingHint;
+
+  /// No description provided for @execFramingOk.
+  ///
+  /// In pt, this message translates to:
+  /// **'Enquadramento ok! Pode gravar.'**
+  String get execFramingOk;
+
+  /// No description provided for @execFramingBad.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não vejo seu corpo inteiro de lado.'**
+  String get execFramingBad;
+
+  /// No description provided for @execStart.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gravar série'**
+  String get execStart;
+
+  /// No description provided for @execStop.
+  ///
+  /// In pt, this message translates to:
+  /// **'Parar'**
+  String get execStop;
+
+  /// No description provided for @execCountdown.
+  ///
+  /// In pt, this message translates to:
+  /// **'Começando em {seconds}…'**
+  String execCountdown(int seconds);
+
+  /// No description provided for @execRecording.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gravando — faça sua série'**
+  String get execRecording;
+
+  /// No description provided for @execLiveReps.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count} reps'**
+  String execLiveReps(int count);
+
+  /// No description provided for @execAnalyzing.
+  ///
+  /// In pt, this message translates to:
+  /// **'Analisando sua execução…'**
+  String get execAnalyzing;
+
+  /// No description provided for @execNoRepsTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não consegui contar repetições'**
+  String get execNoRepsTitle;
+
+  /// No description provided for @execNoRepsBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Grave de lado, com o corpo inteiro no quadro, fazendo o agachamento completo.'**
+  String get execNoRepsBody;
+
+  /// No description provided for @execTryAgain.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gravar de novo'**
+  String get execTryAgain;
+
+  /// No description provided for @execScore.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nota {score}'**
+  String execScore(int score);
+
+  /// No description provided for @execRepsCount.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count} repetições'**
+  String execRepsCount(int count);
+
+  /// No description provided for @execAiLoading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Seu personal virtual está revendo os quadros…'**
+  String get execAiLoading;
+
+  /// No description provided for @execAiUnavailable.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não consegui o comentário da IA agora — veja abaixo os pontos medidos.'**
+  String get execAiUnavailable;
+
+  /// No description provided for @execIssuesTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pontos a corrigir'**
+  String get execIssuesTitle;
+
+  /// No description provided for @execNoIssues.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum problema medido. Mandou bem! 💪'**
+  String get execNoIssues;
+
+  /// No description provided for @execSee.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ver'**
+  String get execSee;
+
+  /// No description provided for @execRepsList.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reps {reps}'**
+  String execRepsList(String reps);
+
+  /// No description provided for @execMeasured.
+  ///
+  /// In pt, this message translates to:
+  /// **'Medido: {measured} · alvo {target}'**
+  String execMeasured(String measured, String target);
+
+  /// No description provided for @execUnclear.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não consegui ver bem as reps {reps}. Filme de lado com o corpo todo no quadro.'**
+  String execUnclear(String reps);
+
+  /// No description provided for @execFatigue.
+  ///
+  /// In pt, this message translates to:
+  /// **'A amplitude caiu {pct}% a partir da rep {rep} — sinal de cansaço.'**
+  String execFatigue(int pct, int rep);
+
+  /// No description provided for @execIssueDepth.
+  ///
+  /// In pt, this message translates to:
+  /// **'Profundidade'**
+  String get execIssueDepth;
+
+  /// No description provided for @execIssueTrunkLean.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tronco inclinado'**
+  String get execIssueTrunkLean;
+
+  /// No description provided for @execIssueHeelLift.
+  ///
+  /// In pt, this message translates to:
+  /// **'Calcanhar saindo do chão'**
+  String get execIssueHeelLift;
+
+  /// No description provided for @execIssueTempo.
+  ///
+  /// In pt, this message translates to:
+  /// **'Descida rápida'**
+  String get execIssueTempo;
+
+  /// No description provided for @execExtraIssue.
+  ///
+  /// In pt, this message translates to:
+  /// **'Observado pela IA'**
+  String get execExtraIssue;
+
+  /// No description provided for @execCameraError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível abrir a câmera. Verifique a permissão de câmera do app.'**
+  String get execCameraError;
+
+  /// No description provided for @execSwitchCamera.
+  ///
+  /// In pt, this message translates to:
+  /// **'Trocar câmera'**
+  String get execSwitchCamera;
 }
 
 class _AppLocalizationsDelegate
