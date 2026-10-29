@@ -8,6 +8,7 @@ import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/presentation/password_login_screen.dart';
 import '../../features/coming_soon/presentation/coming_soon_screen.dart';
+import '../../features/execution_analysis/presentation/execution_capture_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/menu/presentation/menu_screen.dart';
 import '../../features/onboarding/data/onboarding_api.dart';
@@ -167,6 +168,11 @@ GoRouter buildRouter({
         path: '/workout/rest-timer',
         builder: (context, state) =>
             RestTimerScreen(args: state.extra as RestTimerArgs),
+      ),
+      GoRoute(
+        path: '/workout/execution-analysis',
+        builder: (context, state) =>
+            ExecutionCaptureScreen(args: state.extra as ExecutionCaptureArgs),
       ),
       GoRoute(
         path: '/workout/swap-exercise',

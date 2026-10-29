@@ -1,0 +1,72 @@
+{
+  "exercise": "squat",
+  "version": "1",
+  "view": "side",
+  "minConfidence": 0.5,
+  "rep": { "signal": "knee_angle", "down": 125, "up": 155, "minDurationMs": 600 },
+  "checks": [
+    {
+      "id": "depth",
+      "signal": "knee_angle",
+      "agg": "min",
+      "op": "lte",
+      "target": 95,
+      "unit": "deg",
+      "severity": "medium",
+      "weight": 35,
+      "joints": ["hip", "knee"],
+      "cue": {
+        "pt": "Desça mais: leve o quadril até a coxa ficar paralela ao chão.",
+        "en": "Go deeper: lower your hips until your thighs are parallel to the floor.",
+        "es": "Baja más: lleva la cadera hasta que el muslo quede paralelo al suelo."
+      }
+    },
+    {
+      "id": "trunk_lean",
+      "signal": "trunk_lean",
+      "agg": "max",
+      "op": "lte",
+      "target": 45,
+      "unit": "deg",
+      "severity": "medium",
+      "weight": 25,
+      "joints": ["shoulder", "hip"],
+      "cue": {
+        "pt": "Mantenha o peito aberto e o tronco mais em pé ao descer.",
+        "en": "Keep your chest up and your torso more upright on the way down.",
+        "es": "Mantén el pecho abierto y el tronco más erguido al bajar."
+      }
+    },
+    {
+      "id": "heel_lift",
+      "signal": "heel_lift",
+      "agg": "max",
+      "op": "lte",
+      "target": 8,
+      "unit": "pct_shin",
+      "severity": "high",
+      "weight": 25,
+      "joints": ["heel", "ankle"],
+      "cue": {
+        "pt": "Mantenha os calcanhares no chão: distribua o peso no pé inteiro.",
+        "en": "Keep your heels down: spread the weight across your whole foot.",
+        "es": "Mantén los talones en el suelo: reparte el peso en todo el pie."
+      }
+    },
+    {
+      "id": "tempo",
+      "signal": "rep.eccentric_ms",
+      "op": "gte",
+      "target": 800,
+      "unit": "ms",
+      "severity": "low",
+      "weight": 15,
+      "joints": ["knee"],
+      "cue": {
+        "pt": "Desça com controle, em pelo menos 1 segundo.",
+        "en": "Lower with control, taking at least 1 second.",
+        "es": "Baja con control, en al menos 1 segundo."
+      }
+    }
+  ]
+}

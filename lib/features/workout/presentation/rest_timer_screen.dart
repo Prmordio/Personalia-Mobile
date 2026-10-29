@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/notifications/rest_alarm.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../execution_analysis/domain/exercise_matcher.dart';
+import '../../execution_analysis/presentation/execution_capture_screen.dart';
 import '../../home/data/app_api.dart';
 import '../data/exercise_image_provider.dart';
 import '../state/active_workout_session.dart';
@@ -605,6 +607,16 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
                   exerciseName: exercise.nome,
                 ),
               ),
+              if (matchExecutionRuleSet(exercise.nome) case final ruleSetKey?)
+                _ActionButton(
+                  icon: Icons.videocam_outlined,
+                  label: context.l10n.execBtnAnalyze,
+                  color: AppColors.blue,
+                  onPressed: () => context.push(
+                    '/workout/execution-analysis',
+                    extra: ExecutionCaptureArgs(exerciseKey: ruleSetKey, exerciseName: exercise.nome),
+                  ),
+                ),
               _ActionButton(
                 icon: Icons.swap_horiz,
                 label: context.l10n.restBtnSwap,
