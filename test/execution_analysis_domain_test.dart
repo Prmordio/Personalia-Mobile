@@ -3,8 +3,8 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personalia_app/features/execution_analysis/domain/exercise_matcher.dart';
 import 'package:personalia_app/features/execution_analysis/domain/exercise_rule_set.dart';
+import 'package:personalia_app/features/execution_analysis/domain/execution_rule_catalog.dart';
 import 'package:personalia_app/features/execution_analysis/domain/geometry.dart';
 import 'package:personalia_app/features/execution_analysis/domain/keyframe_selector.dart';
 import 'package:personalia_app/features/execution_analysis/domain/pose_frame.dart';
@@ -100,7 +100,7 @@ List<PoseFrame> _set(List<_RepSpec> reps, {double noise = 0}) {
 }
 
 ExerciseRuleSet _squatRules() => ExerciseRuleSet.fromJson(
-      jsonDecode(File('assets/execution_rules/squat.json').readAsStringSync()) as Map<String, dynamic>,
+      jsonDecode(File('test/fixtures/execution_rules/squat.json').readAsStringSync()) as Map<String, dynamic>,
     );
 
 void main() {
@@ -200,10 +200,15 @@ void main() {
       expect(report.issues, isEmpty);
     });
 
+    test('should_tolerate_values_just_past_the_target', () {
+      final report = engine.evaluate(_set(const [_RepSpec(bottomKnee: 96), _RepSpec(bottomKnee: 105)]));
+      expect(report.issues.singleWhere((i) => i.id == 'depth').reps, [2]);
+    });
+
     test('should_serialize_the_fields_the_backend_validates', () {
       final json = engine.evaluate(_set(const [_RepSpec(bottomKnee: 105)])).toJson();
       expect(json['exercise'], 'squat');
-      expect(json['ruleSetVersion'], '1');
+      expect(json['ruleSetVersion'], '2');
       expect(json['score'], isA<int>());
       expect(json['repCount'], 1);
       expect(json['issues'], isA<List>());
@@ -232,17 +237,164 @@ void main() {
     });
   });
 
-  group('matchExecutionRuleSet', () {
-    test('should_match_squat_variations_in_all_languages', () {
-      for (final name in ['Agachamento livre', 'AGACHAMENTO COM BARRA', 'Goblet squat', 'Sentadilla frontal', 'Agachamento no Smith']) {
-        expect(matchExecutionRuleSet(name), 'squat', reason: name);
-      }
+  group('RuleCheck', () {
+    RuleCheck check(CheckOp op, {double tolerance = 0}) => RuleCheck(
+          id: 'x',
+          signal: 'knee_angle',
+          agg: Aggregation.min,
+          op: op,
+          target: 95,
+          tolerance: tolerance,
+          unit: 'deg',
+          severity: IssueSeverity.medium,
+          weight: 10,
+          joints: const [],
+          cue: const {'pt': ''},
+        );
+
+    test('should_pass_within_tolerance_and_fail_beyond_it', () {
+      expect(check(CheckOp.lte, tolerance: 3).passes(97.9), isTrue);
+      expect(check(CheckOp.lte, tolerance: 3).passes(98.1), isFalse);
+      expect(check(CheckOp.gte, tolerance: 3).passes(92.1), isTrue);
+      expect(check(CheckOp.gte, tolerance: 3).passes(91.9), isFalse);
     });
 
-    test('should_ignore_squat_variations_without_rules_and_other_exercises', () {
-      for (final name in ['Agachamento búlgaro', 'Agachamento sumô', 'Hack squat', 'Jump squat', 'Leg press', 'Supino reto']) {
-        expect(matchExecutionRuleSet(name), isNull, reason: name);
+    test('should_be_strict_without_tolerance', () {
+      expect(check(CheckOp.lte).passes(95), isTrue);
+      expect(check(CheckOp.lte).passes(95.1), isFalse);
+    });
+  });
+
+  group('ExecutionRuleCatalog', () {
+    ExerciseRuleSet withNames(List<String> names, {int schemaVersion = 1, String signal = 'knee_angle'}) {
+      final json = jsonDecode(File('test/fixtures/execution_rules/squat.json').readAsStringSync()) as Map<String, dynamic>;
+      json['exerciseNames'] = names;
+      json['schemaVersion'] = schemaVersion;
+      (json['checks'] as List).first['signal'] = signal;
+      return ExerciseRuleSet.fromJson(json);
+    }
+
+    test('should_match_only_names_linked_in_the_panel_ignoring_case_accents_and_spaces', () {
+      final catalog = ExecutionRuleCatalog([withNames(['agachamento livre com barra'])]);
+      expect(catalog.match('Agachamento  LIVRE com Barra '), 'squat');
+      expect(catalog.match('Agachamento livre'), isNull, reason: 'nome parecido mas não ligado');
+      expect(catalog.ruleSet('squat')!.checks.first.labelFor('en'), 'Depth');
+    });
+
+    test('should_ignore_rule_sets_this_app_version_cannot_apply', () {
+      expect(ExecutionRuleCatalog([withNames(['agachamento'], schemaVersion: 2)]).isEmpty, isTrue);
+      expect(ExecutionRuleCatalog([withNames(['agachamento'], signal: 'wrist_flick')]).isEmpty, isTrue);
+    });
+
+    test('should_drop_only_the_rule_set_this_app_cannot_parse', () {
+      final good = jsonDecode(File('test/fixtures/execution_rules/squat.json').readAsStringSync()) as Map<String, dynamic>;
+      final future = jsonDecode(jsonEncode(good)) as Map<String, dynamic>
+        ..['exercise'] = 'future'
+        ..['exerciseNames'] = ['futuro'];
+      (future['checks'] as List).first['joints'] = ['tail'];
+      final catalog = ExecutionRuleCatalog.fromJson({
+        'ruleSets': [future, good..['exerciseNames'] = ['agachamento']],
+      });
+      expect(catalog.match('agachamento'), 'squat');
+      expect(catalog.ruleSet('future'), isNull);
+    });
+
+    test('should_normalize_like_the_trainer', () {
+      expect(normalizeExerciseName('  Sentadilla   Búlgara Peña '), 'sentadilla bulgara pena');
+    });
+  });
+
+  group('Membros superiores', () {
+    /// Braço do lado direito: [shoulder] = ângulo quadril-ombro-cotovelo, [elbow] =
+    /// ombro-cotovelo-punho. Pernas fora do quadro (supino/rosca na máquina).
+    PoseFrame armFrame(int tMs, {required double elbow, double shoulder = 10}) {
+      double rad(double d) => d * math.pi / 180;
+      const s = (x: 0.5, y: 0.3);
+      final e = (x: s.x + 0.15 * math.sin(rad(shoulder)), y: s.y + 0.15 * math.cos(rad(shoulder)));
+      // punho = direção cotovelo→ombro girada por `elbow` graus.
+      final dx = (s.x - e.x) / 0.15, dy = (s.y - e.y) / 0.15;
+      final a = rad(elbow);
+      final w = (x: e.x + 0.13 * (dx * math.cos(a) - dy * math.sin(a)), y: e.y + 0.13 * (dx * math.sin(a) + dy * math.cos(a)));
+      return PoseFrame(tMs, {
+        Landmark.rightShoulder: _p(s.x, s.y),
+        Landmark.rightElbow: _p(e.x, e.y),
+        Landmark.rightWrist: _p(w.x, w.y),
+        Landmark.rightHip: _p(0.5, 0.6),
+        Landmark.leftShoulder: _p(0.5, 0.3, 0.2),
+        Landmark.leftHip: _p(0.5, 0.6, 0.2),
+      });
+    }
+
+    /// Tríceps na polia: cotovelo dobrado (80°) → estendido ([peak]) → volta.
+    List<PoseFrame> pushdowns(int reps, {double peak = 170}) {
+      final frames = <PoseFrame>[];
+      var t = 0;
+      for (var r = 0; r < reps; r++) {
+        for (var i = 0; i <= 30; i++) {
+          final elbow = 80 + (peak - 80) * math.sin(math.pi * i / 30);
+          frames.add(armFrame(t, elbow: elbow));
+          t += 1000 ~/ _fps;
+        }
       }
+      return frames;
+    }
+
+    RuleCheck lockout() => RuleCheck(
+          id: 'lockout',
+          signal: 'elbow_angle',
+          agg: Aggregation.max,
+          op: CheckOp.gte,
+          target: 165,
+          unit: 'deg',
+          severity: IssueSeverity.medium,
+          weight: 60,
+          joints: const [Joint.elbow],
+          cue: const {'pt': 'Estenda o cotovelo.'},
+        );
+
+    final pushdown = ExerciseRuleSet(
+      exercise: 'triceps_pushdown',
+      version: '1',
+      minConfidence: 0.5,
+      rep: const RepRule(signal: 'elbow_angle', down: 150, up: 100, minDurationMs: 500),
+      checks: [lockout()],
+    );
+
+    test('should_measure_elbow_and_shoulder_angles', () {
+      final f = armFrame(0, elbow: 90, shoulder: 40);
+      final samples = extractSignals([f], BodySide.right, {'elbow_angle', 'shoulder_angle'}, minConfidence: 0.5);
+      expect(samples.single['elbow_angle'], closeTo(90, 0.01));
+      expect(samples.single['shoulder_angle'], closeTo(40, 0.01));
+    });
+
+    test('should_count_reps_of_a_rising_signal_when_down_is_greater_than_up', () {
+      expect(pushdown.rep.rising, isTrue);
+      final reps = RepSegmenter(pushdown.rep).segment(
+        extractSignals(pushdowns(5), BodySide.right, {'elbow_angle'}, minConfidence: 0.5),
+      );
+      expect(reps, hasLength(5), reason: 'começa em repouso (≤ up), então a primeira rep já conta');
+      expect(reps.first.bottomValue, closeTo(170, 4), reason: 'o "fundo" de um sinal que sobe é o pico');
+      expect(reps.first.topValue, lessThan(100));
+    });
+
+    test('should_track_only_the_joints_the_rule_measures', () {
+      expect(trackedJoints(pushdown), [Joint.shoulder, Joint.elbow, Joint.wrist]);
+      expect(trackedJoints(_squatRules()), containsAll([Joint.hip, Joint.knee, Joint.ankle, Joint.heel]));
+    });
+
+    test('should_evaluate_an_arm_exercise_without_legs_in_frame', () {
+      final report = RuleEngine(pushdown).evaluate(pushdowns(5, peak: 156));
+      expect(report.side, BodySide.right);
+      expect(report.repCount, 5);
+      expect(report.issues.single.id, 'lockout');
+    });
+
+    test('should_read_the_camera_view_and_report_it', () {
+      final json = jsonDecode(File('test/fixtures/execution_rules/squat.json').readAsStringSync()) as Map<String, dynamic>;
+      expect(ExerciseRuleSet.fromJson(json).view, CameraView.side);
+      final front = ExerciseRuleSet.fromJson(json..['view'] = 'front');
+      expect(front.view, CameraView.front);
+      expect(RuleEngine(front).evaluate(_set(const [_RepSpec()])).toJson()['view'], 'front');
     });
   });
 }

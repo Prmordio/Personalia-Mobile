@@ -66,6 +66,7 @@ class ExecutionReport {
     required this.issues,
     required this.unclearReps,
     required this.fatigue,
+    this.view = CameraView.side,
   });
 
   final String exercise;
@@ -79,6 +80,7 @@ class ExecutionReport {
   /// Reps em que o corpo não ficou visível o bastante — não são avaliadas.
   final List<int> unclearReps;
   final Fatigue? fatigue;
+  final CameraView view;
 
   int get repCount => reps.length;
   bool get hasReps => reps.isNotEmpty;
@@ -100,7 +102,7 @@ class ExecutionReport {
   Map<String, dynamic> toJson() => {
         'exercise': exercise,
         'ruleSetVersion': ruleSetVersion,
-        'view': 'side',
+        'view': view.name,
         'side': side.name,
         'durationMs': durationMs,
         'score': score,

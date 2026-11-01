@@ -44,16 +44,21 @@ class Rep {
 
 /// Conta reps por histerese no sinal principal: topo (≥ up) → desce abaixo de `down` →
 /// volta acima de `up`. A faixa entre down/up evita que tremidas virem reps extras.
-/// Pensado para movimentos que "descem" o sinal (agachamento: ângulo do joelho).
+/// Com `down > up` ([RepRule.rising]) a lógica se inverte para movimentos que "sobem" o
+/// sinal (panturrilha, tríceps na polia): o "fundo" da rep é o pico do sinal.
 class RepSegmenter {
   const RepSegmenter(this.rule);
   final RepRule rule;
 
   List<Rep> segment(List<SignalSample> samples) {
+    // Sinal que sobe vira sinal que desce trocando o sinal; negar é a própria inversa, então
+    // os valores guardados na Rep voltam ao original com `oriented` de novo.
+    double oriented(double v) => rule.rising ? -v : v;
+    final up = oriented(rule.up), down = oriented(rule.down);
     final reps = <Rep>[];
     var inRep = false;
     int? lastTopMs;
-    double lastTopValue = rule.up;
+    double lastTopValue = up;
     late int startMs;
     late double startTopValue;
     var bottomValue = double.infinity;
@@ -61,18 +66,19 @@ class RepSegmenter {
     var total = 0, visible = 0;
 
     for (final s in samples) {
-      final v = s[rule.signal];
+      final raw = s[rule.signal];
       if (inRep) {
         total++;
-        if (v != null) visible++;
+        if (raw != null) visible++;
       }
-      if (v == null) continue;
+      if (raw == null) continue;
+      final v = oriented(raw);
 
       if (!inRep) {
-        if (v >= rule.up) {
+        if (v >= up) {
           lastTopMs = s.tMs;
           lastTopValue = v;
-        } else if (v < rule.down && lastTopMs != null) {
+        } else if (v < down && lastTopMs != null) {
           inRep = true;
           startMs = lastTopMs;
           startTopValue = lastTopValue;
@@ -88,15 +94,15 @@ class RepSegmenter {
         bottomValue = v;
         bottomMs = s.tMs;
       }
-      if (v >= rule.up) {
+      if (v >= up) {
         if (s.tMs - startMs >= rule.minDurationMs) {
           reps.add(Rep(
             index: reps.length + 1,
             startMs: startMs,
             bottomMs: bottomMs,
             endMs: s.tMs,
-            bottomValue: bottomValue,
-            topValue: startTopValue,
+            bottomValue: oriented(bottomValue),
+            topValue: oriented(startTopValue),
             visibleRatio: total == 0 ? 0 : visible / total,
           ));
         }

@@ -4,20 +4,34 @@ import '../domain/execution_report.dart';
 import '../domain/pose_frame.dart';
 import 'widgets/skeleton_overlay_painter.dart';
 
-String issueLabel(AppLocalizations l, String id) => switch (id) {
+/// Nome do erro cadastrado no painel; regras antigas sem nome caem nas traduções do app.
+String issueLabel(AppLocalizations l, RuleCheck check, String language) =>
+    check.labelFor(language) ??
+    switch (check.id) {
       'depth' => l.execIssueDepth,
       'trunk_lean' => l.execIssueTrunkLean,
       'heel_lift' => l.execIssueHeelLift,
       'tempo' => l.execIssueTempo,
-      _ => id,
+      _ => check.id,
     };
 
-String formatMeasure(double value, String unit) => switch (unit) {
-      'deg' => '${value.round()}°',
-      'pct_shin' => '${value.round()}%',
-      'ms' => '${(value / 1000).toStringAsFixed(1)}s',
-      _ => value.toStringAsFixed(1),
-    };
+/// [extraDigits] acrescenta casas decimais além da precisão padrão da unidade.
+String formatMeasure(double value, String unit, {int extraDigits = 0}) {
+  String fixed(double v, int digits) => v.toStringAsFixed(digits + extraDigits);
+  return switch (unit) {
+    'deg' => '${fixed(value, 0)}°',
+    'pct_shin' => '${fixed(value, 0)}%',
+    'ms' => '${fixed(value / 1000, 1)}s',
+    _ => fixed(value, 1),
+  };
+}
+
+/// Valor medido de um check: se o arredondamento o deixar igual ao alvo ("8% · alvo ≤ 8%"),
+/// mostra uma casa a mais para ficar claro que passou do limite.
+String formatMeasured(double value, RuleCheck check) {
+  final plain = formatMeasure(value, check.unit);
+  return plain == formatMeasure(check.target, check.unit) ? formatMeasure(value, check.unit, extraDigits: 1) : plain;
+}
 
 String formatTarget(RuleCheck check) => '${check.op == CheckOp.lte ? '≤' : '≥'} ${formatMeasure(check.target, check.unit)}';
 
@@ -25,6 +39,9 @@ String formatTarget(RuleCheck check) => '${check.op == CheckOp.lte ? '≤' : '�
 const _angleSignals = {
   'knee_angle': (vertex: Joint.knee, fixed: Joint.ankle, moving: Joint.hip),
   'hip_angle': (vertex: Joint.hip, fixed: Joint.knee, moving: Joint.shoulder),
+  'elbow_angle': (vertex: Joint.elbow, fixed: Joint.shoulder, moving: Joint.wrist),
+  'shoulder_angle': (vertex: Joint.shoulder, fixed: Joint.hip, moving: Joint.elbow),
+  'ankle_angle': (vertex: Joint.ankle, fixed: Joint.knee, moving: Joint.footIndex),
 };
 
 AngleAnnotation? annotationFor(List<ExecutionIssue> active) {

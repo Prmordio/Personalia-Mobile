@@ -16,6 +16,18 @@ final Map<String, double Function(Rep)> _repMetrics = {
   'rep.concentric_ms': (r) => r.concentricMs.toDouble(),
 };
 
+/// Sinal que o motor sabe avaliar: por quadro (signals.dart) ou métrica da rep.
+bool isSupportedSignal(String signal) => isKnownSignal(signal) || _repMetrics.containsKey(signal);
+
+/// Articulações que a regra mede (sinal da rep + checks), na ordem de [Joint]: decidem o
+/// lado avaliado e o que precisa aparecer no enquadramento.
+List<Joint> trackedJoints(ExerciseRuleSet ruleSet) {
+  final used = {
+    for (final signal in [ruleSet.rep.signal, for (final c in ruleSet.checks) c.signal]) ...?signalJoints[signal],
+  };
+  return [for (final j in Joint.values) if (used.contains(j)) j];
+}
+
 /// Aplica um [ExerciseRuleSet] a uma sequência de pose: escolhe o lado visível, extrai os
 /// sinais, conta as reps e avalia cada check por rep. Determinístico e sem dependências
 /// de plataforma.
@@ -24,7 +36,7 @@ class RuleEngine {
   final ExerciseRuleSet ruleSet;
 
   ExecutionReport evaluate(List<PoseFrame> frames) {
-    final side = pickVisibleSide(frames);
+    final side = pickVisibleSide(frames, chain: trackedJoints(ruleSet));
     final signals = {
       ruleSet.rep.signal,
       for (final c in ruleSet.checks)
@@ -60,6 +72,7 @@ class RuleEngine {
       issues: issues,
       unclearReps: [for (final r in reps) if (r.visibleRatio < minRepVisibleRatio) r.index],
       fatigue: _fatigue(clear),
+      view: ruleSet.view,
     );
   }
 

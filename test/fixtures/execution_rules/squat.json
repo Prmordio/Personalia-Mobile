@@ -1,0 +1,120 @@
+{
+  "exercise": "squat",
+  "name": "Agachamento",
+  "version": "2",
+  "schemaVersion": 1,
+  "view": "side",
+  "minConfidence": 0.5,
+  "rep": {
+    "up": 155,
+    "down": 125,
+    "signal": "knee_angle",
+    "minDurationMs": 600
+  },
+  "checks": [
+    {
+      "id": "depth",
+      "op": "lte",
+      "agg": "min",
+      "cue": {
+        "en": "Go deeper: lower your hips until your thighs are parallel to the floor.",
+        "es": "Baja más: lleva la cadera hasta que el muslo quede paralelo al suelo.",
+        "pt": "Desça mais: leve o quadril até a coxa ficar paralela ao chão."
+      },
+      "unit": "deg",
+      "label": {
+        "en": "Depth",
+        "es": "Profundidad",
+        "pt": "Profundidade"
+      },
+      "joints": [
+        "hip",
+        "knee"
+      ],
+      "signal": "knee_angle",
+      "target": 95,
+      "weight": 35,
+      "severity": "medium",
+      "tolerance": 3
+    },
+    {
+      "id": "trunk_lean",
+      "op": "lte",
+      "agg": "max",
+      "cue": {
+        "en": "Keep your chest up and your torso more upright on the way down.",
+        "es": "Mantén el pecho abierto y el tronco más erguido al bajar.",
+        "pt": "Mantenha o peito aberto e o tronco mais em pé ao descer."
+      },
+      "unit": "deg",
+      "label": {
+        "en": "Torso leaning forward",
+        "es": "Tronco inclinado",
+        "pt": "Tronco inclinado"
+      },
+      "joints": [
+        "shoulder",
+        "hip"
+      ],
+      "signal": "trunk_lean",
+      "target": 45,
+      "weight": 25,
+      "severity": "medium",
+      "tolerance": 3
+    },
+    {
+      "id": "heel_lift",
+      "op": "lte",
+      "agg": "max",
+      "cue": {
+        "en": "Keep your heels down: spread the weight across your whole foot.",
+        "es": "Mantén los talones en el suelo: reparte el peso en todo el pie.",
+        "pt": "Mantenha os calcanhares no chão: distribua o peso no pé inteiro."
+      },
+      "unit": "pct_shin",
+      "label": {
+        "en": "Heels lifting",
+        "es": "Talón levantándose",
+        "pt": "Calcanhar saindo do chão"
+      },
+      "joints": [
+        "heel",
+        "ankle"
+      ],
+      "signal": "heel_lift",
+      "target": 8,
+      "weight": 25,
+      "severity": "high",
+      "tolerance": 2
+    },
+    {
+      "id": "tempo",
+      "op": "gte",
+      "agg": "max",
+      "cue": {
+        "en": "Lower with control, taking at least 1 second.",
+        "es": "Baja con control, en al menos 1 segundo.",
+        "pt": "Desça com controle, em pelo menos 1 segundo."
+      },
+      "unit": "ms",
+      "label": {
+        "en": "Fast descent",
+        "es": "Bajada rápida",
+        "pt": "Descida rápida"
+      },
+      "joints": [
+        "knee"
+      ],
+      "signal": "rep.eccentric_ms",
+      "target": 800,
+      "weight": 15,
+      "severity": "low",
+      "tolerance": 100
+    }
+  ],
+  "exerciseNames": [
+    "agachamento livre",
+    "agachamento livre com barra",
+    "agachamento no smith"
+  ]
+}

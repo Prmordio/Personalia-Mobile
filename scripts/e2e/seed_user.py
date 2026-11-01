@@ -3,9 +3,13 @@
 
 Cadastro e onboarding passam pela API real do gateway (código do email lido no Mailpit); só o
 treino é inserido por SQL, para os testes não dependerem da geração pelo agent-v2 (lenta, gasta
-LLM e muda a cada execução). Imprime em JSON as credenciais que o run.sh repassa ao app.
+LLM e muda a cada execução). Pelo mesmo motivo as alternativas da troca de exercício do
+"Puxada E2E" vão direto para o cache do agent-v2 (Redis), que responde sem chamar a IA.
+Imprime em JSON as credenciais que o run.sh repassa ao app.
 
 Uso: seed_user.py [--cleanup]   (--cleanup apaga todos os usuários e emails de e2e)
+
+O usuário sai com assinatura válida por 30 dias (conferida pela API antes de devolver).
 """
 import json
 import random
@@ -23,6 +27,13 @@ GATEWAY = "http://localhost:3000"
 MAILPIT = "http://localhost:8025"
 EMAIL_DOMAIN = "e2e.personalia.test"
 PASSWORD = "senha-e2e-123"
+# Exercício exclusivo dos testes: o cache de alternativas é global (nome + objetivo), então um
+# nome real ("Remada curvada") faria o ambiente de dev inteiro receber as alternativas fixas.
+SWAP_EXERCISE = "Puxada E2E"
+SWAP_ALTERNATIVES = [
+    {"nome": "Puxada aberta E2E", "series": "3", "repeticoes": "10-12"},
+    {"nome": "Remada baixa E2E", "series": "3", "repeticoes": "12"},
+]
 
 
 def request(method, url, body=None, token=None):
@@ -90,8 +101,28 @@ def seed_workout(user_id):
       FROM a, (VALUES ('Supino reto'), ('Remada curvada')) AS e(nome)
     UNION ALL
     SELECT gen_random_uuid(), b.id, e.nome, '2', '12', 'tradicional', '10seg', 'Aumente 1kg quando completar as séries'
-      FROM b, (VALUES ('Agachamento livre'), ('Leg press')) AS e(nome);
+      FROM b, (VALUES ('Agachamento livre'), ('Leg press'), ('{SWAP_EXERCISE}')) AS e(nome);
     """)
+
+
+def redis(*args):
+    password = subprocess.run(COMPOSE + ["exec", "-T", "agent-v2", "printenv", "REDIS_PASSWORD"],
+                              capture_output=True, text=True).stdout.strip()
+    result = subprocess.run(COMPOSE + ["exec", "-T", "redis", "redis-cli", "-a", password, "--no-auth-warning", *args],
+                            capture_output=True, text=True)
+    if result.returncode != 0 or result.stdout.startswith(("ERR", "WRONGPASS", "NOAUTH")):
+        sys.exit(f"redis falhou: {result.stdout}{result.stderr}")
+    return result.stdout.strip()
+
+
+def alternatives_key(goal):
+    """Mesma chave do agent-v2 (CacheManager._alternatives_cache_key) para exercício de força."""
+    return f"alternatives:{SWAP_EXERCISE.lower()}:{goal.lower().strip()}:strength"
+
+
+def seed_alternatives(user_id):
+    goal = psql(f"""SELECT "mainGoal" FROM public.anamnesis WHERE "userId" = '{user_id}';""")
+    redis("SETEX", alternatives_key(goal), str(7 * 24 * 3600), json.dumps(SWAP_ALTERNATIVES, ensure_ascii=False))
 
 
 def seed_subscription(user_id, email):
@@ -132,8 +163,24 @@ def create_user():
         sys.exit(f"onboarding do seed não concluiu: {status.get('nextStep')}")
 
     seed_workout(user_id)
+    seed_alternatives(user_id)
     seed_subscription(user_id, email)
+    check_ready(token)
     return {"email": email, "password": PASSWORD, "userId": user_id}
+
+
+def check_ready(token):
+    """Confere pela API o que os testes assumem. Um serviço caído (payment-api, agent-v2) não
+    derruba o container nem o gateway, e o teste só falharia minutos depois, numa tela errada."""
+    subscription = request("GET", f"{GATEWAY}/app/subscription", None, token)
+    if not subscription.get("isValid"):
+        sys.exit(f"assinatura do seed não validou ({subscription}) — o payment-api está de pé? "
+                 "make restart-service S=payment-api")
+    alternatives = request("POST", f"{GATEWAY}/app/workout/exercise/alternatives",
+                           {"exerciseName": SWAP_EXERCISE, "series": "2", "reps": "12", "isCardio": False}, token)
+    names = [a.get("nome") for a in alternatives.get("alternatives", [])]
+    if names != [a["nome"] for a in SWAP_ALTERNATIVES]:
+        sys.exit(f"alternativas fixas não vieram do cache ({names}) — o agent-v2 e o redis estão de pé?")
 
 
 def cleanup():
@@ -149,6 +196,8 @@ def cleanup():
              f"DELETE FROM customer.del_users WHERE id::text IN ({deleted});")
     psql(f"DELETE FROM customer.signup_sessions WHERE email LIKE '{like}'; "
          f"DELETE FROM payment.subscriptions WHERE user_email LIKE '{like}';")
+    for key in redis("--scan", "--pattern", alternatives_key("*")).split():
+        redis("DEL", key)
     for query in (f"to:{EMAIL_DOMAIN}", "to:sms.local"):
         urllib.request.urlopen(urllib.request.Request(
             f"{MAILPIT}/api/v1/search?query={urllib.parse.quote(query)}", method="DELETE"), timeout=10)

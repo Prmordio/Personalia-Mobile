@@ -400,10 +400,10 @@ class _IssueCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(issueLabel(l, issue.id), style: const TextStyle(fontWeight: FontWeight.w600)),
+                  Text(issueLabel(l, issue.check, language), style: const TextStyle(fontWeight: FontWeight.w600)),
                   Text(
                     '${l.execRepsList(issue.reps.join(', '))} · '
-                    '${l.execMeasured(formatMeasure(issue.measured, issue.check.unit), formatTarget(issue.check))}',
+                    '${l.execMeasured(formatMeasured(issue.measured, issue.check), formatTarget(issue.check))}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const SizedBox(height: 4),

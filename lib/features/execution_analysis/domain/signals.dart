@@ -17,6 +17,12 @@ typedef _SignalFn = double? Function(PoseFrame frame, BodySide side, double minC
 final Map<String, _SignalFn> _signals = {
   'knee_angle': (f, s, c) => _angle(f, s, c, Joint.hip, Joint.knee, Joint.ankle),
   'hip_angle': (f, s, c) => _angle(f, s, c, Joint.shoulder, Joint.hip, Joint.knee),
+  // Braço estendido ≈ 180°, dobrado (rosca no topo) ≈ 40°.
+  'elbow_angle': (f, s, c) => _angle(f, s, c, Joint.shoulder, Joint.elbow, Joint.wrist),
+  // Braço junto ao tronco ≈ 0–20°, na horizontal ≈ 90°, acima da cabeça ≈ 170°.
+  'shoulder_angle': (f, s, c) => _angle(f, s, c, Joint.hip, Joint.shoulder, Joint.elbow),
+  // Canela × pé: em pé ≈ 90–110°, na ponta do pé (panturrilha) ≈ 130–150°.
+  'ankle_angle': (f, s, c) => _angle(f, s, c, Joint.knee, Joint.ankle, Joint.footIndex),
   'trunk_lean': (f, s, c) {
     final shoulder = f.visible(Joint.shoulder.on(s), c);
     final hip = f.visible(Joint.hip.on(s), c);
@@ -33,6 +39,18 @@ final Map<String, _SignalFn> _signals = {
     final shin = distance(knee, ankle);
     return shin == 0 ? null : (toe.y - heel.y) / shin * 100;
   },
+};
+
+/// Articulações de que cada sinal depende — definem o lado escolhido e o enquadramento
+/// exigido antes de gravar (um supino não precisa do tornozelo visível).
+const signalJoints = {
+  'knee_angle': [Joint.hip, Joint.knee, Joint.ankle],
+  'hip_angle': [Joint.shoulder, Joint.hip, Joint.knee],
+  'elbow_angle': [Joint.shoulder, Joint.elbow, Joint.wrist],
+  'shoulder_angle': [Joint.hip, Joint.shoulder, Joint.elbow],
+  'ankle_angle': [Joint.knee, Joint.ankle, Joint.footIndex],
+  'trunk_lean': [Joint.shoulder, Joint.hip],
+  'heel_lift': [Joint.knee, Joint.ankle, Joint.heel, Joint.footIndex],
 };
 
 const _baselineSignals = {'heel_lift'};

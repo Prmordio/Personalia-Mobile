@@ -55,6 +55,11 @@ class ExecutionRecorder {
     final controller = _controller!;
     if (controller.value.isStreamingImages) await controller.stopImageStream();
     _frames.clear();
+    // Preview + vídeo + análise juntos fazem o CameraX ligar o StreamSharing em vários
+    // Android: o preview chega já rotacionado e o plugin gira de novo (imagem 90° torta).
+    // Sem o preview ficam só 2 streams — suportados em qualquer aparelho — e a pose roda
+    // mais solta; a tela mostra o esqueleto ao vivo enquanto grava.
+    await controller.pausePreview();
     await controller.startVideoRecording(onAvailable: _onRecordingImage);
     _clock = Stopwatch()..start();
   }
