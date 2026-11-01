@@ -10,6 +10,7 @@ import 'package:personalia_app/features/execution_analysis/data/execution_analys
 import 'package:personalia_app/features/execution_analysis/data/execution_recorder.dart';
 import 'package:personalia_app/features/execution_analysis/data/keyframe_extractor.dart';
 import 'package:personalia_app/features/execution_analysis/domain/exercise_rule_set.dart';
+import 'package:personalia_app/features/execution_analysis/domain/execution_rule_catalog.dart';
 import 'package:personalia_app/features/execution_analysis/domain/execution_report.dart';
 import 'package:personalia_app/features/execution_analysis/domain/keyframe_selector.dart';
 import 'package:personalia_app/features/execution_analysis/domain/pose_frame.dart';
@@ -19,8 +20,11 @@ import 'package:personalia_app/features/execution_analysis/state/execution_analy
 class _FileRuleSets implements RuleSetRepository {
   @override
   Future<ExerciseRuleSet> load(String exerciseKey) async => ExerciseRuleSet.fromJson(
-        jsonDecode(File('assets/execution_rules/$exerciseKey.json').readAsStringSync()) as Map<String, dynamic>,
+        jsonDecode(File('test/fixtures/execution_rules/$exerciseKey.json').readAsStringSync()) as Map<String, dynamic>,
       );
+
+  @override
+  Future<ExecutionRuleCatalog> catalog() async => ExecutionRuleCatalog([await load('squat')]);
 }
 
 class _FakeKeyframes extends KeyframeExtractor {

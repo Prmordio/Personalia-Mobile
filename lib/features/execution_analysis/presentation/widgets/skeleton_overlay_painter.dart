@@ -19,6 +19,8 @@ class AngleAnnotation {
 }
 
 const _bones = [
+  (Joint.shoulder, Joint.elbow),
+  (Joint.elbow, Joint.wrist),
   (Joint.shoulder, Joint.hip),
   (Joint.hip, Joint.knee),
   (Joint.knee, Joint.ankle),

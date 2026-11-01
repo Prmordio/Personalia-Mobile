@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/asset_rule_set_repository.dart';
+import '../../../core/providers.dart';
 import '../data/execution_analysis_api.dart';
 import '../data/execution_recorder.dart';
 import '../data/keyframe_extractor.dart';
+import '../data/remote_rule_set_repository.dart';
 import '../domain/exercise_rule_set.dart';
 import '../domain/execution_report.dart';
+import '../domain/execution_rule_catalog.dart';
 import '../domain/keyframe_selector.dart';
 import '../domain/pose_frame.dart';
 import '../domain/rule_engine.dart';
@@ -110,7 +112,12 @@ class ExecutionAnalysisController extends StateNotifier<ExecutionAnalysisState> 
   }
 }
 
-final ruleSetRepositoryProvider = Provider<RuleSetRepository>((ref) => AssetRuleSetRepository());
+final ruleSetRepositoryProvider =
+    Provider<RuleSetRepository>((ref) => RemoteRuleSetRepository(ref.watch(apiClientProvider).dio));
+
+/// Catálogo de regras publicadas — decide quais exercícios mostram o botão "Analisar".
+final executionRuleCatalogProvider =
+    FutureProvider<ExecutionRuleCatalog>((ref) => ref.watch(ruleSetRepositoryProvider).catalog());
 final keyframeExtractorProvider = Provider<KeyframeExtractor>((ref) => const KeyframeExtractor());
 
 final executionAnalysisProvider =

@@ -66,7 +66,7 @@ void main() {
     await driver.expectText(l.errAppAccessEmail);
 
     // Email que já tem conta (o usuário semeado): 409 do backend, app oferece ir para o login.
-    await driver.enterText(emailField, E2eEnv.seededEmail);
+    await driver.enterText(emailField, E2eEnv.seededEmail('signup'));
     await driver.tapText(l.appAccessSendCodeAction);
     await driver.expectText('Este email já tem uma conta');
     await driver.waitFor(find.text(l.signupGoToLogin));

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n/l10n.dart';
@@ -13,10 +14,12 @@ import '../domain/exercise_rule_set.dart';
 import '../domain/geometry.dart';
 import '../domain/pose_frame.dart';
 import '../domain/rep_segmenter.dart';
+import '../domain/rule_engine.dart';
 import '../domain/signals.dart';
 import '../state/execution_analysis_controller.dart';
 import 'execution_result_screen.dart';
 import 'widgets/skeleton_overlay_painter.dart';
+import 'widgets/upright_camera_preview.dart';
 
 class ExecutionCaptureArgs {
   const ExecutionCaptureArgs({required this.exerciseKey, required this.exerciseName});
@@ -26,7 +29,6 @@ class ExecutionCaptureArgs {
 
 const _countdownSeconds = 3;
 const _maxRecording = Duration(seconds: 60);
-const _framingChain = [Joint.shoulder, Joint.hip, Joint.knee, Joint.ankle];
 
 /// Gravação guiada: consentimento → enquadramento (esqueleto ao vivo) → contagem →
 /// gravação com contador de reps → análise.
@@ -54,6 +56,8 @@ class _ExecutionCaptureScreenState extends ConsumerState<ExecutionCaptureScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // A pose e o vídeo são processados em retrato; a UI não pode girar junto com o aparelho.
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
     WidgetsBinding.instance.addPostFrameCallback((_) => _start());
   }
 
@@ -125,15 +129,23 @@ class _ExecutionCaptureScreenState extends ConsumerState<ExecutionCaptureScreen>
     if (!_recording || recorder == null || ruleSet == null) return;
     final frames = recorder.recordedFrames;
     if (frames.length % 5 != 0) return;
-    final samples = extractSignals(frames, pickVisibleSide(frames), {ruleSet.rep.signal}, minConfidence: ruleSet.minConfidence);
+    final side = pickVisibleSide(frames, chain: _trackedJoints);
+    final samples = extractSignals(frames, side, {ruleSet.rep.signal}, minConfidence: ruleSet.minConfidence);
     final reps = RepSegmenter(ruleSet.rep).segment(samples).length;
     if (reps != _liveReps && mounted) setState(() => _liveReps = reps);
   }
 
+  /// Só as articulações que a regra mede precisam aparecer (no supino o tornozelo pode sumir).
+  List<Joint> get _trackedJoints => switch (_ruleSet) {
+        final ruleSet? => trackedJoints(ruleSet),
+        null => defaultSideChain,
+      };
+
   bool _isFramed(PoseFrame? frame) {
     if (frame == null) return false;
     final min = _ruleSet?.minConfidence ?? 0.5;
-    bool sideOk(BodySide s) => _framingChain.every((j) => frame.visible(j.on(s), min) != null);
+    final chain = _trackedJoints;
+    bool sideOk(BodySide s) => chain.every((j) => frame.visible(j.on(s), min) != null);
     return sideOk(BodySide.left) || sideOk(BodySide.right);
   }
 
@@ -196,6 +208,7 @@ class _ExecutionCaptureScreenState extends ConsumerState<ExecutionCaptureScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    SystemChrome.setPreferredOrientations(const []);
     _timer?.cancel();
     _closeCamera();
     super.dispose();
@@ -235,7 +248,7 @@ class _ExecutionCaptureScreenState extends ConsumerState<ExecutionCaptureScreen>
                   children: [
                     Expanded(
                       child: Center(
-                        child: CameraPreview(
+                        child: UprightCameraPreview(
                           controller,
                           child: ValueListenableBuilder<PoseFrame?>(
                             valueListenable: recorder!.livePose,
@@ -245,7 +258,7 @@ class _ExecutionCaptureScreenState extends ConsumerState<ExecutionCaptureScreen>
                                 CustomPaint(
                                   painter: SkeletonOverlayPainter(
                                     frame: frame,
-                                    side: frame == null ? BodySide.left : pickVisibleSide([frame]),
+                                    side: frame == null ? BodySide.left : pickVisibleSide([frame], chain: _trackedJoints),
                                     minConfidence: _ruleSet?.minConfidence ?? 0.5,
                                   ),
                                 ),
@@ -267,7 +280,9 @@ class _ExecutionCaptureScreenState extends ConsumerState<ExecutionCaptureScreen>
                                             ? l.execCountdown(_countdown!)
                                             : _isFramed(frame)
                                                 ? l.execFramingOk
-                                                : '${l.execFramingBad}\n${l.execFramingHint}',
+                                                : _ruleSet?.view == CameraView.front
+                                                    ? '${l.execFramingBadFront}\n${l.execFramingHintFront}'
+                                                    : '${l.execFramingBad}\n${l.execFramingHint}',
                                     ok: _recording || _isFramed(frame),
                                   ),
                                 ),

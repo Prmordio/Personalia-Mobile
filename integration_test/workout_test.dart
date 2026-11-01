@@ -23,27 +23,9 @@ void main() {
 
   Future<void> loginAndOpenTodayWorkout(AppDriver driver) async {
     await driver.launchLoggedOut();
-    await driver.loginWithPassword(E2eEnv.seededEmail, E2eEnv.seededPassword);
+    await driver.loginWithPassword(E2eEnv.seededEmail('workout'), E2eEnv.seededPassword);
     await driver.tapText(driver.l10n.workoutStart, timeout: const Duration(seconds: 45));
     await driver.waitFor(find.text('Supino reto'));
-  }
-
-  /// Conclui as séries com o descanso pulado, registra peso/observação e finaliza o exercício.
-  Future<void> completeExercise(AppDriver driver, String name, {required String weight, String? note}) async {
-    final l = driver.l10n;
-    for (var set = 0; set < 2; set++) {
-      await driver.tapText(l.restBtnStartRest);
-      if (find.text(l.restEndRest).evaluate().isNotEmpty) {
-        await driver.tapText(l.restEndRest);
-      }
-    }
-    await driver.waitFor(find.text(l.restExerciseDone));
-    await driver.enterText(driver.fieldWithHint(l.restWeightLabel), weight);
-    if (note != null) {
-      await driver.enterText(driver.fieldWithHint(l.restObservationLabel), note);
-    }
-    await driver.tapText(l.restBtnFinishExercise);
-    await driver.waitForGone(find.text(l.restBtnFinishExercise));
   }
 
   testWidgets('2-4. iniciar treino, registrar exercícios, timer de descanso e finalizar', (tester) async {
@@ -87,7 +69,7 @@ void main() {
     await driver.waitForGone(find.text(l.restBtnFinishExercise));
 
     await driver.tapText('Remada curvada');
-    await completeExercise(driver, 'Remada curvada', weight: '30');
+    await driver.completeExercise(sets: 2, weight: '30');
 
     // Finalizar o treino: com todos os exercícios concluídos o app já abre o resumo; senão,
     // passa pelo "Finalizar treino" + confirmação.
@@ -101,7 +83,7 @@ void main() {
     await driver.idle(const Duration(seconds: 3));
 
     // O backend gravou a execução com os dois exercícios e os pesos informados.
-    final token = await backend.login(E2eEnv.seededEmail, E2eEnv.seededPassword);
+    final token = await backend.login(E2eEnv.seededEmail('workout'), E2eEnv.seededPassword);
     final history = await backend.get('/app/workout/history', token) as List;
     expect(history, isNotEmpty, reason: 'execução registrada no histórico');
     final execution = history.first as Map;

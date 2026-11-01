@@ -12,7 +12,7 @@ void main() {
   testWidgets('5. atualizar peso e altura pelo card de progresso', (tester) async {
     final driver = AppDriver(tester);
     await driver.launchLoggedOut();
-    await driver.loginWithPassword(E2eEnv.seededEmail, E2eEnv.seededPassword);
+    await driver.loginWithPassword(E2eEnv.seededEmail('measures'), E2eEnv.seededPassword);
     final l = driver.l10n;
 
     await driver.tapText(l.progressTitle, timeout: const Duration(seconds: 45));
@@ -24,7 +24,7 @@ void main() {
 
     // A home recarrega o progresso com o peso novo, e o backend gravou as duas medidas.
     await driver.expectText('82.5');
-    final token = await backend.login(E2eEnv.seededEmail, E2eEnv.seededPassword);
+    final token = await backend.login(E2eEnv.seededEmail('measures'), E2eEnv.seededPassword);
     final progress = await backend.get('/app/progress', token) as Map;
     expect(progress['currentWeight'], 82.5);
     expect(progress['currentHeight'], 179);

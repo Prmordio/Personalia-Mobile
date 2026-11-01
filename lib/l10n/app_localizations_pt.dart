@@ -1649,6 +1649,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get execFramingBad => 'Ainda não vejo seu corpo inteiro de lado.';
 
   @override
+  String get execFramingHintFront =>
+      'Apoie o celular de frente para você, a uns 2–3 m, com o corpo inteiro aparecendo.';
+
+  @override
+  String get execFramingBadFront =>
+      'Ainda não vejo seu corpo inteiro de frente.';
+
+  @override
   String get execStart => 'Gravar série';
 
   @override
@@ -1675,7 +1683,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get execNoRepsBody =>
-      'Grave de lado, com o corpo inteiro no quadro, fazendo o agachamento completo.';
+      'Grave na posição indicada, com o corpo inteiro no quadro, fazendo o movimento completo.';
 
   @override
   String get execTryAgain => 'Gravar de novo';
@@ -1718,7 +1726,7 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String execUnclear(String reps) {
-    return 'Não consegui ver bem as reps $reps. Filme de lado com o corpo todo no quadro.';
+    return 'Não consegui ver bem as reps $reps. Filme com o corpo todo no quadro, na posição indicada.';
   }
 
   @override

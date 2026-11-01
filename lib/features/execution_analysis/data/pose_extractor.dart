@@ -21,6 +21,10 @@ abstract class PoseExtractor {
 const _landmarkTypes = {
   Landmark.leftShoulder: PoseLandmarkType.leftShoulder,
   Landmark.rightShoulder: PoseLandmarkType.rightShoulder,
+  Landmark.leftElbow: PoseLandmarkType.leftElbow,
+  Landmark.rightElbow: PoseLandmarkType.rightElbow,
+  Landmark.leftWrist: PoseLandmarkType.leftWrist,
+  Landmark.rightWrist: PoseLandmarkType.rightWrist,
   Landmark.leftHip: PoseLandmarkType.leftHip,
   Landmark.rightHip: PoseLandmarkType.rightHip,
   Landmark.leftKnee: PoseLandmarkType.leftKnee,

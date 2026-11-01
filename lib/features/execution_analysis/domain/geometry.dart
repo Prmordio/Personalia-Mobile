@@ -20,10 +20,12 @@ double angleFromVertical(PosePoint top, PosePoint bottom) {
 
 double distance(PosePoint a, PosePoint b) => math.sqrt(math.pow(a.x - b.x, 2) + math.pow(a.y - b.y, 2));
 
-/// Lado mais visível para a câmera (vista lateral): maior confiança média na cadeia
-/// ombro-quadril-joelho-tornozelo.
-BodySide pickVisibleSide(List<PoseFrame> frames) {
-  const chain = [Joint.shoulder, Joint.hip, Joint.knee, Joint.ankle];
+const defaultSideChain = [Joint.shoulder, Joint.hip, Joint.knee, Joint.ankle];
+
+/// Lado mais visível para a câmera: maior confiança média na [chain] de articulações que a
+/// regra usa (por padrão ombro-quadril-joelho-tornozelo).
+
+BodySide pickVisibleSide(List<PoseFrame> frames, {List<Joint> chain = defaultSideChain}) {
   double score(BodySide side) {
     var sum = 0.0;
     for (final f in frames) {

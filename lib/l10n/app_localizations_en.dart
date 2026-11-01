@@ -1643,6 +1643,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'I can\'t see your whole body from the side yet.';
 
   @override
+  String get execFramingHintFront =>
+      'Place your phone facing you, about 2–3 m away, with your whole body in frame.';
+
+  @override
+  String get execFramingBadFront =>
+      'I can\'t see your whole body from the front yet.';
+
+  @override
   String get execStart => 'Record set';
 
   @override
@@ -1669,7 +1677,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get execNoRepsBody =>
-      'Record from the side, with your whole body in frame, doing full squats.';
+      'Record from the suggested position, with your whole body in frame, doing the full movement.';
 
   @override
   String get execTryAgain => 'Record again';
@@ -1712,7 +1720,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String execUnclear(String reps) {
-    return 'I couldn\'t see reps $reps clearly. Film from the side with your whole body in frame.';
+    return 'I couldn\'t see reps $reps clearly. Film with your whole body in frame, from the suggested position.';
   }
 
   @override

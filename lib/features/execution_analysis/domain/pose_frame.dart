@@ -1,7 +1,11 @@
-/// Landmarks do BlazePose usados na análise (vista lateral). Subconjunto dos 33.
+/// Landmarks do BlazePose usados na análise. Subconjunto dos 33.
 enum Landmark {
   leftShoulder,
   rightShoulder,
+  leftElbow,
+  rightElbow,
+  leftWrist,
+  rightWrist,
   leftHip,
   rightHip,
   leftKnee,
@@ -17,11 +21,13 @@ enum Landmark {
 enum BodySide { left, right }
 
 /// Articulação independente de lado — é o que rule sets e overlay referenciam.
-enum Joint { shoulder, hip, knee, ankle, heel, footIndex }
+enum Joint { shoulder, elbow, wrist, hip, knee, ankle, heel, footIndex }
 
 extension JointSide on Joint {
   Landmark on(BodySide side) => switch (this) {
         Joint.shoulder => side == BodySide.left ? Landmark.leftShoulder : Landmark.rightShoulder,
+        Joint.elbow => side == BodySide.left ? Landmark.leftElbow : Landmark.rightElbow,
+        Joint.wrist => side == BodySide.left ? Landmark.leftWrist : Landmark.rightWrist,
         Joint.hip => side == BodySide.left ? Landmark.leftHip : Landmark.rightHip,
         Joint.knee => side == BodySide.left ? Landmark.leftKnee : Landmark.rightKnee,
         Joint.ankle => side == BodySide.left ? Landmark.leftAnkle : Landmark.rightAnkle,

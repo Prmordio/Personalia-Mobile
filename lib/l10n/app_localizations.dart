@@ -3058,6 +3058,18 @@ abstract class AppLocalizations {
   /// **'Ainda não vejo seu corpo inteiro de lado.'**
   String get execFramingBad;
 
+  /// No description provided for @execFramingHintFront.
+  ///
+  /// In pt, this message translates to:
+  /// **'Apoie o celular de frente para você, a uns 2–3 m, com o corpo inteiro aparecendo.'**
+  String get execFramingHintFront;
+
+  /// No description provided for @execFramingBadFront.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não vejo seu corpo inteiro de frente.'**
+  String get execFramingBadFront;
+
   /// No description provided for @execStart.
   ///
   /// In pt, this message translates to:
@@ -3103,7 +3115,7 @@ abstract class AppLocalizations {
   /// No description provided for @execNoRepsBody.
   ///
   /// In pt, this message translates to:
-  /// **'Grave de lado, com o corpo inteiro no quadro, fazendo o agachamento completo.'**
+  /// **'Grave na posição indicada, com o corpo inteiro no quadro, fazendo o movimento completo.'**
   String get execNoRepsBody;
 
   /// No description provided for @execTryAgain.
@@ -3169,7 +3181,7 @@ abstract class AppLocalizations {
   /// No description provided for @execUnclear.
   ///
   /// In pt, this message translates to:
-  /// **'Não consegui ver bem as reps {reps}. Filme de lado com o corpo todo no quadro.'**
+  /// **'Não consegui ver bem as reps {reps}. Filme com o corpo todo no quadro, na posição indicada.'**
   String execUnclear(String reps);
 
   /// No description provided for @execFatigue.

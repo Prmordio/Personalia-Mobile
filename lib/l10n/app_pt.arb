@@ -746,6 +746,8 @@
   "execFramingHint": "Apoie o celular de lado para você, a uns 2–3 m, com o corpo inteiro aparecendo.",
   "execFramingOk": "Enquadramento ok! Pode gravar.",
   "execFramingBad": "Ainda não vejo seu corpo inteiro de lado.",
+  "execFramingHintFront": "Apoie o celular de frente para você, a uns 2–3 m, com o corpo inteiro aparecendo.",
+  "execFramingBadFront": "Ainda não vejo seu corpo inteiro de frente.",
   "execStart": "Gravar série",
   "execStop": "Parar",
   "execCountdown": "Começando em {seconds}…",
@@ -767,7 +769,7 @@
   },
   "execAnalyzing": "Analisando sua execução…",
   "execNoRepsTitle": "Não consegui contar repetições",
-  "execNoRepsBody": "Grave de lado, com o corpo inteiro no quadro, fazendo o agachamento completo.",
+  "execNoRepsBody": "Grave na posição indicada, com o corpo inteiro no quadro, fazendo o movimento completo.",
   "execTryAgain": "Gravar de novo",
   "execScore": "Nota {score}",
   "@execScore": {
@@ -809,7 +811,7 @@
       }
     }
   },
-  "execUnclear": "Não consegui ver bem as reps {reps}. Filme de lado com o corpo todo no quadro.",
+  "execUnclear": "Não consegui ver bem as reps {reps}. Filme com o corpo todo no quadro, na posição indicada.",
   "@execUnclear": {
     "placeholders": {
       "reps": {
