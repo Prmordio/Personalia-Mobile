@@ -760,6 +760,48 @@ abstract class AppLocalizations {
   /// **'Sair'**
   String get menuLogout;
 
+  /// No description provided for @menuDeleteAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir conta'**
+  String get menuDeleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir sua conta?'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tem certeza? Essa ação é permanente e não pode ser desfeita.\n\nSua conta e seus dados — perfil, anamnese, treinos, histórico e conversas — serão excluídos, e você será desconectado.\n\nSe você assina pela App Store ou Google Play, cancele a assinatura na loja: excluir a conta não interrompe a cobrança.'**
+  String get deleteAccountMessage;
+
+  /// No description provided for @deleteAccountCancel.
+  ///
+  /// In pt, this message translates to:
+  /// **'Cancelar'**
+  String get deleteAccountCancel;
+
+  /// No description provided for @deleteAccountConfirm.
+  ///
+  /// In pt, this message translates to:
+  /// **'Excluir conta'**
+  String get deleteAccountConfirm;
+
+  /// No description provided for @deleteAccountDone.
+  ///
+  /// In pt, this message translates to:
+  /// **'Sua conta foi excluída.'**
+  String get deleteAccountDone;
+
+  /// No description provided for @errDeleteAccount.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível excluir sua conta. Tente novamente.'**
+  String get errDeleteAccount;
+
   /// No description provided for @appearanceSystem.
   ///
   /// In pt, this message translates to:
@@ -2385,6 +2427,12 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'O CPF tem 11 dígitos.'**
   String get errProfileCpf;
+
+  /// No description provided for @errProfileCpfInvalid.
+  ///
+  /// In pt, this message translates to:
+  /// **'CPF inválido. Confira os números digitados.'**
+  String get errProfileCpfInvalid;
 
   /// No description provided for @prefsFieldMinDuration.
   ///

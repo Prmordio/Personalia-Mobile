@@ -295,4 +295,81 @@ void main() {
       );
     }
   }
+
+  testWidgets(
+    'typing the weight keeps the field focused when the done banner appears above it',
+    (tester) async {
+      final l = lookupAppLocalizations(const Locale('pt'));
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        WorkoutLiveController.channel,
+        (call) async => null,
+      );
+      final timer = RestTimerNotifier(
+        totalSeconds: 90,
+        totalSets: 3,
+        exerciseName: 'Supino',
+      );
+      timer.syncExecution(3);
+      final container = ProviderContainer(
+        overrides: [
+          restTimerProvider(('Supino', 90, 3)).overrideWith((ref) => timer),
+          exerciseImageProvider('Supino').overrideWith((ref) async => null),
+        ],
+      );
+      try {
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              locale: const Locale('pt'),
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: RestTimerScreen(
+                args: RestTimerArgs(
+                  dayName: 'Treino A',
+                  exercise: WorkoutExercise(
+                    nome: 'Supino',
+                    series: '3',
+                    repeticoes: '10',
+                    descanso: '90s',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(timer.state.finished, isFalse);
+        final weight = find.byWidgetPredicate(
+          (w) => w is TextField && w.decoration?.labelText == l.restWeightLabel,
+        );
+        await tester.showKeyboard(weight);
+        final editable = tester.element(
+          find.descendant(of: weight, matching: find.byType(EditableText)),
+        );
+        final focusNode = (editable.widget as EditableText).focusNode;
+        expect(focusNode.hasFocus, isTrue);
+
+        tester.testTextInput.enterText('4');
+        await tester.pump();
+        // The app root's native-state listener marks the exercise finished once it has a
+        // weight, which inserts the "done" banner above the fields.
+        timer.syncExecution(3, finished: true);
+        await tester.pump();
+
+        expect(find.text(l.restExerciseDone), findsWidgets);
+        expect(editable.mounted, isTrue, reason: 'the weight field was rebuilt');
+        expect(focusNode.hasFocus, isTrue, reason: 'the keyboard would close');
+        tester.testTextInput.enterText('40');
+        await tester.pump();
+        expect(timer.state.weight, '40');
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        container.dispose();
+        messenger.setMockMethodCallHandler(WorkoutLiveController.channel, null);
+      }
+    },
+  );
 }

@@ -382,6 +382,29 @@ class AppLocalizationsEs extends AppLocalizations {
   String get menuLogout => 'Cerrar sesión';
 
   @override
+  String get menuDeleteAccount => 'Eliminar cuenta';
+
+  @override
+  String get deleteAccountTitle => '¿Eliminar tu cuenta?';
+
+  @override
+  String get deleteAccountMessage =>
+      '¿Estás seguro? Esta acción es permanente y no se puede deshacer.\n\nTu cuenta y tus datos — perfil, anamnesis, entrenamientos, historial y conversaciones — serán eliminados y se cerrará tu sesión.\n\nSi te suscribes a través de la App Store o Google Play, cancela la suscripción en la tienda: eliminar la cuenta no detiene el cobro.';
+
+  @override
+  String get deleteAccountCancel => 'Cancelar';
+
+  @override
+  String get deleteAccountConfirm => 'Eliminar cuenta';
+
+  @override
+  String get deleteAccountDone => 'Tu cuenta fue eliminada.';
+
+  @override
+  String get errDeleteAccount =>
+      'No pudimos eliminar tu cuenta. Inténtalo de nuevo.';
+
+  @override
   String get appearanceSystem => 'Sistema';
 
   @override
@@ -1281,6 +1304,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errProfileCpf => 'El CPF tiene 11 dígitos.';
+
+  @override
+  String get errProfileCpfInvalid =>
+      'CPF inválido. Revisa los números ingresados.';
 
   @override
   String get prefsFieldMinDuration => 'Duración mínima';

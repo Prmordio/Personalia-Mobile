@@ -297,8 +297,9 @@ class OnboardingController extends StateNotifier<OnboardingState> {
     required String email,
     required bool accepted,
   }) async {
+    final cpfError = cpfErrorKey(cpf);
     final errors = <String, String>{
-      if (!isValidCpf(cpf)) 'cpf': 'errProfileCpf',
+      'cpf': ?cpfError,
       if (!accepted) 'accepted': 'disclaimerCheckbox',
     };
     if (errors.isNotEmpty) {
