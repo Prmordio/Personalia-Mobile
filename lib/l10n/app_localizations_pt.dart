@@ -381,6 +381,29 @@ class AppLocalizationsPt extends AppLocalizations {
   String get menuLogout => 'Sair';
 
   @override
+  String get menuDeleteAccount => 'Excluir conta';
+
+  @override
+  String get deleteAccountTitle => 'Excluir sua conta?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Tem certeza? Essa ação é permanente e não pode ser desfeita.\n\nSua conta e seus dados — perfil, anamnese, treinos, histórico e conversas — serão excluídos, e você será desconectado.\n\nSe você assina pela App Store ou Google Play, cancele a assinatura na loja: excluir a conta não interrompe a cobrança.';
+
+  @override
+  String get deleteAccountCancel => 'Cancelar';
+
+  @override
+  String get deleteAccountConfirm => 'Excluir conta';
+
+  @override
+  String get deleteAccountDone => 'Sua conta foi excluída.';
+
+  @override
+  String get errDeleteAccount =>
+      'Não foi possível excluir sua conta. Tente novamente.';
+
+  @override
   String get appearanceSystem => 'Sistema';
 
   @override
@@ -1280,6 +1303,10 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get errProfileCpf => 'O CPF tem 11 dígitos.';
+
+  @override
+  String get errProfileCpfInvalid =>
+      'CPF inválido. Confira os números digitados.';
 
   @override
   String get prefsFieldMinDuration => 'Duração mínima';

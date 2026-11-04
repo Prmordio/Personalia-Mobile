@@ -8,10 +8,11 @@
 #   KEEP_DATA=1 scripts/e2e/run.sh     # não apaga os usuários/emails de e2e no fim
 #
 # Aparelho: por padrão o celular conectado por USB (depuração USB ligada, tela desbloqueada).
-# Sem celular, usa um emulador já rodando ou sobe o AVD personalia_e2e (E2E_AVD=nome).
+# Sem celular, usa um emulador já rodando; só sobe o AVD personalia_e2e (E2E_AVD=nome) com
+# E2E_START_EMULATOR=1 — o notebook de dev não aguenta o emulador junto com o backend.
 # O celular alcança o gateway e o Mailpit do host por `adb reverse` (localhost:3000 e :8025).
 #
-# Pré-requisito: `make dev-fast` rodando (gateway, users, trainer, payment, notifier, mailpit,
+# Pré-requisito: `make dev-back-detached` (só backend) rodando (gateway, users, trainer, payment, notifier, mailpit,
 # postgres). Atenção: o teste instala o build de debug por cima do app do aparelho e desloga
 # a conta que estiver logada nele.
 set -euo pipefail
@@ -29,7 +30,7 @@ log() { printf '\n\033[1;36m== %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31m%s\033[0m\n' "$*" >&2; exit 1; }
 
 log "Backend local"
-curl -sf -o /dev/null http://localhost:3000/health || die "Gateway fora do ar em :3000 — rode 'make dev-fast'."
+curl -sf -o /dev/null http://localhost:3000/health || die "Gateway fora do ar em :3000 — rode 'make dev-back-detached'."
 curl -sf -o /dev/null http://localhost:8025/api/v1/messages || die "Mailpit fora do ar em :8025."
 [ "$("${COMPOSE[@]}" exec -T notifier-api printenv SMS_TRANSPORT 2>/dev/null | tr -d '\r')" = mailbox ] ||
   die "notifier-api sem SMS_TRANSPORT=mailbox — recrie com: docker compose -f docker-compose.dev.yml up -d notifier-api"
@@ -42,6 +43,9 @@ if [ -z "$DEVICE" ]; then
   DEVICE="$(emulator_serial)"
 fi
 if [ -z "$DEVICE" ]; then
+  # Subir o emulador pesa demais neste notebook: só com autorização explícita.
+  [ -n "${E2E_START_EMULATOR:-}" ] ||
+    die "Nenhum celular conectado. Conecte o celular por USB (depuração ligada) ou, para subir o AVD $AVD, rode com E2E_START_EMULATOR=1."
   echo "Nenhum celular nem emulador — iniciando o AVD $AVD (sem janela)."
   nohup "$SDK/emulator/emulator" -avd "$AVD" -no-window -no-audio -no-boot-anim -memory 2048 \
     -gpu swiftshader_indirect -no-snapshot-save >/tmp/personalia-e2e-emulator.log 2>&1 &

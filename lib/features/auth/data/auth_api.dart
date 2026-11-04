@@ -41,6 +41,11 @@ class AuthApi {
     return response.data['token'] as String;
   }
 
+  /// Exclui a conta do usuário logado (o backend usa o id do JWT) e todos os dados dela.
+  Future<void> deleteAccount() async {
+    await _dio.delete('/app/account');
+  }
+
   /// Login por email+senha. Retorna o JWT.
   Future<String> loginWithPassword(String email, String password) async {
     final response = await _dio.post('/auth/login', data: {'email': email, 'password': password});

@@ -6,6 +6,7 @@ import '../../../core/l10n/l10n.dart';
 import '../../../core/locale/locale_controller.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/theme_mode_controller.dart';
+import '../../account/state/account_deletion_service.dart';
 import '../../auth/state/biometric_login_service.dart';
 
 class MenuScreen extends ConsumerWidget {
@@ -83,6 +84,7 @@ class MenuScreen extends ConsumerWidget {
               ref.read(authRefreshProvider).value++;
             },
           ),
+          const _DeleteAccountTile(),
         ],
       ),
     );
@@ -177,6 +179,73 @@ class _BiometricToggleState extends ConsumerState<_BiometricToggle> {
       subtitle: Text(context.l10n.biometricToggleSubtitle),
       value: _enabled!,
       onChanged: _busy ? null : _toggle,
+    );
+  }
+}
+
+/// Exclusão da conta: pede confirmação num modal e, confirmada, apaga a conta e desloga.
+class _DeleteAccountTile extends ConsumerWidget {
+  const _DeleteAccountTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    return ListTile(
+      key: const Key('menu-delete-account'),
+      leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
+      title: Text(l.menuDeleteAccount, style: const TextStyle(color: Colors.red)),
+      onTap: () => _confirmAndDelete(context, ref),
+    );
+  }
+
+  Future<void> _confirmAndDelete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
+    );
+    final navigator = Navigator.of(context, rootNavigator: true);
+    try {
+      await ref.read(accountDeletionServiceProvider).deleteAccount();
+      navigator.pop();
+      messenger.showSnackBar(SnackBar(content: Text(l.deleteAccountDone)));
+    } catch (_) {
+      navigator.pop();
+      messenger.showSnackBar(SnackBar(content: Text(l.errDeleteAccount)));
+    }
+  }
+}
+
+class _DeleteAccountDialog extends StatelessWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return AlertDialog(
+      icon: const Icon(Icons.warning_amber_rounded, color: Colors.red),
+      title: Text(l.deleteAccountTitle),
+      content: SingleChildScrollView(child: Text(l.deleteAccountMessage)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: Text(l.deleteAccountCancel),
+        ),
+        FilledButton(
+          key: const Key('delete-account-confirm'),
+          style: FilledButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+          onPressed: () => Navigator.of(context).pop(true),
+          child: Text(l.deleteAccountConfirm),
+        ),
+      ],
     );
   }
 }

@@ -663,7 +663,11 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
             const SizedBox(height: 24),
           ],
           ...[
+            // Chaves estáveis: o banner de "concluído" entra ACIMA dos campos quando o peso é
+            // digitado; sem chave a lista casa os filhos por posição, recria o campo e o
+            // teclado fecha no meio da digitação.
             TextField(
+              key: const ValueKey('rest-weight-field'),
               controller: _weightController,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
@@ -682,6 +686,7 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
             ),
             const SizedBox(height: 12),
             TextField(
+              key: const ValueKey('rest-observation-field'),
               controller: _observationController,
               decoration: InputDecoration(
                 labelText: context.l10n.restObservationLabel,

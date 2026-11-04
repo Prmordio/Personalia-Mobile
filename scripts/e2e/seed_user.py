@@ -142,6 +142,11 @@ def cleanup():
     ids = psql(f"SELECT string_agg(quote_literal(id::text), ',') FROM customer.users WHERE email LIKE '{like}';")
     if ids:
         psql(f"DELETE FROM public.users WHERE id::text IN ({ids}); DELETE FROM customer.users WHERE id::text IN ({ids});")
+    # Contas excluídas pelo próprio app (account_deletion_test) ficam arquivadas em del_users.
+    deleted = psql(f"SELECT string_agg(quote_literal(id::text), ',') FROM customer.del_users WHERE email LIKE '{like}';")
+    if deleted:
+        psql(f"DELETE FROM public.del_users WHERE id::text IN ({deleted}); "
+             f"DELETE FROM customer.del_users WHERE id::text IN ({deleted});")
     psql(f"DELETE FROM customer.signup_sessions WHERE email LIKE '{like}'; "
          f"DELETE FROM payment.subscriptions WHERE user_email LIKE '{like}';")
     for query in (f"to:{EMAIL_DOMAIN}", "to:sms.local"):

@@ -161,6 +161,7 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
           hintText: hint,
           errorText: switch (state.fieldErrors[key]) {
             'errProfileCpf' => l.errProfileCpf,
+            'errProfileCpfInvalid' => l.errProfileCpfInvalid,
             'disclaimerCheckbox' => l.disclaimerCheckbox,
             final message => message,
           },
@@ -326,8 +327,11 @@ class _ProfileFormStepState extends ConsumerState<ProfileFormStep> {
                     'cpf',
                     hint: l.onboardingCpfHint,
                   ),
-                  validator: (v) =>
-                      !isValidCpf(v ?? '') ? l.errProfileCpf : null,
+                  validator: (v) => switch (cpfErrorKey(v ?? '')) {
+                    'errProfileCpf' => l.errProfileCpf,
+                    'errProfileCpfInvalid' => l.errProfileCpfInvalid,
+                    _ => null,
+                  },
                 ),
                 const SizedBox(height: 8),
                 Text(

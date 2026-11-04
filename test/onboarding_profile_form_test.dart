@@ -150,7 +150,9 @@ void main() {
             await tester.enterText(cpf, invalid);
             await tester.tap(button);
             await tester.pumpAndSettle();
-            expect(find.text(l.errProfileCpf), findsOneWidget);
+            // 11 dígitos: a mensagem é de CPF inválido, não "tem 11 dígitos".
+            expect(find.text(l.errProfileCpfInvalid), findsOneWidget);
+            expect(find.text(l.errProfileCpf), findsNothing);
             expect(find.byType(CheckboxListTile), findsOneWidget);
             expect(api.calls, isEmpty);
           }

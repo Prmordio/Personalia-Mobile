@@ -382,6 +382,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuLogout => 'Sign out';
 
   @override
+  String get menuDeleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'Delete your account?';
+
+  @override
+  String get deleteAccountMessage =>
+      'Are you sure? This action is permanent and cannot be undone.\n\nYour account and your data — profile, health questionnaire, workouts, history and conversations — will be deleted, and you will be signed out.\n\nIf you subscribe through the App Store or Google Play, cancel the subscription in the store: deleting your account does not stop billing.';
+
+  @override
+  String get deleteAccountCancel => 'Cancel';
+
+  @override
+  String get deleteAccountConfirm => 'Delete account';
+
+  @override
+  String get deleteAccountDone => 'Your account has been deleted.';
+
+  @override
+  String get errDeleteAccount =>
+      'We couldn\'t delete your account. Please try again.';
+
+  @override
   String get appearanceSystem => 'System';
 
   @override
@@ -1277,6 +1300,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errProfileCpf => 'CPF has 11 digits.';
+
+  @override
+  String get errProfileCpfInvalid =>
+      'Invalid CPF. Please check the numbers you entered.';
 
   @override
   String get prefsFieldMinDuration => 'Minimum duration';
