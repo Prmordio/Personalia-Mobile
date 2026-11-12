@@ -17,10 +17,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
 
-version: 3.2.5+38
+version: 3.4.0+39
 
 environment:
-  sdk: ^3.11.1
+  sdk: ^3.13.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -55,13 +55,18 @@ dependencies:
   firebase_analytics: 11.6.0
   firebase_performance: 0.10.1+10
   in_app_purchase: ^3.3.1
+  camera: ^0.12.2
+  google_mlkit_pose_detection: ^0.16.1
+  video_player: ^2.14.1
+  get_thumbnail_video: ^0.7.3
+  path_provider: ^2.1.6
   firebase_remote_config: ^5.5.0
   crypto: ^3.0.8
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  # Testes integrados no emulador contra o backend local (integration_test/, scripts/e2e/run.sh).
+  # Testes integrados no celular (USB) contra o backend local (integration_test/, scripts/e2e/run.sh).
   integration_test:
     sdk: flutter
 

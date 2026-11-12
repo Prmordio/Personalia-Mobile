@@ -17,7 +17,7 @@
 		<key>GOOGLE_ANALYTICS_IDFA_COLLECTION_ENABLED</key>
 		<false/>
 		<key>NSCameraUsageDescription</key>
-		<string>Use a câmera para fotografar aparelhos da academia e descobrir o exercício.</string>
+		<string>Use a câmera para fotografar aparelhos da academia e para gravar sua série e analisar a execução do exercício.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Escolha uma foto de aparelho da academia para descobrir o exercício.</string>
 		<key>NSFaceIDUsageDescription</key>

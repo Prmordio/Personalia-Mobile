@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personalia_app/features/execution_analysis/domain/execution_rule_catalog.dart';
+import 'package:personalia_app/features/execution_analysis/state/execution_analysis_controller.dart';
 import 'package:personalia_app/features/home/data/app_api.dart';
 import 'package:personalia_app/features/workout/data/exercise_image_provider.dart';
 import 'package:personalia_app/features/workout/presentation/rest_timer_screen.dart';
@@ -182,6 +184,7 @@ void main() {
             overrides: [
               restTimerProvider(('Supino', 90, 3)).overrideWith((ref) => timer),
               exerciseImageProvider('Supino').overrideWith((ref) async => null),
+              executionRuleCatalogProvider.overrideWith((ref) async => ExecutionRuleCatalog.empty),
             ],
           );
           try {
@@ -316,6 +319,7 @@ void main() {
         overrides: [
           restTimerProvider(('Supino', 90, 3)).overrideWith((ref) => timer),
           exerciseImageProvider('Supino').overrideWith((ref) async => null),
+          executionRuleCatalogProvider.overrideWith((ref) async => ExecutionRuleCatalog.empty),
         ],
       );
       try {
@@ -360,7 +364,11 @@ void main() {
         await tester.pump();
 
         expect(find.text(l.restExerciseDone), findsWidgets);
-        expect(editable.mounted, isTrue, reason: 'the weight field was rebuilt');
+        expect(
+          editable.mounted,
+          isTrue,
+          reason: 'the weight field was rebuilt',
+        );
         expect(focusNode.hasFocus, isTrue, reason: 'the keyboard would close');
         tester.testTextInput.enterText('40');
         await tester.pump();

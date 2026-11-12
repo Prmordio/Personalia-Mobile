@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:personalia_app/core/network/token_storage.dart';
 import 'package:personalia_app/l10n/app_localizations.dart';
@@ -12,14 +13,32 @@ class AppDriver {
   AppDriver(this.tester);
   final WidgetTester tester;
 
-  /// Abre o app deslogado (sem token salvo) e espera a tela de login.
-  Future<void> launchLoggedOut() async {
+  /// Abre o app deslogado (sem token salvo) e espera a tela de login. Com [clearWorkoutSessions]
+  /// apaga também o treino em andamento guardado no aparelho (WorkoutSessionCache, com as trocas
+  /// da sessão) — para um teste não herdar o estado deixado pelo anterior no mesmo arquivo.
+  /// Só essas chaves: apagar o armazenamento seguro inteiro trava a inicialização do app.
+  Future<void> launchLoggedOut({bool clearWorkoutSessions = false}) async {
+    if (clearWorkoutSessions) {
+      const storage = FlutterSecureStorage();
+      for (final key in (await storage.readAll()).keys.where((k) => k.startsWith('workout_sessions_v1_'))) {
+        await storage.delete(key: key);
+      }
+    }
     await TokenStorage().clear();
+    // O integration_test não registra o teclado simulado (registerTestTextInput = false): sem
+    // isso o enterText passa pelo teclado de verdade do celular e o texto se perde ou cai no
+    // campo anterior. Registrado, o teclado real nem abre.
+    if (!tester.testTextInput.isRegistered) tester.testTextInput.register();
+    // O flutter_test zera o lifecycleState depois de cada teste (resetInternalState) e no
+    // celular ele só volta com uma pausa/retomada de verdade. Sem "resumed", o que só atualiza
+    // com o app em primeiro plano (o relógio do descanso, WorkoutLiveController) fica parado a
+    // partir do 2º teste do processo — e no all_test.dart quase todos são o 2º em diante.
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     app.main();
     await waitFor(find.byType(TextField), timeout: const Duration(seconds: 60));
   }
 
-  /// Textos do app no idioma em que ele está rodando (o do emulador).
+  /// Textos do app no idioma em que ele está rodando (o do celular).
   AppLocalizations get l10n => AppLocalizations.of(tester.element(find.byType(Scaffold).first));
 
   Future<void> waitFor(Finder finder, {Duration timeout = const Duration(seconds: 30)}) async {
@@ -67,8 +86,9 @@ class AppDriver {
   /// árvore com campos e botões iguais, e `.first` pegaria o dela.
   Finder onTopRoute(Finder finder) => _OnTopRoute(finder);
 
-  /// Digita como o usuário: toca no campo, espera o foco e o teclado assentarem e só então
-  /// manda o texto para a conexão de teclado aberta.
+  /// Digita como o usuário: toca no campo, espera o foco e o teclado assentarem, manda o texto
+  /// para a conexão de teclado aberta (o teclado simulado registrado em [launchLoggedOut]) e
+  /// confere que ele ficou no campo.
   Future<void> enterText(Finder field, String text) async {
     await waitFor(field);
     await tester.ensureVisible(field.first);
@@ -137,6 +157,25 @@ class AppDriver {
     await tester.pump();
   }
 
+  /// Na tela do exercício: conclui as [sets] séries pulando o descanso, registra o peso (e a
+  /// observação) e finaliza o exercício.
+  Future<void> completeExercise({required int sets, required String weight, String? note}) async {
+    final l = l10n;
+    for (var set = 0; set < sets; set++) {
+      await tapText(l.restBtnStartRest);
+      if (find.text(l.restEndRest).evaluate().isNotEmpty) {
+        await tapText(l.restEndRest);
+      }
+    }
+    await waitFor(find.text(l.restExerciseDone));
+    await enterText(fieldWithHint(l.restWeightLabel), weight);
+    if (note != null) {
+      await enterText(fieldWithHint(l.restObservationLabel), note);
+    }
+    await tapText(l.restBtnFinishExercise);
+    await waitForGone(find.text(l.restBtnFinishExercise));
+  }
+
   /// Toca no texto, rolando até ele se preciso. Se o mesmo texto aparece mais de uma vez (ex.:
   /// título "Criar conta" e o botão "Criar conta"), toca no que está dentro de um botão.
   Future<void> tapText(String text, {Duration timeout = const Duration(seconds: 30)}) async {
@@ -171,21 +210,25 @@ class AppDriver {
     await enterText(fieldWithHint(l.onboardingEmailHint), email);
     await enterText(fieldWithHint(l.passwordHint), password);
     await tapText(l.entrar);
-    await _dismissBiometricOffer(l);
+    await _declineBiometricOffer();
   }
 
-  /// Em aparelho com biometria (celular físico), a home abre o diálogo "Entrar com biometria?"
-  /// logo após o login com senha; a barreira dele engoliria os toques seguintes do teste.
-  Future<void> _dismissBiometricOffer(AppLocalizations l) async {
-    await waitFor(find.text(l.navHome), timeout: const Duration(seconds: 45));
+  /// Depois do login com senha o app oferece biometria (BiometricOfferGate) num diálogo por cima
+  /// da home, que engole o próximo toque. Aparece só se o aparelho tem biometria e ela não está
+  /// ativa para a conta — então espera um pouco e recusa se vier.
+  Future<void> _declineBiometricOffer() async {
+    final l = l10n;
+    await waitForGone(fieldWithHint(l.passwordHint), timeout: const Duration(seconds: 45));
     final offer = find.text(l.biometricOfferTitle);
-    final deadline = DateTime.now().add(const Duration(seconds: 5));
-    while (offer.evaluate().isEmpty && DateTime.now().isBefore(deadline)) {
+    final deadline = DateTime.now().add(const Duration(seconds: 6));
+    while (DateTime.now().isBefore(deadline)) {
+      if (offer.evaluate().isNotEmpty) {
+        await tapText(l.agoraNao);
+        await waitForGone(offer);
+        return;
+      }
       await tester.pump(const Duration(milliseconds: 250));
     }
-    if (offer.evaluate().isEmpty) return;
-    await tapText(l.agoraNao);
-    await waitForGone(offer);
   }
 }
 
