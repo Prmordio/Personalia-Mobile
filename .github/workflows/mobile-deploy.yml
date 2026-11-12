@@ -491,8 +491,20 @@ jobs:
           print(re.search(r"appId:\s*'([^']+)'", section)[1])
           PY
           )
-          ios/Pods/FirebaseCrashlytics/upload-symbols \
-            -ai "$APP_ID" -p ios "$RUNNER_TEMP/Runner.xcarchive/dSYMs"
+          # CocoaPods deixa o script em ios/Pods; com Swift Package Manager (padrão do Flutter
+          # 3.47+) ele vem no checkout do firebase-ios-sdk dentro do DerivedData.
+          UPLOAD_SYMBOLS=ios/Pods/FirebaseCrashlytics/upload-symbols
+          if [ ! -x "$UPLOAD_SYMBOLS" ]; then
+            UPLOAD_SYMBOLS=$(find "$HOME/Library/Developer/Xcode/DerivedData" \
+              -path '*/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols' \
+              -type f 2>/dev/null | head -n 1)
+          fi
+          if [ -z "$UPLOAD_SYMBOLS" ]; then
+            echo 'ERROR: upload-symbols do Crashlytics não encontrado (nem em Pods nem em SourcePackages).'
+            exit 1
+          fi
+          echo "Usando $UPLOAD_SYMBOLS"
+          "$UPLOAD_SYMBOLS" -ai "$APP_ID" -p ios "$RUNNER_TEMP/Runner.xcarchive/dSYMs"
 
       - uses: actions/upload-artifact@v4
         with:
