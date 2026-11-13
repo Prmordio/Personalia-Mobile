@@ -304,6 +304,27 @@
       }
     }
   },
+  "subscriptionPaymentPending": "Pago pendiente",
+  "subscriptionGraceUntil": "El cobro no fue aprobado. Actualiza tu método de pago en {store} antes del {date} para no perder el acceso.",
+  "@subscriptionGraceUntil": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionRenewalCanceled": "Renovación cancelada",
+  "subscriptionAccessUntil": "Tu acceso sigue hasta el {date}.",
+  "@subscriptionAccessUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "subscriptionSignupPrompt": "Elige tu plan en la tienda de tu dispositivo.",
   "subscriptionButton": "Suscribirse",
   "dailyTipTitle": "Consejo del día",

@@ -131,17 +131,40 @@ class ProgressInfo {
 }
 
 class SubscriptionInfo {
-  SubscriptionInfo({required this.isValid, this.status, this.dueDate, required this.isFreeTrial});
+  SubscriptionInfo({
+    required this.isValid,
+    this.status,
+    this.dueDate,
+    required this.isFreeTrial,
+    this.provider,
+    this.storeState,
+  });
   final bool isValid;
   final String? status;
+
+  /// Próxima cobrança (`active`), fim da carência (`grace`) ou fim do acesso (`canceled`).
   final DateTime? dueDate;
   final bool isFreeTrial;
+
+  /// 'google' | 'apple' em assinaturas de loja; null no Mercado Pago.
+  final String? provider;
+
+  /// Estado informado pela loja: active, grace, canceled, on_hold, paused, pending, expired, revoked.
+  final String? storeState;
+
+  /// Cobrança da renovação falhou; a loja mantém o acesso até [dueDate].
+  bool get isInGracePeriod => isValid && storeState == 'grace';
+
+  /// Renovação desligada pelo usuário; acesso até [dueDate], sem nova cobrança.
+  bool get isRenewalCanceled => isValid && storeState == 'canceled';
 
   factory SubscriptionInfo.fromJson(Map<String, dynamic> json) => SubscriptionInfo(
         isValid: json['isValid'] ?? false,
         status: json['status'],
         dueDate: json['dueDate'] != null ? DateTime.tryParse(json['dueDate']) : null,
         isFreeTrial: json['isFreeTrial'] ?? false,
+        provider: json['provider'] as String?,
+        storeState: json['storeState'] as String?,
       );
 }
 

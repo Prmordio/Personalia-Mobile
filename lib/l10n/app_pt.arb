@@ -311,6 +311,28 @@
       }
     }
   },
+  "subscriptionPaymentPending": "Pagamento pendente",
+  "subscriptionGraceUntil": "A cobrança não foi aprovada. Atualize a forma de pagamento na {store} até {date} para não perder o acesso.",
+  "@subscriptionGraceUntil": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    },
+    "description": "store = Google Play ou App Store; date = fim do período de carência da loja."
+  },
+  "subscriptionRenewalCanceled": "Renovação cancelada",
+  "subscriptionAccessUntil": "Seu acesso continua até {date}.",
+  "@subscriptionAccessUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "subscriptionSignupPrompt": "Escolha seu plano na loja do aparelho.",
   "subscriptionButton": "Assinar",
   "dailyTipTitle": "Dica do dia",

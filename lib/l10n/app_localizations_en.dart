@@ -769,6 +769,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get subscriptionPaymentPending => 'Payment pending';
+
+  @override
+  String subscriptionGraceUntil(String store, String date) {
+    return 'The charge was declined. Update your payment method on $store by $date to keep your access.';
+  }
+
+  @override
+  String get subscriptionRenewalCanceled => 'Renewal canceled';
+
+  @override
+  String subscriptionAccessUntil(String date) {
+    return 'Your access continues until $date.';
+  }
+
+  @override
   String get subscriptionSignupPrompt =>
       'Choose your plan in your device store.';
 

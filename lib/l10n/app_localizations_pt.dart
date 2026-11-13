@@ -769,6 +769,22 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get subscriptionPaymentPending => 'Pagamento pendente';
+
+  @override
+  String subscriptionGraceUntil(String store, String date) {
+    return 'A cobrança não foi aprovada. Atualize a forma de pagamento na $store até $date para não perder o acesso.';
+  }
+
+  @override
+  String get subscriptionRenewalCanceled => 'Renovação cancelada';
+
+  @override
+  String subscriptionAccessUntil(String date) {
+    return 'Seu acesso continua até $date.';
+  }
+
+  @override
   String get subscriptionSignupPrompt =>
       'Escolha seu plano na loja do aparelho.';
 

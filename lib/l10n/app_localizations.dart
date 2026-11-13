@@ -1462,6 +1462,30 @@ abstract class AppLocalizations {
   /// **'Próxima cobrança em {date}'**
   String subscriptionNextCharge(String date);
 
+  /// No description provided for @subscriptionPaymentPending.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pagamento pendente'**
+  String get subscriptionPaymentPending;
+
+  /// store = Google Play ou App Store; date = fim do período de carência da loja.
+  ///
+  /// In pt, this message translates to:
+  /// **'A cobrança não foi aprovada. Atualize a forma de pagamento na {store} até {date} para não perder o acesso.'**
+  String subscriptionGraceUntil(String store, String date);
+
+  /// No description provided for @subscriptionRenewalCanceled.
+  ///
+  /// In pt, this message translates to:
+  /// **'Renovação cancelada'**
+  String get subscriptionRenewalCanceled;
+
+  /// No description provided for @subscriptionAccessUntil.
+  ///
+  /// In pt, this message translates to:
+  /// **'Seu acesso continua até {date}.'**
+  String subscriptionAccessUntil(String date);
+
   /// No description provided for @subscriptionSignupPrompt.
   ///
   /// In pt, this message translates to:
