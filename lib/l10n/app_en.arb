@@ -304,6 +304,27 @@
       }
     }
   },
+  "subscriptionPaymentPending": "Payment pending",
+  "subscriptionGraceUntil": "The charge was declined. Update your payment method on {store} by {date} to keep your access.",
+  "@subscriptionGraceUntil": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionRenewalCanceled": "Renewal canceled",
+  "subscriptionAccessUntil": "Your access continues until {date}.",
+  "@subscriptionAccessUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "subscriptionSignupPrompt": "Choose your plan in your device store.",
   "subscriptionButton": "Subscribe",
   "dailyTipTitle": "Tip of the day",

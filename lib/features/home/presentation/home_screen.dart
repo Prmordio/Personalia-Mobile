@@ -143,6 +143,10 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+/// Nome da loja que cobra a assinatura (marca, sem tradução).
+String _storeName(String? provider) =>
+    provider == 'apple' ? 'App Store' : 'Google Play';
+
 class _SubscriptionCard extends StatelessWidget {
   const _SubscriptionCard({
     required this.subscription,
@@ -167,6 +171,18 @@ class _SubscriptionCard extends StatelessWidget {
       title = l.subscriptionFreeTrial;
       subtitle = dueDateLabel != null
           ? l.subscriptionValidUntil(dueDateLabel)
+          : null;
+    } else if (subscription.isInGracePeriod) {
+      emoji = '⚠️';
+      title = l.subscriptionPaymentPending;
+      subtitle = dueDateLabel != null
+          ? l.subscriptionGraceUntil(_storeName(subscription.provider), dueDateLabel)
+          : null;
+    } else if (subscription.isRenewalCanceled) {
+      emoji = '⏳';
+      title = l.subscriptionRenewalCanceled;
+      subtitle = dueDateLabel != null
+          ? l.subscriptionAccessUntil(dueDateLabel)
           : null;
     } else if (subscription.isValid) {
       emoji = '✅';
@@ -196,9 +212,12 @@ class _SubscriptionCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.blue,
+                          // Pagamento pendente pede ação do usuário: destaca em laranja.
+                          color: subscription.isInGracePeriod
+                              ? AppColors.orange
+                              : AppColors.blue,
                         ),
                       ),
                       if (subtitle != null) ...[
