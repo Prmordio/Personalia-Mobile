@@ -8,8 +8,11 @@ import '../domain/pose_frame.dart';
 
 /// Extrai os landmarks de um quadro da câmera. Interface para trocar o motor de pose
 /// (ML Kit hoje; MediaPipe/TFLite depois) sem tocar no domínio.
+/// Landmarks normalizados (0..1) + largura/altura do quadro em pé.
+typedef PoseDetection = ({Map<Landmark, PosePoint> points, double aspectRatio});
+
 abstract class PoseExtractor {
-  Future<Map<Landmark, PosePoint>?> process(
+  Future<PoseDetection?> process(
     CameraImage image,
     CameraDescription camera,
     DeviceOrientation deviceOrientation,
@@ -51,7 +54,7 @@ class MlKitPoseExtractor implements PoseExtractor {
   final PoseDetector _detector;
 
   @override
-  Future<Map<Landmark, PosePoint>?> process(
+  Future<PoseDetection?> process(
     CameraImage image,
     CameraDescription camera,
     DeviceOrientation deviceOrientation,
@@ -80,10 +83,13 @@ class MlKitPoseExtractor implements PoseExtractor {
     final height = (swap ? image.width : image.height).toDouble();
 
     final landmarks = poses.first.landmarks;
-    return {
-      for (final e in _landmarkTypes.entries)
-        if (landmarks[e.value] case final l?) e.key: PosePoint(l.x / width, l.y / height, l.likelihood),
-    };
+    return (
+      points: {
+        for (final e in _landmarkTypes.entries)
+          if (landmarks[e.value] case final l?) e.key: PosePoint(l.x / width, l.y / height, l.likelihood),
+      },
+      aspectRatio: width / height,
+    );
   }
 
   InputImageRotation? _rotation(CameraDescription camera, DeviceOrientation deviceOrientation) {
