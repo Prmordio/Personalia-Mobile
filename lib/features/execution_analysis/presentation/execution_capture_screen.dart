@@ -250,8 +250,9 @@ class _ExecutionCaptureScreenState extends ConsumerState<ExecutionCaptureScreen>
                       child: Center(
                         child: UprightCameraPreview(
                           controller,
+                          liveImage: recorder!.liveImage,
                           child: ValueListenableBuilder<PoseFrame?>(
-                            valueListenable: recorder!.livePose,
+                            valueListenable: recorder.livePose,
                             builder: (context, frame, _) => Stack(
                               fit: StackFit.expand,
                               children: [

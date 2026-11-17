@@ -52,11 +52,22 @@ class PosePoint {
 }
 
 class PoseFrame {
-  const PoseFrame(this.tMs, this.points);
+  const PoseFrame(this.tMs, this.points, {this.aspectRatio = 1});
 
   /// Instante relativo ao início do vídeo gravado.
   final int tMs;
   final Map<Landmark, PosePoint> points;
+
+  /// Largura / altura do quadro em pé. x e y são normalizados por dimensões diferentes, então
+  /// ângulos e distâncias só valem depois de reescalar x por esta razão (ver [metric]).
+  final double aspectRatio;
+
+  /// Ponto visível em espaço proporcional (x * largura/altura, y): mesma escala nos dois eixos,
+  /// como os pixels reais. Sem isso, num vídeo 9:16 um ângulo de 115° vira ~140°.
+  PosePoint? metric(Landmark landmark, double minConfidence) {
+    final p = visible(landmark, minConfidence);
+    return p == null ? null : PosePoint(p.x * aspectRatio, p.y, p.confidence);
+  }
 
   PosePoint? visible(Landmark landmark, double minConfidence) {
     final p = points[landmark];
@@ -65,6 +76,7 @@ class PoseFrame {
 
   Map<String, dynamic> toJson() => {
         't': tMs,
+        'a': aspectRatio,
         'p': {for (final e in points.entries) e.key.name: e.value.toJson()},
       };
 
@@ -74,5 +86,6 @@ class PoseFrame {
           for (final e in (json['p'] as Map<String, dynamic>).entries)
             Landmark.values.byName(e.key): PosePoint.fromJson(e.value as Map<String, dynamic>),
         },
+        aspectRatio: (json['a'] as num?)?.toDouble() ?? 1,
       );
 }

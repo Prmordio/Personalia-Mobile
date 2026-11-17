@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -18,18 +20,40 @@ const _quarterTurns = {
 /// (ou o sensor reportar paisagem com a rotação automática desligada) para o preview girar
 /// 90°. Aqui a rotação aplicada é a mesma que o plugin desconta, então elas se anulam.
 ///
-/// Com o preview pausado (durante a gravação) mostra fundo preto no lugar do último quadro
-/// congelado — o [child] (esqueleto) continua por cima, no mesmo espaço de coordenadas.
+/// Com o preview pausado (gravação no Android) mostra o [liveImage] — quadros do stream da
+/// pose, já em pé — no tamanho do próprio quadro, que é o espaço dos landmarks: o [child]
+/// (esqueleto) continua alinhado. Sem quadro ainda, fundo preto.
 class UprightCameraPreview extends StatelessWidget {
-  const UprightCameraPreview(this.controller, {super.key, this.child});
+  const UprightCameraPreview(this.controller, {super.key, this.liveImage, this.child});
 
   final CameraController controller;
+  final ValueListenable<ui.Image?>? liveImage;
   final Widget? child;
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<CameraValue>(
         valueListenable: controller,
         builder: (context, value, child) {
+          final live = liveImage;
+          if (value.isPreviewPaused && live != null) {
+            return ValueListenableBuilder<ui.Image?>(
+              valueListenable: live,
+              builder: (context, image, child) => AspectRatio(
+                aspectRatio: image == null ? 1 / value.aspectRatio : image.width / image.height,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (image == null)
+                      const ColoredBox(color: Color(0xFF000000))
+                    else
+                      RawImage(image: image, fit: BoxFit.fill),
+                    ?child,
+                  ],
+                ),
+              ),
+              child: child,
+            );
+          }
           return AspectRatio(
             aspectRatio: 1 / value.aspectRatio,
             child: Stack(

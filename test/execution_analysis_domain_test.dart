@@ -397,4 +397,66 @@ void main() {
       expect(RuleEngine(front).evaluate(_set(const [_RepSpec()])).toJson()['view'], 'front');
     });
   });
+
+  group('Proporção do quadro', () {
+    // Vídeo em pé 720x1280: x e y são normalizados por dimensões diferentes.
+    const w = 720.0, h = 1280.0;
+
+    /// Hip thrust visto de lado, em pixels reais: tronco sobe do quadril até o ombro no banco,
+    /// coxa sobe até o joelho. Ângulo real do quadril = 180 - tronco - coxa.
+    PoseFrame thrust(int tMs, double torsoDeg, double thighDeg) {
+      double rad(double d) => d * math.pi / 180;
+      const hip = (x: 360.0, y: 800.0);
+      final shoulder = (x: hip.x - 220 * math.cos(rad(torsoDeg)), y: hip.y - 220 * math.sin(rad(torsoDeg)));
+      final knee = (x: hip.x + 200 * math.cos(rad(thighDeg)), y: hip.y - 200 * math.sin(rad(thighDeg)));
+      PosePoint n(({double x, double y}) p) => _p(p.x / w, p.y / h);
+      return PoseFrame(tMs, {
+        Landmark.rightShoulder: n(shoulder),
+        Landmark.rightHip: n(hip),
+        Landmark.rightKnee: n(knee),
+        Landmark.rightAnkle: n((x: knee.x, y: knee.y + 190)),
+      }, aspectRatio: w / h);
+    }
+
+    final hipThrust = ExerciseRuleSet.fromJson({
+      'exercise': 'hip_thrust',
+      'version': '1',
+      'rep': {'signal': 'hip_angle', 'down': 140, 'up': 165, 'minDurationMs': 600},
+      'checks': const [],
+    });
+
+    List<PoseFrame> set(int reps) {
+      final frames = <PoseFrame>[];
+      var t = 0;
+      for (var i = 0; i < 8; i++, t += 66) {
+        frames.add(thrust(t, 0, 5));
+      }
+      for (var r = 0; r < reps; r++) {
+        for (var e = 0; e < 2000; e += 66, t += 66) {
+          final depth = (1 - math.cos(2 * math.pi * e / 2000)) / 2;
+          frames.add(thrust(t, 25 * depth, 5 + 35 * depth)); // fundo real: 115°
+        }
+      }
+      for (var i = 0; i < 8; i++, t += 66) {
+        frames.add(thrust(t, 0, 5));
+      }
+      return frames;
+    }
+
+    test('should_measure_angles_in_real_proportions_on_a_portrait_frame', () {
+      final samples = extractSignals([thrust(0, 25, 40)], BodySide.right, {'hip_angle'}, minConfidence: 0.5);
+      expect(samples.single['hip_angle'], closeTo(115, 0.5));
+    });
+
+    test('should_count_hip_thrust_reps_recorded_in_portrait', () {
+      final report = RuleEngine(hipThrust).evaluate(set(4));
+      expect(report.reps, hasLength(4));
+      expect(report.reps.first.bottomValue, closeTo(115, 2));
+    });
+
+    test('should_keep_aspect_ratio_through_json', () {
+      final f = PoseFrame.fromJson(jsonDecode(jsonEncode(thrust(0, 25, 40).toJson())) as Map<String, dynamic>);
+      expect(f.aspectRatio, closeTo(w / h, 1e-9));
+    });
+  });
 }

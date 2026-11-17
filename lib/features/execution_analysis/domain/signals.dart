@@ -24,17 +24,17 @@ final Map<String, _SignalFn> _signals = {
   // Canela × pé: em pé ≈ 90–110°, na ponta do pé (panturrilha) ≈ 130–150°.
   'ankle_angle': (f, s, c) => _angle(f, s, c, Joint.knee, Joint.ankle, Joint.footIndex),
   'trunk_lean': (f, s, c) {
-    final shoulder = f.visible(Joint.shoulder.on(s), c);
-    final hip = f.visible(Joint.hip.on(s), c);
+    final shoulder = f.metric(Joint.shoulder.on(s), c);
+    final hip = f.metric(Joint.hip.on(s), c);
     return shoulder == null || hip == null ? null : angleFromVertical(shoulder, hip);
   },
   // Altura do calcanhar acima da ponta do pé, em % do comprimento da canela (bruto; a
   // linha de base é descontada em extractSignals para anular a inclinação da câmera).
   'heel_lift': (f, s, c) {
-    final heel = f.visible(Joint.heel.on(s), c);
-    final toe = f.visible(Joint.footIndex.on(s), c);
-    final knee = f.visible(Joint.knee.on(s), c);
-    final ankle = f.visible(Joint.ankle.on(s), c);
+    final heel = f.metric(Joint.heel.on(s), c);
+    final toe = f.metric(Joint.footIndex.on(s), c);
+    final knee = f.metric(Joint.knee.on(s), c);
+    final ankle = f.metric(Joint.ankle.on(s), c);
     if (heel == null || toe == null || knee == null || ankle == null) return null;
     final shin = distance(knee, ankle);
     return shin == 0 ? null : (toe.y - heel.y) / shin * 100;
@@ -57,9 +57,9 @@ const _baselineSignals = {'heel_lift'};
 const _baselineSamples = 10;
 
 double? _angle(PoseFrame f, BodySide side, double minConfidence, Joint a, Joint b, Joint c) {
-  final pa = f.visible(a.on(side), minConfidence);
-  final pb = f.visible(b.on(side), minConfidence);
-  final pc = f.visible(c.on(side), minConfidence);
+  final pa = f.metric(a.on(side), minConfidence);
+  final pb = f.metric(b.on(side), minConfidence);
+  final pc = f.metric(c.on(side), minConfidence);
   return pa == null || pb == null || pc == null ? null : angleAt(pa, pb, pc);
 }
 
