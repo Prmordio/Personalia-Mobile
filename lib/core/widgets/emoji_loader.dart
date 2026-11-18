@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 
 const _defaultEmojis = ['🏋️', '💪', '🔥', '🏃', '🧠', '⚡', '🥗', '🤸', '🚴', '🎯', '⏱️', '📈', '🦵', '🧘', '🥇'];
 
@@ -61,7 +62,7 @@ class _EmojiLoaderState extends State<EmojiLoader> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Carregando',
+      label: context.l10n.commonLoading,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

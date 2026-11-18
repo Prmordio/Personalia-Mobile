@@ -61,13 +61,10 @@ class ExecutionAnalysisState {
 /// feedback da IA. Não conhece câmera nem ML Kit.
 class ExecutionAnalysisController extends StateNotifier<ExecutionAnalysisState> {
   ExecutionAnalysisController({
-    required RuleSetRepository ruleSets,
-    required KeyframeExtractor keyframes,
-    required ExecutionAnalysisApi api,
-  })  : _ruleSets = ruleSets,
-        _keyframes = keyframes,
-        _api = api,
-        super(const ExecutionAnalysisState());
+    required this._ruleSets,
+    required this._keyframes,
+    required this._api,
+  })  : super(const ExecutionAnalysisState());
 
   final RuleSetRepository _ruleSets;
   final KeyframeExtractor _keyframes;

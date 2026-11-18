@@ -42,6 +42,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   icon: const Icon(Icons.arrow_back),
                   onPressed: state.loading
                       ? null

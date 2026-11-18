@@ -1,15 +1,26 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
+
 import '../../../../core/theme/app_theme.dart';
 
 /// Gráfico de barras simples (sem dependência externa). [labels] aparece sob cada barra.
+/// Cada barra é anunciada ao leitor de tela como "rótulo: valor" ([valueLabel] formata o valor).
 class SimpleBarChart extends StatelessWidget {
-  const SimpleBarChart({super.key, required this.values, required this.labels, this.height = 140, this.highlightLast = false});
+  const SimpleBarChart({
+    super.key,
+    required this.values,
+    required this.labels,
+    this.height = 140,
+    this.highlightLast = false,
+    this.valueLabel,
+  });
 
   final List<num> values;
   final List<String> labels;
   final double height;
   final bool highlightLast;
+  final String Function(num value)? valueLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -21,25 +32,36 @@ class SimpleBarChart extends StatelessWidget {
         children: [
           for (var i = 0; i < values.length; i++)
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 3),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (values[i] > 0)
-                      Text(_compact(values[i]), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                    const SizedBox(height: 2),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 400),
-                      height: maxValue == 0 ? 2 : max(2, height * values[i] / maxValue),
-                      decoration: BoxDecoration(
-                        color: highlightLast && i == values.length - 1 ? AppColors.orange : AppColors.blue.withValues(alpha: 0.75),
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              child: Semantics(
+                label: '${labels[i]}: ${valueLabel?.call(values[i]) ?? values[i]}',
+                excludeSemantics: true,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (values[i] > 0)
+                        Text(_compact(values[i]), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      const SizedBox(height: 2),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        height: maxValue == 0 ? 2 : max(2, height * values[i] / maxValue),
+                        decoration: BoxDecoration(
+                          color: highlightLast && i == values.length - 1
+                              ? AppColors.orange
+                              : AppColors.blue.withValues(alpha: 0.75),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(labels[i], style: const TextStyle(fontSize: 10, color: Colors.grey), maxLines: 1, overflow: TextOverflow.clip),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        labels[i],
+                        style: const TextStyle(fontSize: 10, color: Colors.grey),
+                        maxLines: 1,
+                        overflow: TextOverflow.clip,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -52,19 +74,31 @@ class SimpleBarChart extends StatelessWidget {
 }
 
 /// Linha simples com pontos — evolução de peso ou carga.
+/// [semanticLabel] descreve os pontos para o leitor de tela (o desenho em si é invisível a ele).
 class SimpleLineChart extends StatelessWidget {
-  const SimpleLineChart({super.key, required this.values, this.height = 120, this.color = AppColors.orange});
+  const SimpleLineChart({
+    super.key,
+    required this.values,
+    this.height = 120,
+    this.color = AppColors.orange,
+    this.semanticLabel,
+  });
 
   final List<num> values;
   final double height;
   final Color color;
+  final String? semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: CustomPaint(painter: _LinePainter(values.map((v) => v.toDouble()).toList(), color)),
+    return Semantics(
+      label: semanticLabel,
+      image: true,
+      child: SizedBox(
+        height: height,
+        width: double.infinity,
+        child: CustomPaint(painter: _LinePainter(values.map((v) => v.toDouble()).toList(), color)),
+      ),
     );
   }
 }
@@ -121,9 +155,17 @@ class StatTile extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12), textAlign: TextAlign.center),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );

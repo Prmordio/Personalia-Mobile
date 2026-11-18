@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:personalia_app/core/notifications/rest_alarm.dart';
-import 'package:personalia_app/features/workout/presentation/rest_timer_screen.dart';
+import 'package:personalia_app/features/workout/state/rest_timer_controller.dart';
 import 'package:personalia_app/features/workout/state/active_workout_session.dart';
 
 class _FakeAlarm implements RestAlarm {

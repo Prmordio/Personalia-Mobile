@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personalia_app/l10n/app_localizations.dart';
 import 'package:personalia_app/features/reports/data/reports_api.dart';
 import 'package:personalia_app/features/reports/presentation/body_report_screen.dart';
 import 'package:personalia_app/features/reports/presentation/frequency_report_screen.dart';
@@ -51,8 +52,23 @@ final _loadJson = [
   },
 ];
 
-Future<void> _pump(WidgetTester tester, Widget screen, List<Override> overrides) async {
-  await tester.pumpWidget(ProviderScope(overrides: overrides, child: MaterialApp(home: screen)));
+Future<void> _pump(
+  WidgetTester tester,
+  Widget screen,
+  List<Override> overrides, {
+  Locale locale = const Locale('pt'),
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: overrides,
+      child: MaterialApp(
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: screen,
+      ),
+    ),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -117,6 +133,33 @@ void main() {
     ]);
     expect(find.text('Supino'), findsOneWidget);
     expect(find.text('+2,5 kg'), findsOneWidget);
+    expect(find.textContaining('3 registros'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('should_render_reports_in_english_with_locale_number_format', (tester) async {
+    await _pump(
+      tester,
+      const LoadEvolutionReportScreen(),
+      [loadEvolutionProvider.overrideWith((ref) async => _loadJson.map(ExerciseLoad.fromJson).toList())],
+      locale: const Locale('en'),
+    );
+    expect(find.text('Load progression'), findsOneWidget);
+    expect(find.text('Summary'), findsOneWidget);
+    expect(find.text('+2.5 kg'), findsOneWidget);
+    expect(find.textContaining('3 entries'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('should_announce_frequency_comparison_in_english', (tester) async {
+    await _pump(
+      tester,
+      const FrequencyReportScreen(),
+      [frequencyReportProvider.overrideWith((ref) async => FrequencyReport.fromJson(_frequencyJson))],
+      locale: const Locale('en'),
+    );
+    expect(find.text('2 fewer days than last month — let\'s get back on track!'), findsOneWidget);
+    expect(find.bySemanticsLabel('Day 25, trained'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

@@ -6,7 +6,7 @@ import '../../home/state/today_workout_override.dart';
 import '../state/active_workout_session.dart';
 import '../state/workout_live_activity.dart';
 import '../state/workout_session_cache.dart';
-import 'rest_timer_screen.dart';
+import '../state/rest_timer_controller.dart';
 
 Future<bool> cancelWorkoutSession(BuildContext context, WidgetRef ref) async {
   final l = context.l10n;

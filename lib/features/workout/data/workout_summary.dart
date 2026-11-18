@@ -1,4 +1,4 @@
-import '../presentation/rest_timer_screen.dart';
+import '../state/rest_timer_controller.dart';
 
 class ExerciseSummary {
   const ExerciseSummary({

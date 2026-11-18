@@ -24,7 +24,7 @@ import 'features/onboarding/data/onboarding_api.dart';
 import 'firebase_options.dart';
 import 'features/workout/state/workout_live_activity.dart';
 import 'features/workout/state/active_workout_session.dart';
-import 'features/workout/presentation/rest_timer_screen.dart';
+import 'features/workout/state/rest_timer_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -312,7 +312,16 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
-        final labels = workoutLiveLabels(AppLocalizations.of(context));
+        final l = AppLocalizations.of(context);
+        final labels = workoutLiveLabels(l);
+        LocalNotificationRestAlarm.instance.localize(
+          RestAlarmMessages(
+            title: l.restAlarmTitle,
+            body: l.restAlarmBody,
+            channelName: l.restAlarmChannelName,
+            channelDescription: l.restAlarmChannelDesc,
+          ),
+        );
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             unawaited(ref.read(workoutLiveProvider.notifier).localize(labels));

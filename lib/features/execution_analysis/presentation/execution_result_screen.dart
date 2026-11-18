@@ -221,6 +221,7 @@ class _PlaybackControls extends StatelessWidget {
         builder: (context, value, _) => Row(
           children: [
             IconButton(
+              tooltip: value.isPlaying ? context.l10n.commonPause : context.l10n.commonPlay,
               icon: Icon(value.isPlaying ? Icons.pause : Icons.play_arrow),
               onPressed: () => value.isPlaying ? video.pause() : video.play(),
             ),
@@ -257,7 +258,9 @@ class _RepTimeline extends StatelessWidget {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           double x(int ms) => (ms / total).clamp(0, 1) * width;
-          return GestureDetector(
+          return Semantics(
+            label: context.l10n.execVideoTimeline,
+            child: GestureDetector(
             onTapDown: (d) => video.seekTo(Duration(milliseconds: (d.localPosition.dx / width * total).round())),
             child: SizedBox(
               height: 28,
@@ -302,6 +305,7 @@ class _RepTimeline extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
             ),
           );
         },

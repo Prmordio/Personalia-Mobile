@@ -240,8 +240,8 @@ class AppApi {
     await _dio.post(
       '/app/workout/log',
       data: {
-        if (sessionId != null) 'sessionId': sessionId,
-        if (ownerId != null) 'ownerId': ownerId,
+        'sessionId': ?sessionId,
+        'ownerId': ?ownerId,
         'dayName': dayName,
         'startedAt': startedAt.toIso8601String(),
         'endedAt': endedAt.toIso8601String(),
@@ -353,8 +353,8 @@ class AppApi {
 
   Future<void> updateProgress({double? weight, double? height}) async {
     await _dio.put('/app/progress', data: {
-      if (weight != null) 'weight': weight,
-      if (height != null) 'height': height,
+      'weight': ?weight,
+      'height': ?height,
     });
   }
 
@@ -394,8 +394,8 @@ class AppApi {
     await _dio.post('/app/workout/exercise/swap/permanent', data: {
       'originalExerciseName': originalExerciseName,
       'newName': newName,
-      if (newSeries != null) 'newSeries': newSeries,
-      if (newReps != null) 'newReps': newReps,
+      'newSeries': ?newSeries,
+      'newReps': ?newReps,
     });
   }
 

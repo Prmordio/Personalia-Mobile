@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 
 /// Campo de senha com botão de mostrar/ocultar.
 class PasswordTextField extends StatefulWidget {
@@ -29,6 +30,7 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
       decoration: InputDecoration(
         hintText: widget.hintText,
         suffixIcon: IconButton(
+          tooltip: _visible ? context.l10n.passwordHide : context.l10n.passwordShow,
           icon: Icon(_visible ? Icons.visibility_off_outlined : Icons.visibility_outlined),
           onPressed: () => setState(() => _visible = !_visible),
         ),

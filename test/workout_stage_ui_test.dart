@@ -10,7 +10,7 @@ import 'package:personalia_app/features/home/data/app_api.dart';
 import 'package:personalia_app/features/home/state/today_workout_override.dart';
 import 'package:personalia_app/features/workout/data/exercise_image_provider.dart';
 import 'package:personalia_app/features/workout/presentation/today_workout_screen.dart';
-import 'package:personalia_app/features/workout/presentation/rest_timer_screen.dart';
+import 'package:personalia_app/features/workout/state/rest_timer_controller.dart';
 import 'package:personalia_app/features/workout/state/active_workout_session.dart';
 import 'package:personalia_app/features/workout/state/workout_session_cache.dart';
 import 'package:personalia_app/features/workout/state/workout_live_activity.dart';

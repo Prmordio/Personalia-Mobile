@@ -185,7 +185,7 @@ class OnboardingApi {
           'trainingDaysPerWeek': trainingDaysPerWeek,
           'wantsCardio': wantsCardio,
           'trainingFocus': trainingFocus,
-          if (preferredGymTime != null) 'preferredGymTime': preferredGymTime,
+          'preferredGymTime': ?preferredGymTime,
         }));
   }
 

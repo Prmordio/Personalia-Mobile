@@ -1793,4 +1793,240 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get execSwitchCamera => 'Switch camera';
+
+  @override
+  String get commonLoading => 'Loading';
+
+  @override
+  String get reportPdfGenerating => 'Generating PDF...';
+
+  @override
+  String get reportPdfError => 'Couldn\'t generate the PDF. Please try again.';
+
+  @override
+  String get reportPdfDownload => 'Download PDF';
+
+  @override
+  String get reportLoadError =>
+      'Couldn\'t load the report. Pull down to try again.';
+
+  @override
+  String get reportEmptyDefault => 'There\'s no data for this report yet.';
+
+  @override
+  String get reportSummary => 'Summary';
+
+  @override
+  String get reportLoadEmpty =>
+      'Log your exercise loads during workouts to track your progress here.';
+
+  @override
+  String get reportStatExercises => 'Exercises';
+
+  @override
+  String get reportStatImproved => 'Improved';
+
+  @override
+  String get reportStatEntries => 'Entries';
+
+  @override
+  String reportLoadExerciseDetail(
+    String first,
+    String last,
+    String best,
+    int count,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count entries',
+      one: '1 entry',
+    );
+    return '$first → $last · best $best · $_temp0';
+  }
+
+  @override
+  String get reportBodyToday => 'Today';
+
+  @override
+  String get reportBodyWeight => 'Weight';
+
+  @override
+  String get reportBodyHeight => 'Height';
+
+  @override
+  String get reportBodyBmi => 'BMI';
+
+  @override
+  String reportBodyBmiCategory(String category) {
+    return 'BMI: $category';
+  }
+
+  @override
+  String get reportBodyWeightEvolution => 'Weight progress';
+
+  @override
+  String reportBodyWeightLost(String amount) {
+    return '📉 $amount kg down since your first weigh-in';
+  }
+
+  @override
+  String reportBodyWeightGained(String amount) {
+    return '📈 $amount kg up since your first weigh-in';
+  }
+
+  @override
+  String get reportBodyWeightStable =>
+      'Weight stable since your first weigh-in';
+
+  @override
+  String get reportBodyChartHint =>
+      'Once you have two or more weigh-ins, your progress chart shows up here.';
+
+  @override
+  String get reportBodyHistory => 'Weigh-in history';
+
+  @override
+  String get reportVolumeEmpty =>
+      'Log your loads during workouts to see the tonnage lifted in each session.';
+
+  @override
+  String get reportVolumeTonnage => 'Tonnage';
+
+  @override
+  String get reportVolumeTonnageDesc => 'Load × sets × reps for each workout';
+
+  @override
+  String get reportVolumeTotal => 'Total';
+
+  @override
+  String get reportVolumeAverage => 'Avg/workout';
+
+  @override
+  String get reportVolumeBest => 'Best workout';
+
+  @override
+  String get reportVolumePerWorkout => 'Per workout';
+
+  @override
+  String reportVolumeLastN(int count) {
+    return 'Last $count workouts';
+  }
+
+  @override
+  String get reportVolumeWorkouts => 'Workouts';
+
+  @override
+  String get reportVolumeWorkoutFallback => 'Workout';
+
+  @override
+  String reportVolumeSessionDetail(String date, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count exercises',
+      one: '1 exercise',
+    );
+    return '$date · $_temp0';
+  }
+
+  @override
+  String get reportFreqDaysTrained => 'Days trained';
+
+  @override
+  String get reportFreqLastMonth => 'Last month';
+
+  @override
+  String get reportFreqAvgWeek => 'Avg/week';
+
+  @override
+  String get reportFreqSamePace => '💪 Same pace as last month';
+
+  @override
+  String reportFreqMoreDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more days',
+      one: '1 more day',
+    );
+    return '💪 $_temp0 than last month';
+  }
+
+  @override
+  String reportFreqFewerDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fewer days',
+      one: '1 fewer day',
+    );
+    return '$_temp0 than last month — let\'s get back on track!';
+  }
+
+  @override
+  String get reportFreqPerWeek => 'Workouts per week';
+
+  @override
+  String get reportFreqLast8Weeks => 'Last 8 weeks';
+
+  @override
+  String reportCalendarDayTrained(int day) {
+    return 'Day $day, trained';
+  }
+
+  @override
+  String reportCalendarDayRest(int day) {
+    return 'Day $day';
+  }
+
+  @override
+  String videoSheetTitle(String exercise) {
+    return 'Videos — $exercise';
+  }
+
+  @override
+  String get videoSheetEmpty => 'No videos found.';
+
+  @override
+  String get videoSheetError => 'Couldn\'t load videos.';
+
+  @override
+  String get videoSheetFallbackTitle => 'Video';
+
+  @override
+  String get restAlarmTitle => '⏱️ Rest is over!';
+
+  @override
+  String restAlarmBody(String exercise) {
+    return 'Time for your next set of $exercise 💪';
+  }
+
+  @override
+  String get restAlarmChannelName => 'Rest finished';
+
+  @override
+  String get restAlarmChannelDesc =>
+      'Alerts you when the rest between sets is over';
+
+  @override
+  String get passwordShow => 'Show password';
+
+  @override
+  String get passwordHide => 'Hide password';
+
+  @override
+  String get commonIncrease => 'Increase';
+
+  @override
+  String get commonDecrease => 'Decrease';
+
+  @override
+  String get commonPlay => 'Play';
+
+  @override
+  String get commonPause => 'Pause';
+
+  @override
+  String get execVideoTimeline => 'Video timeline. Tap to jump to a moment.';
 }

@@ -68,26 +68,29 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
       _userId = config['userId'] as String;
       termsUrl = config['termsUrl'] as String?;
       privacyUrl = config['privacyUrl'] as String?;
-      if (config['enabled'] != true || !await _store.isAvailable())
+      if (config['enabled'] != true || !await _store.isAvailable()) {
         throw StateError('Unavailable');
+      }
       _listener ??= _store.purchaseStream.listen(
         (purchases) {
           _queue = _queue.then((_) => _process(purchases)).catchError((
             Object _,
           ) {
-            if (mounted)
+            if (mounted) {
               state = StoreBillingState(
                 products: state.products,
                 error: 'storeVerificationFailed',
               );
+            }
           });
         },
         onError: (Object _) {
-          if (mounted)
+          if (mounted) {
             state = StoreBillingState(
               products: state.products,
               error: 'storeVerificationFailed',
             );
+          }
         },
       );
       final ids = Set<String>.from(config['products'] as List);
@@ -95,8 +98,9 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
       if (!mounted) return;
       if (response.error != null ||
           response.notFoundIDs.isNotEmpty ||
-          response.productDetails.isEmpty)
+          response.productDetails.isEmpty) {
         throw StateError('Products unavailable');
+      }
       state = StoreBillingState(
         products: response.productDetails,
         canPurchase: config['canPurchase'] == true,
@@ -119,11 +123,12 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
         data: {'provider': _provider},
       )).data;
       if (config['canPurchase'] != true || config['userId'] != _userId) {
-        if (mounted)
+        if (mounted) {
           state = StoreBillingState(
             products: state.products,
             error: 'storeAlreadyActive',
           );
+        }
         return;
       }
       if (!mounted) return;
@@ -161,20 +166,22 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
       if (!launched) {
         _report('buy_$stage', StateError('not_launched'), StackTrace.current);
       }
-      if (!launched && mounted)
+      if (!launched && mounted) {
         state = StoreBillingState(
           products: state.products,
           canPurchase: true,
           error: 'storeUnavailable',
         );
+      }
     } catch (error, stack) {
       _report('buy_$stage', error, stack);
-      if (mounted)
+      if (mounted) {
         state = StoreBillingState(
           products: state.products,
           canPurchase: true,
           error: 'storeUnavailable',
         );
+      }
     }
   }
 
@@ -185,18 +192,20 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
       await _store.restorePurchases(applicationUserName: _userId);
       final result = (await _dio.post('/app/store-billing/refresh')).data;
       _onVerified();
-      if (mounted)
+      if (mounted) {
         state = StoreBillingState(
           products: state.products,
           canPurchase: result['isValid'] != true,
           success: result['isValid'] == true,
         );
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         state = StoreBillingState(
           products: state.products,
           error: 'storeVerificationFailed',
         );
+      }
     }
   }
 
@@ -227,21 +236,24 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
           final token = _provider == 'apple'
               ? purchase.purchaseID
               : purchase.verificationData.serverVerificationData;
-          if (token == null || token.isEmpty)
+          if (token == null || token.isEmpty) {
             throw StateError('Missing transaction');
+          }
           final result = (await _dio.post(
             '/app/store-billing/verify',
             data: {'provider': _provider, 'token': token},
           )).data;
           // Never finish a purchase that has not been verified by our backend.
-          if (purchase.pendingCompletePurchase)
+          if (purchase.pendingCompletePurchase) {
             await _store.completePurchase(purchase);
+          }
           _onVerified();
-          if (mounted)
+          if (mounted) {
             state = StoreBillingState(
               products: state.products,
               success: result['isValid'] == true,
             );
+          }
         } catch (error, stack) {
           _report('verify', error, stack);
           // Recusa definitiva (outra conta, ambiente ou produto inválido) nunca será aceita:
@@ -251,12 +263,13 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
               purchase.pendingCompletePurchase) {
             await _store.completePurchase(purchase);
           }
-          if (mounted)
+          if (mounted) {
             state = StoreBillingState(
               products: state.products,
               canPurchase: _isDefinitiveRejection(error),
               error: 'storeVerificationFailed',
             );
+          }
         }
       }
     }

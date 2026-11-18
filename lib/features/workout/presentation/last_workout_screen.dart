@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../home/data/app_api.dart';
 
-final _dateFormat = DateFormat('dd/MM/yyyy');
-final _timeFormat = DateFormat('HH:mm');
 
 class LastWorkoutScreen extends ConsumerWidget {
   const LastWorkoutScreen({super.key});
@@ -120,7 +117,7 @@ class _WorkoutHistoryCardState extends State<_WorkoutHistoryCard> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                _dateFormat.format(date),
+                                MaterialLocalizations.of(context).formatCompactDate(date),
                                 style: TextStyle(
                                   color: Theme.of(
                                     context,
@@ -146,7 +143,10 @@ class _WorkoutHistoryCardState extends State<_WorkoutHistoryCard> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _timeFormat.format(entry.startedAt!),
+                                  MaterialLocalizations.of(context).formatTimeOfDay(
+                                    TimeOfDay.fromDateTime(entry.startedAt!),
+                                    alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+                                  ),
                                   style: TextStyle(
                                     color: Theme.of(
                                       context,

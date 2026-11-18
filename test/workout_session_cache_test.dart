@@ -5,7 +5,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:personalia_app/features/workout/state/workout_session_cache.dart';
-import 'package:personalia_app/features/workout/presentation/rest_timer_screen.dart';
+import 'package:personalia_app/features/workout/state/rest_timer_controller.dart';
 
 class MemoryStore implements WorkoutCacheStore {
   final values = <String, String>{};
