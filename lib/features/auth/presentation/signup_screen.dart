@@ -78,6 +78,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton(
+                    tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                     icon: const Icon(Icons.arrow_back),
                     // No passo do SMS, voltar = trocar o número (a conta só é criada no fim).
                     onPressed: state.loading

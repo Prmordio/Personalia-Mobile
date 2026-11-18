@@ -7,7 +7,6 @@ void main() {
       AppTelemetry.screenName('/assistant?machine=1&token=secret'),
       '/assistant',
     );
-    expect(AppTelemetry.screenName('/coming-soon/private-id'), '/coming-soon');
     expect(AppTelemetry.screenName('/users/private-id'), 'other');
   });
 

@@ -158,15 +158,14 @@ class ExerciseLoad {
 
 /// Relatórios em PDF que o reports-api gera (mesmos tipos liberados no gateway).
 enum ReportPdf {
-  plan('plan', 'Plano de treino'),
-  workout('workout', 'Histórico de treinos'),
-  biometrics('biometrics', 'Medidas corporais'),
-  volume('volume', 'Volume de treino'),
-  attendance('attendance', 'Frequência');
+  plan('plan'),
+  workout('workout'),
+  biometrics('biometrics'),
+  volume('volume'),
+  attendance('attendance');
 
-  const ReportPdf(this.type, this.title);
+  const ReportPdf(this.type);
   final String type;
-  final String title;
 }
 
 class ReportsApi {

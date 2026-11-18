@@ -866,5 +866,160 @@
   "execIssueTempo": "Descida rápida",
   "execExtraIssue": "Observado pela IA",
   "execCameraError": "Não foi possível abrir a câmera. Verifique a permissão de câmera do app.",
-  "execSwitchCamera": "Trocar câmera"
+  "execSwitchCamera": "Trocar câmera",
+  "commonLoading": "Carregando",
+  "reportPdfGenerating": "Gerando PDF...",
+  "reportPdfError": "Não foi possível gerar o PDF. Tente novamente.",
+  "reportPdfDownload": "Baixar PDF",
+  "reportLoadError": "Não foi possível carregar o relatório. Puxe para tentar de novo.",
+  "reportEmptyDefault": "Ainda não há dados para este relatório.",
+  "reportSummary": "Resumo",
+  "reportLoadEmpty": "Registre a carga dos exercícios durante os treinos para acompanhar sua evolução aqui.",
+  "reportStatExercises": "Exercícios",
+  "reportStatImproved": "Com evolução",
+  "reportStatEntries": "Registros",
+  "reportLoadExerciseDetail": "{first} → {last} · melhor {best} · {count, plural, =1{1 registro} other{{count} registros}}",
+  "@reportLoadExerciseDetail": {
+    "placeholders": {
+      "first": {
+        "type": "String"
+      },
+      "last": {
+        "type": "String"
+      },
+      "best": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportBodyToday": "Hoje",
+  "reportBodyWeight": "Peso",
+  "reportBodyHeight": "Altura",
+  "reportBodyBmi": "IMC",
+  "reportBodyBmiCategory": "IMC: {category}",
+  "@reportBodyBmiCategory": {
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
+  },
+  "reportBodyWeightEvolution": "Evolução do peso",
+  "reportBodyWeightLost": "📉 {amount} kg a menos desde a primeira pesagem",
+  "@reportBodyWeightLost": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportBodyWeightGained": "📈 {amount} kg a mais desde a primeira pesagem",
+  "@reportBodyWeightGained": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "reportBodyWeightStable": "Peso estável desde a primeira pesagem",
+  "reportBodyChartHint": "Com duas pesagens ou mais, o gráfico da sua evolução aparece aqui.",
+  "reportBodyHistory": "Histórico de pesagens",
+  "reportVolumeEmpty": "Registre as cargas durante os treinos para ver a tonelagem levantada em cada sessão.",
+  "reportVolumeTonnage": "Tonelagem",
+  "reportVolumeTonnageDesc": "Carga × séries × repetições de cada treino",
+  "reportVolumeTotal": "Total",
+  "reportVolumeAverage": "Média/treino",
+  "reportVolumeBest": "Melhor treino",
+  "reportVolumePerWorkout": "Por treino",
+  "reportVolumeLastN": "Últimos {count} treinos",
+  "@reportVolumeLastN": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportVolumeWorkouts": "Treinos",
+  "reportVolumeWorkoutFallback": "Treino",
+  "reportVolumeSessionDetail": "{date} · {count, plural, =1{1 exercício} other{{count} exercícios}}",
+  "@reportVolumeSessionDetail": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportFreqDaysTrained": "Dias treinados",
+  "reportFreqLastMonth": "Mês passado",
+  "reportFreqAvgWeek": "Média/semana",
+  "reportFreqSamePace": "💪 Mesmo ritmo que no mês passado",
+  "reportFreqMoreDays": "💪 {count, plural, =1{1 dia a mais} other{{count} dias a mais}} que no mês passado",
+  "@reportFreqMoreDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportFreqFewerDays": "{count, plural, =1{1 dia a menos} other{{count} dias a menos}} que no mês passado — bora recuperar!",
+  "@reportFreqFewerDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportFreqPerWeek": "Treinos por semana",
+  "reportFreqLast8Weeks": "Últimas 8 semanas",
+  "reportCalendarDayTrained": "Dia {day}, treinou",
+  "@reportCalendarDayTrained": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "reportCalendarDayRest": "Dia {day}",
+  "@reportCalendarDayRest": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "videoSheetTitle": "Vídeos — {exercise}",
+  "@videoSheetTitle": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      }
+    }
+  },
+  "videoSheetEmpty": "Nenhum vídeo encontrado.",
+  "videoSheetError": "Não foi possível buscar vídeos.",
+  "videoSheetFallbackTitle": "Vídeo",
+  "restAlarmTitle": "⏱️ Descanso encerrado!",
+  "restAlarmBody": "Hora da próxima série de {exercise} 💪",
+  "@restAlarmBody": {
+    "placeholders": {
+      "exercise": {
+        "type": "String"
+      }
+    }
+  },
+  "restAlarmChannelName": "Fim do descanso",
+  "restAlarmChannelDesc": "Avisa quando o descanso entre as séries termina",
+  "passwordShow": "Mostrar senha",
+  "passwordHide": "Ocultar senha",
+  "commonIncrease": "Aumentar",
+  "commonDecrease": "Diminuir",
+  "commonPlay": "Reproduzir",
+  "commonPause": "Pausar",
+  "execVideoTimeline": "Linha do tempo do vídeo. Toque para pular para um momento."
 }

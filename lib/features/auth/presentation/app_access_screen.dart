@@ -58,6 +58,7 @@ class _AppAccessScreenState extends ConsumerState<AppAccessScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                   icon: const Icon(Icons.arrow_back),
                   onPressed: state.loading
                       ? null

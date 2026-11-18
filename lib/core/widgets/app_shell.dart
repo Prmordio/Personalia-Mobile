@@ -17,7 +17,6 @@ class AppShell extends ConsumerWidget {
   static const _tabRoutes = [
     ('/home', Icons.home),
     ('/reports', Icons.bar_chart),
-    ('/referral', Icons.card_giftcard),
     ('/menu', Icons.menu),
   ];
 
@@ -31,7 +30,9 @@ class AppShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
-    final tabLabels = [l.navHome, l.navReports, l.navReferral, l.navMenu];
+    // Mesma ordem de _tabRoutes.
+    final tabLabels = [l.navHome, l.navReports, l.navMenu];
+    assert(tabLabels.length == _tabRoutes.length);
 
     final isActive = ref.watch(featureAccessProvider);
 

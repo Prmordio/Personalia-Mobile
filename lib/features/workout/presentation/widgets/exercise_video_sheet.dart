@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../home/data/app_api.dart';
 
 Future<void> showExerciseVideoSheet(BuildContext context, {required String exerciseName}) {
@@ -19,6 +20,7 @@ class ExerciseVideoSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final videosAsync = ref.watch(exerciseVideosProvider(exerciseName));
+    final l = context.l10n;
 
     return SafeArea(
       child: Padding(
@@ -27,15 +29,18 @@ class ExerciseVideoSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Vídeos — $exerciseName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Semantics(
+              header: true,
+              child: Text(l.videoSheetTitle(exerciseName), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
             const SizedBox(height: 12),
             Flexible(
               child: videosAsync.when(
                 data: (videos) {
                   if (videos.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: Text('Nenhum vídeo encontrado.'),
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Text(l.videoSheetEmpty),
                     );
                   }
                   return ListView.builder(
@@ -48,10 +53,16 @@ class ExerciseVideoSheet extends ConsumerWidget {
                         leading: video.thumbnail != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(6),
-                                child: Image.network(video.thumbnail!, width: 80, height: 56, fit: BoxFit.cover),
+                                child: Image.network(
+                                  video.thumbnail!,
+                                  width: 80,
+                                  height: 56,
+                                  fit: BoxFit.cover,
+                                  excludeFromSemantics: true,
+                                ),
                               )
-                            : const Icon(Icons.play_circle_outline, size: 40),
-                        title: Text(video.title ?? 'Vídeo', maxLines: 2, overflow: TextOverflow.ellipsis),
+                            : const ExcludeSemantics(child: Icon(Icons.play_circle_outline, size: 40)),
+                        title: Text(video.title ?? l.videoSheetFallbackTitle, maxLines: 2, overflow: TextOverflow.ellipsis),
                         subtitle: Text([video.duration, video.views].whereType<String>().join(' • ')),
                         onTap: video.url == null
                             ? null
@@ -64,9 +75,9 @@ class ExerciseVideoSheet extends ConsumerWidget {
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Center(child: CircularProgressIndicator()),
                 ),
-                error: (err, st) => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Text('Não foi possível buscar vídeos.'),
+                error: (err, st) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Text(l.videoSheetError),
                 ),
               ),
             ),

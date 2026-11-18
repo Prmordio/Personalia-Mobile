@@ -7,7 +7,6 @@ import '../../features/account/presentation/edit_training_preferences_screen.dar
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/signup_screen.dart';
 import '../../features/auth/presentation/password_login_screen.dart';
-import '../../features/coming_soon/presentation/coming_soon_screen.dart';
 import '../../features/execution_analysis/presentation/execution_capture_screen.dart';
 import '../../features/home/presentation/home_screen.dart';
 import '../../features/menu/presentation/menu_screen.dart';
@@ -179,27 +178,6 @@ GoRouter buildRouter({
         builder: (context, state) =>
             SwapExerciseScreen(args: state.extra as SwapExerciseArgs),
       ),
-      GoRoute(
-        path: '/coming-soon/:section',
-        builder: (context, state) => ComingSoonScreen(
-          title: _sectionTitle(state.pathParameters['section']),
-        ),
-      ),
     ],
   );
-}
-
-String _sectionTitle(String? section) {
-  switch (section) {
-    case 'perfil':
-      return 'Atualizar Perfil';
-    case 'preferencias':
-      return 'Preferências de Treino';
-    case 'trocar-exercicio':
-      return 'Trocar Exercício';
-    case 'relatorios':
-      return 'Relatórios de Desempenho';
-    default:
-      return 'Em breve';
-  }
 }

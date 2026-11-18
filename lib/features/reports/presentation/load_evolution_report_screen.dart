@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/reports_api.dart';
+import 'report_format.dart';
 import 'widgets/report_charts.dart';
 import 'widgets/report_scaffold.dart';
-
-String _kg(num v) => '${(v % 1 == 0 ? v.toInt().toString() : v.toStringAsFixed(1)).replaceAll('.', ',')} kg';
 
 /// Evolução de cargas por exercício (primeira → última, melhor carga).
 class LoadEvolutionReportScreen extends StatelessWidget {
@@ -12,22 +13,23 @@ class LoadEvolutionReportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return ReportScaffold<List<ExerciseLoad>>(
-      title: 'Evolução de cargas',
+      title: l.reportLoadEvolution,
       provider: loadEvolutionProvider,
       pdf: ReportPdf.workout,
       isEmpty: (exercises) => exercises.isEmpty,
-      emptyMessage: 'Registre a carga dos exercícios durante os treinos para acompanhar sua evolução aqui.',
+      emptyMessage: l.reportLoadEmpty,
       builder: (context, exercises) {
         final improved = exercises.where((e) => e.change > 0).length;
         return [
           ReportCard(
-            title: 'Resumo',
+            title: l.reportSummary,
             child: Row(
               children: [
-                StatTile(value: '${exercises.length}', label: 'Exercícios'),
-                StatTile(value: '$improved', label: 'Com evolução'),
-                StatTile(value: '${exercises.fold<int>(0, (s, e) => s + e.sessions)}', label: 'Registros'),
+                StatTile(value: '${exercises.length}', label: l.reportStatExercises),
+                StatTile(value: '$improved', label: l.reportStatImproved),
+                StatTile(value: '${exercises.fold<int>(0, (s, e) => s + e.sessions)}', label: l.reportStatEntries),
               ],
             ),
           ),
@@ -44,6 +46,7 @@ class _ExerciseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fmt = ReportFormat.of(context);
     final change = exercise.change;
     final color = change > 0 ? Colors.green.shade700 : (change < 0 ? AppColors.error : Colors.grey);
     return Card(
@@ -55,22 +58,33 @@ class _ExerciseCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.bold))),
+                Expanded(
+                  child: Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
                 Text(
-                  change == 0 ? '=' : '${change > 0 ? '+' : ''}${_kg(change)}',
+                  change == 0 ? '=' : fmt.signedKg(change),
                   style: TextStyle(color: color, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
             const SizedBox(height: 4),
             Text(
-              '${_kg(exercise.firstWeight)} → ${_kg(exercise.lastWeight)} · melhor ${_kg(exercise.bestWeight)} · '
-              '${exercise.sessions} registro${exercise.sessions == 1 ? '' : 's'}',
+              context.l10n.reportLoadExerciseDetail(
+                fmt.kg(exercise.firstWeight),
+                fmt.kg(exercise.lastWeight),
+                fmt.kg(exercise.bestWeight),
+                exercise.sessions,
+              ),
               style: const TextStyle(color: Colors.grey),
             ),
             if (exercise.points.length >= 2) ...[
               const SizedBox(height: 8),
-              SimpleLineChart(values: exercise.points, height: 60, color: color == Colors.grey ? AppColors.blue : color),
+              SimpleLineChart(
+                values: exercise.points,
+                height: 60,
+                color: color == Colors.grey ? AppColors.blue : color,
+                semanticLabel: '${exercise.name}: ${exercise.points.map(fmt.kg).join(', ')}',
+              ),
             ],
           ],
         ),

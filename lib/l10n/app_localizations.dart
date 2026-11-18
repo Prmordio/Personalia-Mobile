@@ -3303,6 +3303,365 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Trocar câmera'**
   String get execSwitchCamera;
+
+  /// No description provided for @commonLoading.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carregando'**
+  String get commonLoading;
+
+  /// No description provided for @reportPdfGenerating.
+  ///
+  /// In pt, this message translates to:
+  /// **'Gerando PDF...'**
+  String get reportPdfGenerating;
+
+  /// No description provided for @reportPdfError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível gerar o PDF. Tente novamente.'**
+  String get reportPdfError;
+
+  /// No description provided for @reportPdfDownload.
+  ///
+  /// In pt, this message translates to:
+  /// **'Baixar PDF'**
+  String get reportPdfDownload;
+
+  /// No description provided for @reportLoadError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível carregar o relatório. Puxe para tentar de novo.'**
+  String get reportLoadError;
+
+  /// No description provided for @reportEmptyDefault.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ainda não há dados para este relatório.'**
+  String get reportEmptyDefault;
+
+  /// No description provided for @reportSummary.
+  ///
+  /// In pt, this message translates to:
+  /// **'Resumo'**
+  String get reportSummary;
+
+  /// No description provided for @reportLoadEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registre a carga dos exercícios durante os treinos para acompanhar sua evolução aqui.'**
+  String get reportLoadEmpty;
+
+  /// No description provided for @reportStatExercises.
+  ///
+  /// In pt, this message translates to:
+  /// **'Exercícios'**
+  String get reportStatExercises;
+
+  /// No description provided for @reportStatImproved.
+  ///
+  /// In pt, this message translates to:
+  /// **'Com evolução'**
+  String get reportStatImproved;
+
+  /// No description provided for @reportStatEntries.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registros'**
+  String get reportStatEntries;
+
+  /// No description provided for @reportLoadExerciseDetail.
+  ///
+  /// In pt, this message translates to:
+  /// **'{first} → {last} · melhor {best} · {count, plural, =1{1 registro} other{{count} registros}}'**
+  String reportLoadExerciseDetail(
+    String first,
+    String last,
+    String best,
+    int count,
+  );
+
+  /// No description provided for @reportBodyToday.
+  ///
+  /// In pt, this message translates to:
+  /// **'Hoje'**
+  String get reportBodyToday;
+
+  /// No description provided for @reportBodyWeight.
+  ///
+  /// In pt, this message translates to:
+  /// **'Peso'**
+  String get reportBodyWeight;
+
+  /// No description provided for @reportBodyHeight.
+  ///
+  /// In pt, this message translates to:
+  /// **'Altura'**
+  String get reportBodyHeight;
+
+  /// No description provided for @reportBodyBmi.
+  ///
+  /// In pt, this message translates to:
+  /// **'IMC'**
+  String get reportBodyBmi;
+
+  /// No description provided for @reportBodyBmiCategory.
+  ///
+  /// In pt, this message translates to:
+  /// **'IMC: {category}'**
+  String reportBodyBmiCategory(String category);
+
+  /// No description provided for @reportBodyWeightEvolution.
+  ///
+  /// In pt, this message translates to:
+  /// **'Evolução do peso'**
+  String get reportBodyWeightEvolution;
+
+  /// No description provided for @reportBodyWeightLost.
+  ///
+  /// In pt, this message translates to:
+  /// **'📉 {amount} kg a menos desde a primeira pesagem'**
+  String reportBodyWeightLost(String amount);
+
+  /// No description provided for @reportBodyWeightGained.
+  ///
+  /// In pt, this message translates to:
+  /// **'📈 {amount} kg a mais desde a primeira pesagem'**
+  String reportBodyWeightGained(String amount);
+
+  /// No description provided for @reportBodyWeightStable.
+  ///
+  /// In pt, this message translates to:
+  /// **'Peso estável desde a primeira pesagem'**
+  String get reportBodyWeightStable;
+
+  /// No description provided for @reportBodyChartHint.
+  ///
+  /// In pt, this message translates to:
+  /// **'Com duas pesagens ou mais, o gráfico da sua evolução aparece aqui.'**
+  String get reportBodyChartHint;
+
+  /// No description provided for @reportBodyHistory.
+  ///
+  /// In pt, this message translates to:
+  /// **'Histórico de pesagens'**
+  String get reportBodyHistory;
+
+  /// No description provided for @reportVolumeEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Registre as cargas durante os treinos para ver a tonelagem levantada em cada sessão.'**
+  String get reportVolumeEmpty;
+
+  /// No description provided for @reportVolumeTonnage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Tonelagem'**
+  String get reportVolumeTonnage;
+
+  /// No description provided for @reportVolumeTonnageDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Carga × séries × repetições de cada treino'**
+  String get reportVolumeTonnageDesc;
+
+  /// No description provided for @reportVolumeTotal.
+  ///
+  /// In pt, this message translates to:
+  /// **'Total'**
+  String get reportVolumeTotal;
+
+  /// No description provided for @reportVolumeAverage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Média/treino'**
+  String get reportVolumeAverage;
+
+  /// No description provided for @reportVolumeBest.
+  ///
+  /// In pt, this message translates to:
+  /// **'Melhor treino'**
+  String get reportVolumeBest;
+
+  /// No description provided for @reportVolumePerWorkout.
+  ///
+  /// In pt, this message translates to:
+  /// **'Por treino'**
+  String get reportVolumePerWorkout;
+
+  /// No description provided for @reportVolumeLastN.
+  ///
+  /// In pt, this message translates to:
+  /// **'Últimos {count} treinos'**
+  String reportVolumeLastN(int count);
+
+  /// No description provided for @reportVolumeWorkouts.
+  ///
+  /// In pt, this message translates to:
+  /// **'Treinos'**
+  String get reportVolumeWorkouts;
+
+  /// No description provided for @reportVolumeWorkoutFallback.
+  ///
+  /// In pt, this message translates to:
+  /// **'Treino'**
+  String get reportVolumeWorkoutFallback;
+
+  /// No description provided for @reportVolumeSessionDetail.
+  ///
+  /// In pt, this message translates to:
+  /// **'{date} · {count, plural, =1{1 exercício} other{{count} exercícios}}'**
+  String reportVolumeSessionDetail(String date, int count);
+
+  /// No description provided for @reportFreqDaysTrained.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dias treinados'**
+  String get reportFreqDaysTrained;
+
+  /// No description provided for @reportFreqLastMonth.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mês passado'**
+  String get reportFreqLastMonth;
+
+  /// No description provided for @reportFreqAvgWeek.
+  ///
+  /// In pt, this message translates to:
+  /// **'Média/semana'**
+  String get reportFreqAvgWeek;
+
+  /// No description provided for @reportFreqSamePace.
+  ///
+  /// In pt, this message translates to:
+  /// **'💪 Mesmo ritmo que no mês passado'**
+  String get reportFreqSamePace;
+
+  /// No description provided for @reportFreqMoreDays.
+  ///
+  /// In pt, this message translates to:
+  /// **'💪 {count, plural, =1{1 dia a mais} other{{count} dias a mais}} que no mês passado'**
+  String reportFreqMoreDays(int count);
+
+  /// No description provided for @reportFreqFewerDays.
+  ///
+  /// In pt, this message translates to:
+  /// **'{count, plural, =1{1 dia a menos} other{{count} dias a menos}} que no mês passado — bora recuperar!'**
+  String reportFreqFewerDays(int count);
+
+  /// No description provided for @reportFreqPerWeek.
+  ///
+  /// In pt, this message translates to:
+  /// **'Treinos por semana'**
+  String get reportFreqPerWeek;
+
+  /// No description provided for @reportFreqLast8Weeks.
+  ///
+  /// In pt, this message translates to:
+  /// **'Últimas 8 semanas'**
+  String get reportFreqLast8Weeks;
+
+  /// No description provided for @reportCalendarDayTrained.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dia {day}, treinou'**
+  String reportCalendarDayTrained(int day);
+
+  /// No description provided for @reportCalendarDayRest.
+  ///
+  /// In pt, this message translates to:
+  /// **'Dia {day}'**
+  String reportCalendarDayRest(int day);
+
+  /// No description provided for @videoSheetTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vídeos — {exercise}'**
+  String videoSheetTitle(String exercise);
+
+  /// No description provided for @videoSheetEmpty.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nenhum vídeo encontrado.'**
+  String get videoSheetEmpty;
+
+  /// No description provided for @videoSheetError.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não foi possível buscar vídeos.'**
+  String get videoSheetError;
+
+  /// No description provided for @videoSheetFallbackTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Vídeo'**
+  String get videoSheetFallbackTitle;
+
+  /// No description provided for @restAlarmTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'⏱️ Descanso encerrado!'**
+  String get restAlarmTitle;
+
+  /// No description provided for @restAlarmBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Hora da próxima série de {exercise} 💪'**
+  String restAlarmBody(String exercise);
+
+  /// No description provided for @restAlarmChannelName.
+  ///
+  /// In pt, this message translates to:
+  /// **'Fim do descanso'**
+  String get restAlarmChannelName;
+
+  /// No description provided for @restAlarmChannelDesc.
+  ///
+  /// In pt, this message translates to:
+  /// **'Avisa quando o descanso entre as séries termina'**
+  String get restAlarmChannelDesc;
+
+  /// No description provided for @passwordShow.
+  ///
+  /// In pt, this message translates to:
+  /// **'Mostrar senha'**
+  String get passwordShow;
+
+  /// No description provided for @passwordHide.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ocultar senha'**
+  String get passwordHide;
+
+  /// No description provided for @commonIncrease.
+  ///
+  /// In pt, this message translates to:
+  /// **'Aumentar'**
+  String get commonIncrease;
+
+  /// No description provided for @commonDecrease.
+  ///
+  /// In pt, this message translates to:
+  /// **'Diminuir'**
+  String get commonDecrease;
+
+  /// No description provided for @commonPlay.
+  ///
+  /// In pt, this message translates to:
+  /// **'Reproduzir'**
+  String get commonPlay;
+
+  /// No description provided for @commonPause.
+  ///
+  /// In pt, this message translates to:
+  /// **'Pausar'**
+  String get commonPause;
+
+  /// No description provided for @execVideoTimeline.
+  ///
+  /// In pt, this message translates to:
+  /// **'Linha do tempo do vídeo. Toque para pular para um momento.'**
+  String get execVideoTimeline;
 }
 
 class _AppLocalizationsDelegate

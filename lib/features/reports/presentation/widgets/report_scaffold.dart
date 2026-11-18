@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+
+import '../../../../core/l10n/l10n.dart';
 import '../../data/reports_api.dart';
 
 /// Gera o PDF no servidor e abre a folha de compartilhar do sistema (salvar, abrir, enviar).
 Future<void> sharePdfReport(BuildContext context, WidgetRef ref, ReportPdf report) async {
   final messenger = ScaffoldMessenger.of(context);
-  messenger.showSnackBar(const SnackBar(content: Text('Gerando PDF...'), duration: Duration(seconds: 2)));
+  final l = context.l10n;
+  messenger.showSnackBar(SnackBar(content: Text(l.reportPdfGenerating), duration: const Duration(seconds: 2)));
   try {
     final bytes = await ref.read(reportsApiProvider).downloadPdf(report);
     final fileName = 'personalia_${report.type}.pdf';
@@ -15,7 +18,7 @@ Future<void> sharePdfReport(BuildContext context, WidgetRef ref, ReportPdf repor
       fileNameOverrides: [fileName],
     );
   } catch (_) {
-    messenger.showSnackBar(const SnackBar(content: Text('Não foi possível gerar o PDF. Tente novamente.')));
+    messenger.showSnackBar(SnackBar(content: Text(l.reportPdfError)));
   }
 }
 
@@ -29,7 +32,7 @@ class ReportScaffold<T> extends ConsumerWidget {
     required this.builder,
     this.pdf,
     this.isEmpty,
-    this.emptyMessage = 'Ainda não há dados para este relatório.',
+    this.emptyMessage,
   });
 
   final String title;
@@ -37,7 +40,9 @@ class ReportScaffold<T> extends ConsumerWidget {
   final List<Widget> Function(BuildContext context, T data) builder;
   final ReportPdf? pdf;
   final bool Function(T data)? isEmpty;
-  final String emptyMessage;
+
+  /// `null` usa a mensagem padrão traduzida.
+  final String? emptyMessage;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,7 +53,7 @@ class ReportScaffold<T> extends ConsumerWidget {
         actions: [
           if (pdf != null)
             IconButton(
-              tooltip: 'Baixar PDF',
+              tooltip: context.l10n.reportPdfDownload,
               icon: const Icon(Icons.picture_as_pdf),
               onPressed: () => sharePdfReport(context, ref, pdf!),
             ),
@@ -59,14 +64,16 @@ class ReportScaffold<T> extends ConsumerWidget {
         child: async.when(
           data: (data) => ListView(
             padding: const EdgeInsets.all(16),
-            children: isEmpty?.call(data) == true ? [_EmptyState(message: emptyMessage)] : builder(context, data),
+            children: isEmpty?.call(data) == true
+                ? [_EmptyState(message: emptyMessage ?? context.l10n.reportEmptyDefault)]
+                : builder(context, data),
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stackTrace) => ListView(
-            children: const [
+            children: [
               Padding(
-                padding: EdgeInsets.all(32),
-                child: Text('Não foi possível carregar o relatório. Puxe para tentar de novo.', textAlign: TextAlign.center),
+                padding: const EdgeInsets.all(32),
+                child: Text(context.l10n.reportLoadError, textAlign: TextAlign.center),
               ),
             ],
           ),
@@ -86,9 +93,13 @@ class _EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 16),
       child: Column(
         children: [
-          const Text('📊', style: TextStyle(fontSize: 48)),
+          const ExcludeSemantics(child: Text('📊', style: TextStyle(fontSize: 48))),
           const SizedBox(height: 12),
-          Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -111,7 +122,10 @@ class ReportCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Semantics(
+              header: true,
+              child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ),
             if (subtitle != null) Text(subtitle!, style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 12),
             child,

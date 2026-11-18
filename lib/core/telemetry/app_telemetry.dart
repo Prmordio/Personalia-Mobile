@@ -101,7 +101,6 @@ class AppTelemetry {
       '/workout/swap-exercise',
     };
     if (routes.contains(path)) return path;
-    if (path.startsWith('/coming-soon/')) return '/coming-soon';
     return 'other';
   }
 

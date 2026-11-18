@@ -103,6 +103,11 @@ class WorkoutExecutionControls extends ConsumerWidget {
                   IconButton(
                     iconSize: 56,
                     color: color,
+                    tooltip: !resting || restEnded
+                        ? context.l10n.restBtnStartRest
+                        : live.running
+                        ? context.l10n.restPause
+                        : context.l10n.restResume,
                     onPressed: () => act(centerAction),
                     icon: Icon(
                       restEnded
@@ -113,7 +118,12 @@ class WorkoutExecutionControls extends ConsumerWidget {
                     ),
                   )
                 else
-                  const Icon(Icons.check_circle, color: Colors.green, size: 56),
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 56,
+                    semanticLabel: context.l10n.exerciseCompleted,
+                  ),
               ],
             ),
           ],

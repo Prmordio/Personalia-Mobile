@@ -8,6 +8,7 @@ import 'package:personalia_app/features/execution_analysis/state/execution_analy
 import 'package:personalia_app/features/home/data/app_api.dart';
 import 'package:personalia_app/features/workout/data/exercise_image_provider.dart';
 import 'package:personalia_app/features/workout/presentation/rest_timer_screen.dart';
+import 'package:personalia_app/features/workout/state/rest_timer_controller.dart';
 import 'package:personalia_app/features/workout/state/workout_live_activity.dart';
 import 'package:personalia_app/features/workout/state/workout_live_labels.dart';
 import 'package:personalia_app/l10n/app_localizations.dart';

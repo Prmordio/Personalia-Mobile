@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+
+import '../../../core/l10n/l10n.dart';
 import '../../../core/theme/app_theme.dart';
 import '../data/reports_api.dart';
+import 'report_format.dart';
 import 'widgets/report_charts.dart';
 import 'widgets/report_scaffold.dart';
-
-final _day = DateFormat('dd/MM');
-const _weekdays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
 class FrequencyReportScreen extends StatelessWidget {
   const FrequencyReportScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return ReportScaffold<FrequencyReport>(
-      title: 'Frequência',
+      title: l.reportFrequency,
       provider: frequencyReportProvider,
       pdf: ReportPdf.attendance,
       builder: (context, report) {
+        final fmt = ReportFormat.of(context);
         final diff = report.trainedThisMonth - report.trainedLastMonth;
         return [
           ReportCard(
@@ -27,32 +28,18 @@ class FrequencyReportScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    StatTile(
-                      value: '${report.trainedThisMonth}',
-                      label: 'Dias treinados',
-                    ),
-                    StatTile(
-                      value: '${report.trainedLastMonth}',
-                      label: 'Mês passado',
-                    ),
-                    StatTile(
-                      value: report.averagePerWeek.toString().replaceAll(
-                        '.',
-                        ',',
-                      ),
-                      label: 'Média/semana',
-                    ),
+                    StatTile(value: '${report.trainedThisMonth}', label: l.reportFreqDaysTrained),
+                    StatTile(value: '${report.trainedLastMonth}', label: l.reportFreqLastMonth),
+                    StatTile(value: fmt.number(report.averagePerWeek), label: l.reportFreqAvgWeek),
                   ],
                 ),
-                if (report.trainedLastMonth > 0 ||
-                    report.trainedThisMonth > 0) ...[
+                if (report.trainedLastMonth > 0 || report.trainedThisMonth > 0) ...[
                   const SizedBox(height: 12),
-                  Text(
-                    diff >= 0
-                        ? '💪 ${diff == 0 ? 'Mesmo ritmo' : '$diff dia${diff == 1 ? '' : 's'} a mais'} que no mês passado'
-                        : '${-diff} dia${diff == -1 ? '' : 's'} a menos que no mês passado — bora recuperar!',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
+                  Text(switch (diff) {
+                    0 => l.reportFreqSamePace,
+                    > 0 => l.reportFreqMoreDays(diff),
+                    _ => l.reportFreqFewerDays(-diff),
+                  }, style: const TextStyle(color: Colors.grey)),
                 ],
                 const SizedBox(height: 16),
                 _MonthCalendar(report: report),
@@ -60,13 +47,11 @@ class FrequencyReportScreen extends StatelessWidget {
             ),
           ),
           ReportCard(
-            title: 'Treinos por semana',
-            subtitle: 'Últimas 8 semanas',
+            title: l.reportFreqPerWeek,
+            subtitle: l.reportFreqLast8Weeks,
             child: SimpleBarChart(
               values: report.weekly.map((w) => w.count).toList(),
-              labels: report.weekly
-                  .map((w) => _day.format(w.weekStart))
-                  .toList(),
+              labels: report.weekly.map((w) => fmt.shortDate(w.weekStart)).toList(),
               height: 100,
               highlightLast: true,
             ),
@@ -84,20 +69,19 @@ class _MonthCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now().day;
-    final cells = [
-      for (var i = 0; i < report.firstWeekday; i++) null,
-      for (var d = 1; d <= report.daysInMonth; d++) d,
-    ];
+    final l = context.l10n;
+    // narrowWeekdays começa no domingo, igual ao firstWeekday do backend.
+    final weekdays = MaterialLocalizations.of(context).narrowWeekdays;
+    final cells = [for (var i = 0; i < report.firstWeekday; i++) null, for (var d = 1; d <= report.daysInMonth; d++) d];
     return Column(
       children: [
         Row(
           children: [
-            for (final w in _weekdays)
+            for (final w in weekdays)
               Expanded(
                 child: Center(
-                  child: Text(
-                    w,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  child: ExcludeSemantics(
+                    child: Text(w, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   ),
                 ),
               ),
@@ -115,26 +99,28 @@ class _MonthCalendar extends StatelessWidget {
               if (day == null)
                 const SizedBox.shrink()
               else
-                Container(
-                  decoration: BoxDecoration(
-                    color: report.trainedDays.contains(day)
-                        ? Theme.of(context).colorScheme.secondary
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                    border: day == today
-                        ? Border.all(color: AppColors.blue, width: 2)
-                        : null,
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    '$day',
-                    style: TextStyle(
+                Semantics(
+                  label: report.trainedDays.contains(day)
+                      ? l.reportCalendarDayTrained(day)
+                      : l.reportCalendarDayRest(day),
+                  excludeSemantics: true,
+                  child: Container(
+                    decoration: BoxDecoration(
                       color: report.trainedDays.contains(day)
-                          ? Theme.of(context).colorScheme.onSecondary
-                          : Theme.of(context).colorScheme.onSurface,
-                      fontWeight: report.trainedDays.contains(day)
-                          ? FontWeight.bold
-                          : FontWeight.normal,
+                          ? Theme.of(context).colorScheme.secondary
+                          : Theme.of(context).colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                      border: day == today ? Border.all(color: AppColors.blue, width: 2) : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$day',
+                      style: TextStyle(
+                        color: report.trainedDays.contains(day)
+                            ? Theme.of(context).colorScheme.onSecondary
+                            : Theme.of(context).colorScheme.onSurface,
+                        fontWeight: report.trainedDays.contains(day) ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
                   ),
                 ),

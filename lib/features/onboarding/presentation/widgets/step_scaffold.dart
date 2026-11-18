@@ -43,6 +43,7 @@ class StepScaffold extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: backLabel == null
                       ? IconButton(
+                          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
                           icon: const Icon(Icons.arrow_back),
                           onPressed: loading ? null : onBack,
                         )
@@ -226,6 +227,7 @@ class NumberSpinner extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton.filledTonal(
+          tooltip: context.l10n.commonDecrease,
           onPressed: value - step >= min ? () => onChanged(value - step) : null,
           icon: const Icon(Icons.remove),
         ),
@@ -234,12 +236,14 @@ class NumberSpinner extends StatelessWidget {
             width: 140,
             child: Text(
               valueLabel ?? '$value',
+              semanticsLabel: valueLabel ?? '$value',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
           ),
         ),
         IconButton.filledTonal(
+          tooltip: context.l10n.commonIncrease,
           onPressed: value + step <= max ? () => onChanged(value + step) : null,
           icon: const Icon(Icons.add),
         ),
