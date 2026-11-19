@@ -1,4 +1,7 @@
-- Mais segurança: o app agora verifica se está rodando em um aparelho e versão oficiais.
-- Modo offline: aviso quando você está sem internet; os treinos registrados offline são sincronizados assim que a conexão volta.
-- Aviso de nova versão disponível direto no app.
-- Correções e melhorias de estabilidade.
+- Análise de execução: grave sua série e receba um comentário da IA sobre a técnica do exercício.
+- Cartões do treino e da sua assinatura na tela inicial, com acesso mais rápido ao treino do dia.
+- Assinatura mais clara: veja a próxima cobrança, pagamento pendente ou até quando vai seu acesso.
+- Exclusão de conta direto pelo app.
+- Modo offline: aviso quando você está sem internet; treinos registrados offline sincronizam assim que a conexão volta.
+- Aviso no app quando houver uma nova versão.
+- Mais segurança, correções e melhorias de estabilidade.
