@@ -1,4 +1,7 @@
-- Improved security: the app now checks that it is running as an official version on a genuine device.
+- Execution analysis: record your set and get AI feedback on your exercise technique.
+- Workout and subscription cards on the home screen, with faster access to today's workout.
+- Clearer subscription details: see your next charge, a pending payment or how long your access lasts.
+- Delete your account directly in the app.
 - Offline mode: a notice when you have no internet connection; workouts logged offline sync as soon as you are back online.
 - In-app notice when a new version is available.
-- Bug fixes and stability improvements.
+- Improved security, bug fixes and stability improvements.

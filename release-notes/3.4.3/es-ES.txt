@@ -1,4 +1,7 @@
-- Más seguridad: la app ahora verifica que se está ejecutando en una versión oficial y en un dispositivo auténtico.
+- Análisis de ejecución: graba tu serie y recibe un comentario de la IA sobre la técnica del ejercicio.
+- Tarjetas del entrenamiento y de tu suscripción en la pantalla de inicio, con acceso más rápido al entrenamiento del día.
+- Suscripción más clara: consulta el próximo cobro, un pago pendiente o hasta cuándo tienes acceso.
+- Eliminación de la cuenta directamente desde la app.
 - Modo sin conexión: aviso cuando no tienes internet; los entrenamientos registrados sin conexión se sincronizan en cuanto vuelve la conexión.
-- Aviso dentro de la app cuando hay una nueva versión disponible.
-- Correcciones y mejoras de estabilidad.
+- Aviso en la app cuando hay una nueva versión disponible.
+- Más seguridad, correcciones y mejoras de estabilidad.
