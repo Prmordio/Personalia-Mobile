@@ -16,7 +16,8 @@ lane :promote do
       track_promote_to: 'production',
       version_code: build.to_i,
       track_promote_release_status: rollout == 1.0 ? 'completed' : 'inProgress',
-      rollout: rollout,
+      # Fastlane exige String; em 100% (completed) o Play não aceita fração.
+      rollout: rollout == 1.0 ? nil : rollout.to_s,
       skip_upload_apk: true,
       skip_upload_aab: true,
       skip_upload_metadata: true,
