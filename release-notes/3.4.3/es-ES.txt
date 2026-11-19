@@ -1,0 +1,4 @@
+- Más seguridad: la app ahora verifica que se está ejecutando en una versión oficial y en un dispositivo auténtico.
+- Modo sin conexión: aviso cuando no tienes internet; los entrenamientos registrados sin conexión se sincronizan en cuanto vuelve la conexión.
+- Aviso dentro de la app cuando hay una nueva versión disponible.
+- Correcciones y mejoras de estabilidad.

@@ -50,6 +50,18 @@ jobs:
             echo 'ERROR: version deve usar o formato X.Y.Z+BUILD no pubspec.yaml.'
             exit 1
           fi
+          NOTES_DIR="release-notes/${VERSION%%+*}"
+          if ! compgen -G "$NOTES_DIR/*.txt" > /dev/null; then
+            echo "ERROR: crie $NOTES_DIR/pt-BR.txt com o \"O que há de novo\" (ver release-notes/README.md)."
+            exit 1
+          fi
+          for NOTES in "$NOTES_DIR"/*.txt; do
+            CHARS=$(tr -d '[:space:]' < "$NOTES" | wc -m)
+            if [ "$CHARS" -eq 0 ] || [ "$(wc -m < "$NOTES")" -gt 4000 ]; then
+              echo "ERROR: $NOTES está vazio ou passa de 4000 caracteres."
+              exit 1
+            fi
+          done
           TAG="mobile/v${VERSION}"
           if git show-ref --verify --quiet "refs/tags/$TAG"; then
             if [ "$(git rev-parse "$TAG^{commit}")" != "$(git rev-parse HEAD)" ]; then
