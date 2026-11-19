@@ -1,17 +1,15 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_remote_config/firebase_remote_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../firebase_options.dart';
+import '../../../core/remote_config/app_remote_config.dart';
 import '../../onboarding/data/onboarding_api.dart';
 import '../data/app_api.dart';
 
 /// Chave do Remote Config com os SHA-256 (hex) dos emails com acesso ilimitado,
 /// separados por vírgula/espaço. Só hashes: o Remote Config é legível por qualquer cliente.
-const unlimitedAccessRemoteConfigKey = 'unlimited_access_email_hashes';
+const unlimitedAccessRemoteConfigKey = RemoteConfigKeys.unlimitedAccessEmailHashes;
 
 String hashEmail(String email) =>
     sha256.convert(utf8.encode(email.trim().toLowerCase())).toString();
@@ -22,32 +20,10 @@ Set<String> parseEmailHashes(String raw) => raw
     .where((hash) => hash.isNotEmpty)
     .toSet();
 
-Future<Set<String>> _loadRemoteHashes() async {
-  // O shell pode montar antes do startup terminar; initializeApp é idempotente.
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  }
-  final config = FirebaseRemoteConfig.instance;
-  await config.setConfigSettings(
-    RemoteConfigSettings(
-      fetchTimeout: const Duration(seconds: 10),
-      minimumFetchInterval: const Duration(hours: 1),
-    ),
-  );
-  await config.setDefaults(const {unlimitedAccessRemoteConfigKey: ''});
-  try {
-    await config.fetchAndActivate();
-  } catch (_) {
-    // Sem rede, vale o último valor ativado.
-  }
+final unlimitedAccessHashesProvider = FutureProvider<Set<String>>((ref) async {
+  final config = await ref.watch(remoteConfigProvider.future);
   return parseEmailHashes(config.getString(unlimitedAccessRemoteConfigKey));
-}
-
-final unlimitedAccessHashesProvider = FutureProvider<Set<String>>(
-  (ref) => _loadRemoteHashes(),
-);
+});
 
 /// Contas liberadas sem assinatura (ex.: conta demo da revisão da Apple). Não altera a
 /// assinatura: o "Assinar" e a compra continuam disponíveis para essas contas.
@@ -60,11 +36,14 @@ final unlimitedAccessProvider = FutureProvider.autoDispose<bool>((ref) async {
 });
 
 /// Libera as áreas de assinante. Considera liberado enquanto carrega (evita piscar
-/// de bloqueado para liberado).
+/// de bloqueado para liberado); erro de rede/servidor conta como bloqueado.
 final featureAccessProvider = Provider.autoDispose<bool>((ref) {
+  // Falha fechado: erro ao consultar a assinatura NÃO libera as áreas pagas (antes,
+  // bloquear /app/subscription num proxy destravava a UI). Carregando = liberado só para
+  // não piscar; o servidor exige assinatura nos endpoints pagos de qualquer forma.
   final subscribed = ref
       .watch(subscriptionProvider)
-      .maybeWhen(data: (s) => s.isValid, orElse: () => true);
+      .when(data: (s) => s.isValid, loading: () => true, error: (_, _) => false);
   if (subscribed) return true;
   return ref
       .watch(unlimitedAccessProvider)

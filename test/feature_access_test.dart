@@ -90,4 +90,34 @@ void main() {
     );
     expect(onboarding.calls, 0);
   });
+
+  test('a failing subscription lookup does not unlock paid areas', () async {
+    final container = ProviderContainer(
+      overrides: [
+        subscriptionProvider.overrideWith((ref) async => throw DioException(requestOptions: RequestOptions())),
+        unlimitedAccessHashesProvider.overrideWith((ref) async => <String>{}),
+        onboardingApiProvider.overrideWithValue(_Onboarding(demo)),
+      ],
+    );
+    addTearDown(container.dispose);
+    final sub = container.listen(featureAccessProvider, (_, _) {});
+    await expectLater(container.read(subscriptionProvider.future), throwsA(isA<DioException>()));
+    await container.read(unlimitedAccessProvider.future);
+    expect(sub.read(), false);
+  });
+
+  test('an allowlisted account keeps access even if the subscription lookup fails', () async {
+    final container = ProviderContainer(
+      overrides: [
+        subscriptionProvider.overrideWith((ref) async => throw DioException(requestOptions: RequestOptions())),
+        unlimitedAccessHashesProvider.overrideWith((ref) async => {hashEmail(demo)}),
+        onboardingApiProvider.overrideWithValue(_Onboarding(demo)),
+      ],
+    );
+    addTearDown(container.dispose);
+    final sub = container.listen(featureAccessProvider, (_, _) {});
+    await expectLater(container.read(subscriptionProvider.future), throwsA(isA<DioException>()));
+    await container.read(unlimitedAccessProvider.future);
+    expect(sub.read(), true);
+  });
 }

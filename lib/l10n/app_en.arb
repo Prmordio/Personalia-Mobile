@@ -841,5 +841,12 @@
   "commonDecrease": "Decrease",
   "commonPlay": "Play",
   "commonPause": "Pause",
-  "execVideoTimeline": "Video timeline. Tap to jump to a moment."
+  "execVideoTimeline": "Video timeline. Tap to jump to a moment.",
+  "updateRequiredTitle": "Update PersonaliA",
+  "updateRequiredBody": "This version is no longer supported. Update from the store to keep training — your data is safe.",
+  "updateRecommendedTitle": "New version available",
+  "updateRecommendedBody": "Update to get the latest improvements and fixes.",
+  "updateNow": "Update",
+  "updateLater": "Not now",
+  "offlineBanner": "You're offline. Your workout keeps going and syncs when you're back online."
 }

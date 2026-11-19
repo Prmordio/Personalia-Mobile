@@ -15,10 +15,15 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <!-- Sem backup do Android (nuvem / troca de aparelho): o cache do treino, preferências e
+         sessão ficam só neste aparelho. A conta e o histórico vivem no servidor. -->
     <application
         android:label="personalia_app"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <receiver android:name=".WorkoutLiveReceiver" android:exported="false" />
         <service android:name=".WorkoutRestService" android:exported="false"
             android:foregroundServiceType="specialUse">

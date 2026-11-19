@@ -841,5 +841,12 @@
   "commonDecrease": "Disminuir",
   "commonPlay": "Reproducir",
   "commonPause": "Pausar",
-  "execVideoTimeline": "Línea de tiempo del video. Toca para saltar a un momento."
+  "execVideoTimeline": "Línea de tiempo del video. Toca para saltar a un momento.",
+  "updateRequiredTitle": "Actualiza PersonaliA",
+  "updateRequiredBody": "Esta versión ya no es compatible. Actualiza desde la tienda para seguir entrenando — tus datos están guardados.",
+  "updateRecommendedTitle": "Nueva versión disponible",
+  "updateRecommendedBody": "Actualiza para obtener las últimas mejoras y correcciones.",
+  "updateNow": "Actualizar",
+  "updateLater": "Ahora no",
+  "offlineBanner": "Estás sin conexión. El entrenamiento sigue y se sincroniza cuando vuelva la conexión."
 }

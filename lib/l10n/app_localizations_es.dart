@@ -2037,4 +2037,28 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get execVideoTimeline =>
       'Línea de tiempo del video. Toca para saltar a un momento.';
+
+  @override
+  String get updateRequiredTitle => 'Actualiza PersonaliA';
+
+  @override
+  String get updateRequiredBody =>
+      'Esta versión ya no es compatible. Actualiza desde la tienda para seguir entrenando — tus datos están guardados.';
+
+  @override
+  String get updateRecommendedTitle => 'Nueva versión disponible';
+
+  @override
+  String get updateRecommendedBody =>
+      'Actualiza para obtener las últimas mejoras y correcciones.';
+
+  @override
+  String get updateNow => 'Actualizar';
+
+  @override
+  String get updateLater => 'Ahora no';
+
+  @override
+  String get offlineBanner =>
+      'Estás sin conexión. El entrenamiento sigue y se sincroniza cuando vuelva la conexión.';
 }

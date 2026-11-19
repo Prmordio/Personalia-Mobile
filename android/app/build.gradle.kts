@@ -54,6 +54,11 @@ android {
 
     buildTypes {
         release {
+            // No CI, release sem keystore = erro (antes caía na chave de debug em silêncio e
+            // gerava um AAB que a Play rejeita / que qualquer um poderia reassinar).
+            if (keyProperties.isEmpty() && System.getenv("CI") == "true") {
+                throw GradleException("Release build on CI requires android/key.properties")
+            }
             signingConfig = if (keyProperties.isNotEmpty())
                 signingConfigs.getByName("release")
             else

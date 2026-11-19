@@ -2029,4 +2029,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get execVideoTimeline => 'Video timeline. Tap to jump to a moment.';
+
+  @override
+  String get updateRequiredTitle => 'Update PersonaliA';
+
+  @override
+  String get updateRequiredBody =>
+      'This version is no longer supported. Update from the store to keep training — your data is safe.';
+
+  @override
+  String get updateRecommendedTitle => 'New version available';
+
+  @override
+  String get updateRecommendedBody =>
+      'Update to get the latest improvements and fixes.';
+
+  @override
+  String get updateNow => 'Update';
+
+  @override
+  String get updateLater => 'Not now';
+
+  @override
+  String get offlineBanner =>
+      'You\'re offline. Your workout keeps going and syncs when you\'re back online.';
 }

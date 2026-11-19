@@ -2036,4 +2036,28 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get execVideoTimeline =>
       'Linha do tempo do vídeo. Toque para pular para um momento.';
+
+  @override
+  String get updateRequiredTitle => 'Atualize o PersonaliA';
+
+  @override
+  String get updateRequiredBody =>
+      'Esta versão não é mais suportada. Atualize na loja para continuar treinando — seus dados estão salvos.';
+
+  @override
+  String get updateRecommendedTitle => 'Nova versão disponível';
+
+  @override
+  String get updateRecommendedBody =>
+      'Atualize para ter as últimas melhorias e correções.';
+
+  @override
+  String get updateNow => 'Atualizar';
+
+  @override
+  String get updateLater => 'Agora não';
+
+  @override
+  String get offlineBanner =>
+      'Você está offline. O treino continua e sincroniza quando a conexão voltar.';
 }
