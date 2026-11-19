@@ -1,3 +1,4 @@
+import 'dart:async';
 import '../state/workout_session_cache.dart';
 import '../state/workout_live_activity.dart';
 import '../../../core/telemetry/app_telemetry.dart';
@@ -10,6 +11,7 @@ import '../data/workout_summary.dart';
 import '../state/active_workout_session.dart';
 import '../state/completed_workout_session.dart';
 import 'workout_card_screen.dart';
+import '../state/review_prompt.dart';
 
 const _moodEmojis = ['😤', '😑', '😊', '🔥'];
 
@@ -122,6 +124,8 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
       totalCount: s.totalExercises,
     );
     ref.read(activeWorkoutSessionProvider.notifier).state = null;
+    // Momento bom para pedir avaliação na loja (a política filtra frequência e humor).
+    unawaited(ref.read(reviewPromptServiceProvider).onWorkoutCompleted(mood: mood));
     if (!synced) {
       ScaffoldMessenger.of(
         context,

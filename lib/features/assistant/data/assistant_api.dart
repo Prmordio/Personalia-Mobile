@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
+import '../../../core/network/api_errors.dart';
 
 class EquipmentIdentification {
   EquipmentIdentification({
@@ -80,6 +81,11 @@ class AssistantApi {
               return;
             }
             if (data['error'] == true) {
+              if (data['reason'] == 'subscription_required') {
+                controller.addError(const SubscriptionRequiredException());
+                await controller.close();
+                return;
+              }
               final msg = (data['message'] as String?) ?? 'Erro desconhecido';
               controller.addError(msg);
               await controller.close();

@@ -3,6 +3,7 @@ import '../../../core/locale/locale_controller.dart';
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/network/api_errors.dart';
 import '../data/assistant_api.dart';
 
 class ChatMessage {
@@ -27,6 +28,17 @@ String _genericErrorFor(String language) {
       return 'No pude responder ahora. Inténtalo de nuevo en un momento.';
     default:
       return 'Não consegui responder agora. Tente de novo em instantes.';
+  }
+}
+
+String _subscriptionRequiredFor(String language) {
+  switch (language) {
+    case 'en':
+      return 'The assistant is for subscribers only. Subscribe on the home screen to keep chatting. 💪';
+    case 'es':
+      return 'El asistente es exclusivo para suscriptores. Suscríbete en la pantalla de inicio para seguir. 💪';
+    default:
+      return 'O assistente é exclusivo para assinantes. Assine na tela inicial para continuar. 💪';
   }
 }
 
@@ -73,6 +85,8 @@ class AssistantChatController extends StateNotifier<List<ChatMessage>> {
       _resolve(ChatMessage(fromUser: false, text: reply.isEmpty ? _genericErrorFor(language) : reply));
     } on DioException catch (e) {
       _resolve(ChatMessage(fromUser: false, text: _messageFrom(e, language)));
+    } on SubscriptionRequiredException {
+      _resolve(ChatMessage(fromUser: false, text: _subscriptionRequiredFor(language)));
     } catch (_) {
       _resolve(ChatMessage(fromUser: false, text: buffer.isEmpty ? _genericErrorFor(language) : buffer.toString()));
     }
@@ -114,6 +128,7 @@ class AssistantChatController extends StateNotifier<List<ChatMessage>> {
   }
 
   String _messageFrom(DioException e, [String language = 'pt']) {
+    if (isSubscriptionRequired(e)) return _subscriptionRequiredFor(language);
     final data = e.response?.data;
     final message = data is Map ? data['message'] : null;
     return message is String ? message : _genericErrorFor(language);

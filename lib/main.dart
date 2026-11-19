@@ -15,6 +15,9 @@ import 'core/notifications/fcm_service.dart';
 import 'core/notifications/rest_alarm.dart';
 import 'core/providers.dart';
 import 'core/startup_task.dart';
+import 'core/app_update/update_gate.dart';
+import 'core/connectivity/connectivity.dart';
+import 'core/security/app_check.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
@@ -158,6 +161,11 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
     }
     await Future.wait([
       runStartupTask(
+        'app_check',
+        activateAppCheck,
+        cancelled: _startupCancelled.future,
+      ),
+      runStartupTask(
         'telemetry',
         AppTelemetry.instance.initialize,
         cancelled: _startupCancelled.future,
@@ -230,6 +238,14 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
       // Habilita navegação via push notification a partir daqui
       FcmService.instance.onRoute = router.go;
       unawaited(_initializeServices());
+    });
+
+    // Voltou a conexão: envia já as séries/treinos guardados offline (sem esperar o timer).
+    ref.listenManual<AsyncValue<bool>>(isOnlineProvider, (previous, next) {
+      final wasOffline = previous?.asData?.value == false;
+      if (wasOffline && next.asData?.value == true) {
+        unawaited(_restoreWorkoutCache());
+      }
     });
 
     // Registra (ou re-registra) o FCM token a cada mudança de estado de auth (login/logout)
@@ -327,7 +343,9 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
             unawaited(ref.read(workoutLiveProvider.notifier).localize(labels));
           }
         });
-        return child ?? const SizedBox.shrink();
+        return UpdateGate(
+          child: OfflineBanner(child: child ?? const SizedBox.shrink()),
+        );
       },
       routerConfig: router,
     );

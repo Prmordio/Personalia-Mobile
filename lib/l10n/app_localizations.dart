@@ -3662,6 +3662,48 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Linha do tempo do vídeo. Toque para pular para um momento.'**
   String get execVideoTimeline;
+
+  /// No description provided for @updateRequiredTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualize o PersonaliA'**
+  String get updateRequiredTitle;
+
+  /// No description provided for @updateRequiredBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Esta versão não é mais suportada. Atualize na loja para continuar treinando — seus dados estão salvos.'**
+  String get updateRequiredBody;
+
+  /// No description provided for @updateRecommendedTitle.
+  ///
+  /// In pt, this message translates to:
+  /// **'Nova versão disponível'**
+  String get updateRecommendedTitle;
+
+  /// No description provided for @updateRecommendedBody.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualize para ter as últimas melhorias e correções.'**
+  String get updateRecommendedBody;
+
+  /// No description provided for @updateNow.
+  ///
+  /// In pt, this message translates to:
+  /// **'Atualizar'**
+  String get updateNow;
+
+  /// No description provided for @updateLater.
+  ///
+  /// In pt, this message translates to:
+  /// **'Agora não'**
+  String get updateLater;
+
+  /// No description provided for @offlineBanner.
+  ///
+  /// In pt, this message translates to:
+  /// **'Você está offline. O treino continua e sincroniza quando a conexão voltar.'**
+  String get offlineBanner;
 }
 
 class _AppLocalizationsDelegate

@@ -1021,5 +1021,12 @@
   "commonDecrease": "Diminuir",
   "commonPlay": "Reproduzir",
   "commonPause": "Pausar",
-  "execVideoTimeline": "Linha do tempo do vídeo. Toque para pular para um momento."
+  "execVideoTimeline": "Linha do tempo do vídeo. Toque para pular para um momento.",
+  "updateRequiredTitle": "Atualize o PersonaliA",
+  "updateRequiredBody": "Esta versão não é mais suportada. Atualize na loja para continuar treinando — seus dados estão salvos.",
+  "updateRecommendedTitle": "Nova versão disponível",
+  "updateRecommendedBody": "Atualize para ter as últimas melhorias e correções.",
+  "updateNow": "Atualizar",
+  "updateLater": "Agora não",
+  "offlineBanner": "Você está offline. O treino continua e sincroniza quando a conexão voltar."
 }

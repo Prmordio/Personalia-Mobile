@@ -1,16 +1,28 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'token_storage.dart';
+import '../security/app_check.dart';
 import '../telemetry/performance_interceptor.dart';
 
 /// URL base do gateway. Em dev local: Android emulator usa 10.0.2.2 (não localhost),
 /// iOS simulator/desktop usa localhost. Sobrescreva com:
 ///   flutter run --dart-define=API_BASE_URL=http://SEU_IP:3000
 const _defaultBaseUrl = 'http://10.0.2.2:3000';
+const _baseUrl = String.fromEnvironment('API_BASE_URL', defaultValue: _defaultBaseUrl);
+
+/// Build de release só fala com a API por HTTPS: um build sem API_BASE_URL (ou com http)
+/// mandaria token e dados pessoais em texto puro. Falha cedo em vez de vazar.
+String resolveBaseUrl({String baseUrl = _baseUrl, bool release = kReleaseMode}) {
+  if (release && !baseUrl.startsWith('https://')) {
+    throw StateError('Release builds require an https API_BASE_URL');
+  }
+  return baseUrl;
+}
 
 class ApiClient {
   ApiClient(this._tokenStorage, {void Function()? onUnauthorized})
       : _dio = Dio(BaseOptions(
-          baseUrl: const String.fromEnvironment('API_BASE_URL', defaultValue: _defaultBaseUrl),
+          baseUrl: resolveBaseUrl(),
           connectTimeout: const Duration(seconds: 15),
           receiveTimeout: const Duration(seconds: 30),
         )) {
@@ -30,6 +42,7 @@ class ApiClient {
         handler.next(error);
       },
     ));
+    _dio.interceptors.add(AppCheckInterceptor());
     _dio.interceptors.add(PerformanceInterceptor());
   }
 
