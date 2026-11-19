@@ -1,0 +1,4 @@
+- Improved security: the app now checks that it is running as an official version on a genuine device.
+- Offline mode: a notice when you have no internet connection; workouts logged offline sync as soon as you are back online.
+- In-app notice when a new version is available.
+- Bug fixes and stability improvements.

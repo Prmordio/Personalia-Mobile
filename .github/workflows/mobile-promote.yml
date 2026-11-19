@@ -105,6 +105,7 @@ jobs:
           RELEASE_PLATFORM: ${{ matrix.platform }}
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
           RELEASE_BUILD: ${{ needs.validate.outputs.build }}
+          RELEASE_NOTES_DIR: ${{ github.workspace }}/release-notes
           ANDROID_ROLLOUT: ${{ inputs.android_rollout }}
           IOS_AUTOMATIC_RELEASE: ${{ inputs.ios_automatic_release }}
           PLAY_STORE_JSON_KEY: ${{ secrets.PLAY_STORE_JSON_KEY }}

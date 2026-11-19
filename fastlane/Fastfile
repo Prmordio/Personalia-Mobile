@@ -1,3 +1,4 @@
+require 'tmpdir'
 desc 'Promote the exact beta build without rebuilding or uploading binaries'
 lane :promote do
   build = ENV.fetch('RELEASE_BUILD')
@@ -31,15 +32,25 @@ lane :promote do
       issuer_id: ENV.fetch('APP_STORE_ISSUER_ID'),
       key_content: ENV.fetch('APP_STORE_API_PRIVATE_KEY')
     )
+    version = ENV.fetch('RELEASE_VERSION')
+    # "What's New" obrigatório em toda atualização: release-notes/<versão>/<idioma>.txt (ver README).
+    notes_dir = File.join(ENV.fetch('RELEASE_NOTES_DIR'), version)
+    release_notes = Dir.glob(File.join(notes_dir, '*.txt')).to_h { |path| [File.basename(path, '.txt'), File.read(path).strip] }
+    if release_notes.empty? || release_notes.values.any?(&:empty?)
+      UI.user_error!("Release notes ausentes ou vazias em release-notes/#{version}/ (ex.: pt-BR.txt)")
+    end
     deliver(
       api_key: api_key,
       app_identifier: 'com.personalia.personalia-app',
-      app_version: ENV.fetch('RELEASE_VERSION'),
+      app_version: version,
       build_number: build,
       submit_for_review: true,
       automatic_release: ENV.fetch('IOS_AUTOMATIC_RELEASE') == 'true',
       skip_binary_upload: true,
-      skip_metadata: true,
+      # Só o "What's New": pasta de metadata vazia, nada além de release_notes é enviado.
+      skip_metadata: false,
+      metadata_path: Dir.mktmpdir,
+      release_notes: release_notes,
       skip_screenshots: true,
       precheck_include_in_app_purchases: false,
       force: true
