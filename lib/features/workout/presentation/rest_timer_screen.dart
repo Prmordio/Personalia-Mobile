@@ -1,6 +1,7 @@
 import '../state/rest_timer_controller.dart';
 import '../state/workout_session_cache.dart';
 import '../state/workout_live_labels.dart';
+import '../../../core/remote_config/feature_flags.dart';
 import '../../../core/telemetry/app_telemetry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +14,7 @@ import '../../home/data/app_api.dart';
 import '../data/exercise_image_provider.dart';
 import '../state/active_workout_session.dart';
 import '../state/workout_live_activity.dart';
+import 'widgets/live_activity_hint.dart';
 import 'widgets/workout_execution_controls.dart';
 import 'swap_exercise_screen.dart';
 import 'widgets/exercise_list.dart';
@@ -194,17 +196,21 @@ class _RestTimerScreenState extends ConsumerState<RestTimerScreen>
         .watch(exerciseImageProvider(exercise.nome))
         .asData
         ?.value;
-    final executionRuleKey = ref
-        .watch(executionRuleCatalogProvider)
-        .asData
-        ?.value
-        .match(exercise.nome);
+    final executionRuleKey =
+        ref.watch(featureFlagsProvider).executionAnalysisEnabled
+        ? ref
+              .watch(executionRuleCatalogProvider)
+              .asData
+              ?.value
+              .match(exercise.nome)
+        : null;
 
     return Scaffold(
       appBar: AppBar(title: Text(exercise.nome)),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          if (!_recordOnly) const LiveActivityHint(),
           if (imageBytes != null) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),

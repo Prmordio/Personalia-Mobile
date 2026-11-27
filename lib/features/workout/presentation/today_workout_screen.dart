@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/telemetry/app_telemetry.dart';
 import '../../home/data/app_api.dart';
 import '../../home/state/today_workout_override.dart';
 import '../data/workout_summary.dart';
@@ -30,6 +31,30 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
   bool _cacheOpening = false;
   bool _cacheFailed = false;
   List<WorkoutExercise>? _cachedExercises;
+
+  /// Da abertura da tela até o treino utilizável (plano + cache local prontos).
+  final _readyTrace = AppTelemetry.instance.startTrace('workout_today_ready');
+
+  @override
+  void initState() {
+    super.initState();
+    ref.listenManual<AsyncValue<TodayWorkout>>(effectiveTodayWorkoutProvider, (
+      _,
+      next,
+    ) {
+      if (next.hasError) {
+        _readyTrace.stop(attributes: {'outcome': 'error'});
+      } else if (next.asData?.value.isRest == true) {
+        _readyTrace.stop(attributes: {'outcome': 'rest_day'});
+      }
+    }, fireImmediately: true);
+  }
+
+  @override
+  void dispose() {
+    _readyTrace.stop(attributes: {'outcome': 'abandoned'});
+    super.dispose();
+  }
 
   Map<String, dynamic> _exerciseData(WorkoutExercise e) => {
     'nome': e.nome,
@@ -83,7 +108,9 @@ class _TodayWorkoutScreenState extends ConsumerState<TodayWorkoutScreen> {
         _cacheReady = true;
         _cacheFailed = false;
       });
+      _readyTrace.stop(attributes: {'outcome': 'ready'});
     } catch (_) {
+      _readyTrace.stop(attributes: {'outcome': 'cache_failed'});
       if (mounted) {
         setState(() {
           _cacheFailed = true;

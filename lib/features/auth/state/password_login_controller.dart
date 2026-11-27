@@ -32,7 +32,7 @@ class PasswordLoginController extends StateNotifier<PasswordLoginState> {
     try {
       final token = await _authApi.loginWithPassword(email, password);
       await _tokenStorage.save(token);
-      AppTelemetry.instance.event('login');
+      AppTelemetry.instance.event('login', {'method': 'password'});
       onLoggedIn?.call();
       _refresh.value++;
       state = state.copyWith(loading: false);

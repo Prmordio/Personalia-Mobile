@@ -1028,5 +1028,7 @@
   "updateRecommendedBody": "Atualize para ter as últimas melhorias e correções.",
   "updateNow": "Atualizar",
   "updateLater": "Agora não",
-  "offlineBanner": "Você está offline. O treino continua e sincroniza quando a conexão voltar."
+  "offlineBanner": "Você está offline. O treino continua e sincroniza quando a conexão voltar.",
+  "liveActivityHintMessage": "Ative as Atividades ao Vivo para ver o cronômetro na tela de bloqueio e na Dynamic Island.",
+  "liveActivityHintDismiss": "Não mostrar de novo"
 }

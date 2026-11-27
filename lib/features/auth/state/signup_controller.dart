@@ -227,7 +227,11 @@ class SignupController extends StateNotifier<SignupState> {
       state = state.copyWith(loading: false, error: _messageFrom(e));
       return;
     }
-    AppTelemetry.instance.event(state.linkAccount ? 'sign_up_whatsapp_linked' : 'sign_up');
+    // `sign_up_whatsapp_linked` virou o parâmetro `linked_whatsapp` (até a 3.4.3 eram dois eventos).
+    AppTelemetry.instance.event('sign_up', {
+      'method': 'email',
+      'linked_whatsapp': state.linkAccount,
+    });
     _refresh.value++;
     state = state.copyWith(loading: false);
   }

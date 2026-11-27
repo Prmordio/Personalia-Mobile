@@ -1,4 +1,4 @@
-# Crashlytics, Analytics e Performance Monitoring
+# Crashlytics, Analytics, Performance e In-App Messaging
 
 `AppTelemetry` centraliza a integração. A coleta é ativada em release e
 desativada em debug/profile por padrão. Para testar ou desativar explicitamente,
@@ -6,25 +6,42 @@ use `--dart-define=TELEMETRY_ENABLED=true` ou `false` no build.
 
 ## Eventos implementados
 
-- `login`: autenticação concluída por OTP, senha, primeiro acesso ou biometria.
-- `onboarding_completed`: preferências salvas, antes da oferta de trial/geração.
-- `workout_started`: primeira ativação da sessão de treino pelo cronômetro.
-- `workout_completed`: registro do treino confirmado pelo backend.
-- `assistant_message_sent`: mensagem de texto aceita para envio ao assistente.
-- `push_opened`: abertura de uma notificação remota, inclusive com app encerrado.
-- `screen_view`: mudanças de rota no GoRouter, incluindo o ShellRoute.
+Lista completa, com parâmetros e significado: [FIREBASE-METRICAS.md §4](../../FIREBASE-METRICAS.md).
+Resumo: `login`, `sign_up`, `onboarding_completed`, `workout_started`,
+`workout_completed`, `assistant_message_sent`, `assistant_reply`,
+`assistant_photo_sent`, `paywall_viewed`, `purchase_started`,
+`purchase_cancelled`, `purchase_failed`, `purchase_completed`,
+`restore_completed`, `push_opened`, `update_prompt_dismissed`,
+`update_store_opened`, `screen_view`.
 
-Eventos não incluem parâmetros pessoais, mensagens, fotos, exercícios ou dados
-de saúde. Rotas são limitadas a nomes conhecidos, sem queries ou IDs dinâmicos.
-O identificador de publicidade está desabilitado. Analytics ainda utiliza os
-identificadores de instalação e metadados padrão do SDK; não é coleta anônima.
+Parâmetros passam por `AppTelemetry.sanitizeParams` e são sempre valores
+fechados (enums, booleanos, números): nunca mensagens, fotos, exercícios, ids ou
+dados de saúde. Rotas são limitadas a nomes conhecidos, sem queries ou IDs.
+O identificador de publicidade está desabilitado.
+
+## Identidade e segmentos
+
+`UserTelemetrySync` ([user_telemetry_sync.dart](../lib/core/telemetry/user_telemetry_sync.dart))
+roda no início do app, no login/logout e após compra:
+- `user_id` do Analytics e User ID do Crashlytics = JWT `sub` (UUID interno da
+  conta, pseudônimo; nunca telefone/email/CPF). Limpo no logout.
+- User properties (espelhadas como custom keys do Crashlytics): `plan`,
+  `has_whatsapp_link`, `training_focus`, `internal_tester`.
+- Tópico FCM `plan_<plano>` (apenas um por vez; todos removidos no logout).
+
+Com isso os dados de uso/diagnóstico são **vinculados ao usuário**: o Data safety
+da Play e o App Privacy da Apple precisam declarar isso.
 
 ## Erros e símbolos
 
-Erros Flutter e assíncronos não tratados são registrados como fatais. Falhas
-recuperáveis ao salvar o treino são registradas como não fatais. Apenas tipo,
-stack trace e categoria da operação são enviados pelo código Dart: mensagens
-de exceção podem conter tokens ou conteúdo de requisições e são omitidas.
+Erros Flutter e assíncronos não tratados são registrados como fatais. Não
+fatais: `save_workout`, `cache_workout`, `store_billing_<etapa>_<código>` e, via
+`HttpErrorInterceptor`, `http_5xx <MÉTODO> <endpoint>`/`http_timeout …` (no
+máximo 1 por endpoint a cada 5 min). Apenas tipo, stack trace e categoria são
+enviados: mensagens de exceção podem conter tokens ou conteúdo de requisições e
+são omitidas. Texto variável e seguro (ex.: mensagem da loja) vai na custom key
+`error_detail`. Também são enviadas as keys `screen` e `workout_active` e uma
+trilha de logs (`nav:<tela>`, `http <status> <endpoint>`), sem payload.
 Falhas de transmissão de telemetria não interrompem essas operações.
 
 O plugin Gradle Crashlytics integra os símbolos/mapeamento Android ao build.
@@ -73,8 +90,10 @@ são substituídos por `_`, evitando IDs ou dados pessoais no caminho.
 O tamanho dos corpos não é estimado serializando conteúdo.
 
 O interceptor ignora `ResponseType.stream` (chat SSE), pois receber os headers
-não significa que o stream terminou. A duração de operações em streaming e
-o tempo de renderização de cada tela Flutter não são medidos por esta integração.
+não significa que o stream terminou. Para o chat existe o trace
+`assistant_first_token`. Outros traces personalizados: `app_start` (métrica
+`ms_to_first_screen`, medida desde o `main()`) e `workout_today_ready`. O tempo
+de renderização genérico de cada tela Flutter não é medido.
 
 O SDK usa `TELEMETRY_ENABLED`, com o mesmo padrão de release dos outros dois
 produtos. A configuração nativa começa com coleta desativada e o Dart a ativa
@@ -89,3 +108,14 @@ como carregar treino e relatórios. As métricas são enviadas em lotes e podem
 demorar a aparecer. Não foi adicionada coleta de conteúdo ou informação de saúde.
 
 Referência: [Performance Monitoring Flutter](https://firebase.google.com/docs/perf-mon/flutter/get-started).
+
+## In-App Messaging e Remote Config
+
+`firebase_in_app_messaging` segue o mesmo `TELEMETRY_ENABLED` (coleta nativa
+desligada no manifest/Info.plist até o Dart decidir) e fica suprimido durante um
+treino em andamento. Campanhas são criadas no console.
+
+Chaves do Remote Config (kill switches `assistant_enabled` e
+`execution_analysis_enabled`, faixa `maintenance_message`, lista
+`internal_tester_email_hashes`): ver
+[docs/firebase-rotina-e-melhorias.md](../../docs/firebase-rotina-e-melhorias.md) §3.

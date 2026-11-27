@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../home/presentation/subscription_checkout.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/locale/locale_controller.dart';
+import '../../../core/remote_config/feature_flags.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/theme_mode_controller.dart';
 import '../../account/state/account_deletion_service.dart';
@@ -15,11 +16,14 @@ class MenuScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = context.l10n;
+    final assistantEnabled = ref.watch(featureFlagsProvider).assistantEnabled;
     final items = [
       (l.menuCurrentWorkout, Icons.fitness_center, '/workout/current'),
       (l.menuHistory, Icons.history, '/workout/last'),
-      (l.menuSearchMachine, Icons.photo_camera, '/assistant?machine=1'),
-      (l.menuAskDoubt, Icons.chat_bubble_outline, '/assistant'),
+      if (assistantEnabled) ...[
+        (l.menuSearchMachine, Icons.photo_camera, '/assistant?machine=1'),
+        (l.menuAskDoubt, Icons.chat_bubble_outline, '/assistant'),
+      ],
       (l.menuUpdateProfile, Icons.person, '/account/profile'),
       (l.menuTrainingPreferences, Icons.tune, '/account/preferences'),
     ];
@@ -73,7 +77,7 @@ class MenuScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.subscriptions_outlined),
             title: Text(context.l10n.storeManage),
-            onTap: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => const StoreSubscriptionSheet()),
+            onTap: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => const StoreSubscriptionSheet(source: 'menu')),
           ),
           const Divider(),
           ListTile(

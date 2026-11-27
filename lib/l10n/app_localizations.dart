@@ -3704,6 +3704,18 @@ abstract class AppLocalizations {
   /// In pt, this message translates to:
   /// **'Você está offline. O treino continua e sincroniza quando a conexão voltar.'**
   String get offlineBanner;
+
+  /// No description provided for @liveActivityHintMessage.
+  ///
+  /// In pt, this message translates to:
+  /// **'Ative as Atividades ao Vivo para ver o cronômetro na tela de bloqueio e na Dynamic Island.'**
+  String get liveActivityHintMessage;
+
+  /// No description provided for @liveActivityHintDismiss.
+  ///
+  /// In pt, this message translates to:
+  /// **'Não mostrar de novo'**
+  String get liveActivityHintDismiss;
 }
 
 class _AppLocalizationsDelegate

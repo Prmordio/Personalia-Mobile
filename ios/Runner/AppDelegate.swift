@@ -1,4 +1,5 @@
 import Flutter
+import ActivityKit
 import UIKit
 import UserNotifications
 
@@ -21,6 +22,22 @@ import UserNotifications
     let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "WorkoutLive")!
     let channel = FlutterMethodChannel(name: "personalia/workout_live", binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { call, result in
+      // Permissão "Atividades ao Vivo": respondida antes do guard para que iOS < 17
+      // devolva "unsupported" em vez de NotImplemented.
+      switch call.method {
+      case "liveActivitiesStatus":
+        if #available(iOS 17.0, *) {
+          result(ActivityAuthorizationInfo().areActivitiesEnabled ? "enabled" : "disabled")
+        } else {
+          result("unsupported")
+        }
+        return
+      case "openSettings":
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { result(false); return }
+        UIApplication.shared.open(url) { opened in result(opened) }
+        return
+      default: break
+      }
       guard #available(iOS 17.0, *) else { result(FlutterMethodNotImplemented); return }
       Task { @MainActor in
         do {

@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import '../providers.dart';
 import '../telemetry/app_telemetry.dart';
+import '../telemetry/user_telemetry_sync.dart';
 import '../../features/home/data/app_api.dart';
 
 class StoreBillingState {
@@ -24,7 +25,16 @@ class StoreBillingState {
 }
 
 typedef StoreErrorReporter =
-    void Function(Object error, StackTrace stack, String operation);
+    void Function(
+      Object error,
+      StackTrace stack,
+      String operation, {
+      String? detail,
+    });
+
+/// Funil de compra no Analytics (parâmetros só com ids de produto e códigos da loja).
+typedef StoreEventReporter =
+    void Function(String name, Map<String, Object?> params);
 
 class StoreBillingController extends StateNotifier<StoreBillingState> {
   StoreBillingController(
@@ -32,13 +42,16 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
     this._onVerified, {
     InAppPurchase? store,
     StoreErrorReporter? reportError,
+    StoreEventReporter? trackEvent,
   }) : _store = store ?? InAppPurchase.instance,
        _reportError = reportError ?? AppTelemetry.instance.recoverableError,
+       _trackEvent = trackEvent ?? AppTelemetry.instance.event,
        super(const StoreBillingState());
   final Dio _dio;
   final void Function() _onVerified;
   final InAppPurchase _store;
   final StoreErrorReporter _reportError;
+  final StoreEventReporter _trackEvent;
   StreamSubscription<List<PurchaseDetails>>? _listener;
   String? _userId;
   String? termsUrl;
@@ -163,7 +176,9 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
           applicationUserName: _userId,
         ),
       );
-      if (!launched) {
+      if (launched) {
+        _trackEvent('purchase_started', {'product': freshProduct.id});
+      } else {
         _report('buy_$stage', StateError('not_launched'), StackTrace.current);
       }
       if (!launched && mounted) {
@@ -191,6 +206,7 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
     try {
       await _store.restorePurchases(applicationUserName: _userId);
       final result = (await _dio.post('/app/store-billing/refresh')).data;
+      _trackEvent('restore_completed', {'valid': result['isValid'] == true});
       _onVerified();
       if (mounted) {
         state = StoreBillingState(
@@ -199,7 +215,8 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
           success: result['isValid'] == true,
         );
       }
-    } catch (_) {
+    } catch (error, stack) {
+      _report('restore', error, stack);
       if (mounted) {
         state = StoreBillingState(
           products: state.products,
@@ -222,6 +239,8 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
             purchase.error ?? StateError('unknown'),
             StackTrace.current,
           );
+        } else {
+          _trackEvent('purchase_cancelled', {'product': purchase.productID});
         }
         state = StoreBillingState(
           products: state.products,
@@ -246,6 +265,12 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
           // Never finish a purchase that has not been verified by our backend.
           if (purchase.pendingCompletePurchase) {
             await _store.completePurchase(purchase);
+          }
+          if (purchase.status == PurchaseStatus.purchased) {
+            _trackEvent('purchase_completed', {
+              'product': purchase.productID,
+              'valid': result['isValid'] == true,
+            });
           }
           _onVerified();
           if (mounted) {
@@ -297,10 +322,16 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
       StateError e => (e.message, null),
       _ => (error.runtimeType.toString(), null),
     };
-    final detail = message == null || message.isEmpty
-        ? ''
-        : ': ${message.length > 120 ? message.substring(0, 120) : message}';
-    _reportError(error, stack, 'store_billing_${stage}_$code$detail');
+    // Reason estável (filtro no Crashlytics); a mensagem variável vai em custom key.
+    _reportError(
+      error,
+      stack,
+      'store_billing_${stage}_$code',
+      detail: message == null || message.isEmpty
+          ? null
+          : (message.length > 120 ? message.substring(0, 120) : message),
+    );
+    _trackEvent('purchase_failed', {'stage': stage, 'code': code});
   }
 
   static String? _backendMessage(Object? data) {
@@ -317,8 +348,9 @@ class StoreBillingController extends StateNotifier<StoreBillingState> {
 
 final storeBillingProvider =
     StateNotifierProvider<StoreBillingController, StoreBillingState>((ref) {
-      return StoreBillingController(
-        ref.watch(apiClientProvider).dio,
-        () => ref.invalidate(subscriptionProvider),
-      );
+      return StoreBillingController(ref.watch(apiClientProvider).dio, () {
+        ref.invalidate(subscriptionProvider);
+        // Plano mudou: atualiza a user property `plan` e o tópico `plan_<x>`.
+        unawaited(ref.read(userTelemetrySyncProvider).sync());
+      });
     });

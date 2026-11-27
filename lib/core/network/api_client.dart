@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'token_storage.dart';
 import '../security/app_check.dart';
+import '../telemetry/http_error_interceptor.dart';
 import '../telemetry/performance_interceptor.dart';
 
 /// URL base do gateway. Em dev local: Android emulator usa 10.0.2.2 (não localhost),
@@ -44,6 +45,7 @@ class ApiClient {
     ));
     _dio.interceptors.add(AppCheckInterceptor());
     _dio.interceptors.add(PerformanceInterceptor());
+    _dio.interceptors.add(HttpErrorInterceptor());
   }
 
   final Dio _dio;

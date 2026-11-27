@@ -85,7 +85,11 @@ class _WorkoutFinishScreenState extends ConsumerState<WorkoutFinishScreen> {
       if (!mounted) return true;
       ref.invalidate(lastWorkoutProvider);
       ref.invalidate(workoutHistoryProvider);
-      AppTelemetry.instance.event('workout_completed');
+      AppTelemetry.instance.event('workout_completed', {
+        'duration_bucket': s.durationBucket,
+        'all_exercises_done': s.completedCount == s.totalExercises,
+        'exercises_swapped': swaps.isNotEmpty,
+      });
       return !cache.isPending(id);
     } catch (error, stack) {
       AppTelemetry.instance.recoverableError(error, stack, 'save_workout');
