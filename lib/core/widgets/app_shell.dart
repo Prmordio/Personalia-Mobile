@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/l10n/l10n.dart';
 import '../../features/home/state/feature_access.dart';
+import '../remote_config/feature_flags.dart';
 
 class AppShell extends ConsumerWidget {
   const AppShell({
@@ -39,7 +40,9 @@ class AppShell extends ConsumerWidget {
     return Scaffold(
       body: child,
       // Chat de dúvidas disponível somente para assinantes.
-      floatingActionButton: isActive
+      // Também some quando o kill switch remoto `assistant_enabled` está desligado.
+      floatingActionButton:
+          isActive && ref.watch(featureFlagsProvider).assistantEnabled
           ? FloatingActionButton(
               tooltip: l.navAssistantTooltip,
               onPressed: () => context.push('/assistant'),

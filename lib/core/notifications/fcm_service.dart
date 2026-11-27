@@ -71,8 +71,8 @@ class FcmService {
     // App encerrado: captura rota para processar depois que o router estiver pronto
     final initial = await _messaging.getInitialMessage();
     if (initial != null) {
-      AppTelemetry.instance.event('push_opened');
-      _pendingRoute = _routeFromMessage(initial);
+      _trackOpened(initial.data['type'] as String?, coldStart: true);
+      _pendingRoute = routeForType(initial.data['type'] as String?);
     }
   }
 
@@ -103,7 +103,6 @@ class FcmService {
   void _onForegroundMessage(RemoteMessage message) {
     final notification = message.notification;
     if (notification == null) return;
-    final route = _routeFromMessage(message);
     _localPlugin.show(
       id: message.hashCode,
       title: notification.title,
@@ -117,20 +116,93 @@ class FcmService {
         ),
         iOS: DarwinNotificationDetails(),
       ),
-      payload: route,
+      // O tipo (não a rota) vai no payload: o toque precisa dele para a campanha.
+      payload: pushPayload(message.data['type'] as String?),
     );
   }
 
   void _onLocalNotificationTap(NotificationResponse response) {
-    final route = response.payload;
-    if (route == null || route.isEmpty) return;
-    _navigate(route);
+    // O plugin local é singleton: este callback também recebe o toque no alarme do
+    // descanso (sem payload), que não pode tirar a pessoa da tela do treino.
+    final payload = response.payload;
+    if (!isPushPayload(payload)) return;
+    final type = pushTypeFromPayload(payload!);
+    _trackOpened(type, foreground: true);
+    _navigate(routeForType(type));
+  }
+
+  static const _pushPayloadPrefix = 'push:';
+
+  /// Payload da notificação local que espelha um push recebido em primeiro plano.
+  static String pushPayload(String? type) => '$_pushPayloadPrefix${type ?? ''}';
+
+  /// Só notificações criadas por [pushPayload] navegam; as demais (alarme) são ignoradas.
+  static bool isPushPayload(String? payload) =>
+      payload != null && payload.startsWith(_pushPayloadPrefix);
+
+  static String? pushTypeFromPayload(String payload) {
+    final type = payload.substring(_pushPayloadPrefix.length);
+    return type.isEmpty ? null : type;
   }
 
   void _handleMessageRoute(RemoteMessage message) {
-    AppTelemetry.instance.event('push_opened');
-    final route = _routeFromMessage(message);
-    if (route != null) _navigate(route);
+    final type = message.data['type'] as String?;
+    _trackOpened(type);
+    _navigate(routeForType(type));
+  }
+
+  void _trackOpened(
+    String? type, {
+    bool coldStart = false,
+    bool foreground = false,
+  }) {
+    AppTelemetry.instance.event('push_opened', {
+      'campaign': pushCampaign(type),
+      'app_state': coldStart
+          ? 'terminated'
+          : foreground
+          ? 'foreground'
+          : 'background',
+    });
+  }
+
+  /// Campanha do push para o Analytics: só tipos conhecidos (enviados pelo janitor/
+  /// notifier/trainer em `data.type`); o resto vira `other`.
+  static String pushCampaign(String? type) {
+    const known = {
+      'rest_timer',
+      'workout_regua',
+      'stale_workout',
+      'medidas_regua',
+      'weekly_summary',
+      'subscription',
+      'subscription_expired',
+      'workout_ready',
+      'referral_bonus',
+    };
+    if (type == null || type.isEmpty) return 'none';
+    if (known.contains(type)) return type;
+    if (type.startsWith('subscription_funnel')) return 'subscription_funnel';
+    return 'other';
+  }
+
+  static const _planTopics = {'trial', 'paid', 'expired', 'none'};
+
+  /// Mantém o aparelho inscrito só no tópico `plan_<plano>` atual (campanhas
+  /// segmentadas direto pelo console do FCM). `null` (logout) remove todos.
+  Future<void> setPlanTopic(String? plan) async {
+    for (final candidate in _planTopics) {
+      try {
+        if (candidate == plan) {
+          await _messaging.subscribeToTopic('plan_$candidate');
+        } else {
+          await _messaging.unsubscribeFromTopic('plan_$candidate');
+        }
+      } catch (e) {
+        // iOS sem APNs token ainda / sem rede: tenta de novo no próximo sync.
+        debugPrint('[FCM] topic plan_$candidate failed: $e');
+      }
+    }
   }
 
   void _navigate(String route) {
@@ -141,8 +213,7 @@ class FcmService {
     }
   }
 
-  String? _routeFromMessage(RemoteMessage message) {
-    final type = message.data['type'] as String?;
+  static String routeForType(String? type) {
     switch (type) {
       case 'rest_timer':
         return '/workout/today';

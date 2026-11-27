@@ -69,10 +69,13 @@ class AssistantChatController extends StateNotifier<List<ChatMessage>> {
     AppTelemetry.instance.event('assistant_message_sent');
     _push(ChatMessage(fromUser: true, text: text));
 
+    // Do envio até o primeiro trecho do SSE: o tempo que a pessoa fica olhando o "...".
+    final firstToken = AppTelemetry.instance.startTrace('assistant_first_token');
     final buffer = StringBuffer();
     try {
       await for (final chunk in _api.askStream(text, language: language)) {
         if (!mounted) return;
+        if (buffer.isEmpty) firstToken.stop(attributes: {'outcome': 'ok'});
         buffer.write(chunk);
         // Atualiza a bolha em tempo real (efeito typewriter) mantendo o pending=true.
         state = [
@@ -82,14 +85,24 @@ class AssistantChatController extends StateNotifier<List<ChatMessage>> {
       }
       if (!mounted) return;
       final reply = buffer.toString();
+      _trackReply(firstToken, reply.isEmpty ? 'empty' : 'ok');
       _resolve(ChatMessage(fromUser: false, text: reply.isEmpty ? _genericErrorFor(language) : reply));
     } on DioException catch (e) {
+      _trackReply(firstToken, isSubscriptionRequired(e) ? 'subscription_required' : 'error');
       _resolve(ChatMessage(fromUser: false, text: _messageFrom(e, language)));
     } on SubscriptionRequiredException {
+      _trackReply(firstToken, 'subscription_required');
       _resolve(ChatMessage(fromUser: false, text: _subscriptionRequiredFor(language)));
     } catch (_) {
+      _trackReply(firstToken, buffer.isEmpty ? 'error' : 'interrupted');
       _resolve(ChatMessage(fromUser: false, text: buffer.isEmpty ? _genericErrorFor(language) : buffer.toString()));
     }
+  }
+
+  /// Sem primeiro trecho, o trace fecha com o desfecho (o stop seguinte é ignorado).
+  void _trackReply(TelemetryTrace firstToken, String outcome) {
+    firstToken.stop(attributes: {'outcome': outcome});
+    AppTelemetry.instance.event('assistant_reply', {'outcome': outcome});
   }
 
   Future<void> sendPhoto(Uint8List bytes, String mimeType, {String language = 'pt'}) async {
@@ -97,6 +110,7 @@ class AssistantChatController extends StateNotifier<List<ChatMessage>> {
     _push(ChatMessage(fromUser: true, text: '', image: bytes));
     try {
       final result = await _api.identifyEquipment(bytes, mimeType, language: language);
+      AppTelemetry.instance.event('assistant_photo_sent', {'found': result.found});
       _resolve(
         result.found
             ? ChatMessage(fromUser: false, text: _describe(result, language), exerciseName: result.primaryExercise)

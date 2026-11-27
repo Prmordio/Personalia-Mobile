@@ -164,7 +164,7 @@ class AppAccessController extends StateNotifier<AppAccessState> {
     await _run(() async {
       final token = await _authApi.completeAppAccess(state.sessionId!, password);
       await _tokenStorage.save(token);
-      AppTelemetry.instance.event('login');
+      AppTelemetry.instance.event('login', {'method': 'first_access'});
       onLoggedIn?.call();
       _refresh.value++;
       state = state.copyWith(loading: false);

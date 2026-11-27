@@ -43,6 +43,15 @@ class WorkoutSummary {
 
   Duration get duration => finishedAt.difference(startedAt);
 
+  /// Faixa de duração para o Analytics (baixa cardinalidade, sem o tempo exato).
+  String get durationBucket {
+    final minutes = duration.inMinutes;
+    if (minutes < 20) return 'lt_20';
+    if (minutes < 40) return '20_40';
+    if (minutes < 60) return '40_60';
+    return 'gte_60';
+  }
+
   String get durationFormatted {
     final d = duration;
     final h = d.inHours;

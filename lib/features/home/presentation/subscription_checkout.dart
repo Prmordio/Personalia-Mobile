@@ -3,13 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/l10n/l10n.dart';
 import '../../../core/billing/store_billing_controller.dart';
+import '../../../core/telemetry/app_telemetry.dart';
 import '../data/app_api.dart';
 
 /// Uses the store of the device; existing Mercado Pago plans keep their access.
+/// [source] identifica a entrada no funil (`paywall_viewed`): `home`, `menu`...
 Future<void> openSubscriptionCheckout(
   BuildContext context,
-  WidgetRef ref,
-) async {
+  WidgetRef ref, {
+  String source = 'home',
+}) async {
   final messenger = ScaffoldMessenger.of(context);
   final l = context.l10n;
   try {
@@ -24,7 +27,7 @@ Future<void> openSubscriptionCheckout(
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => const StoreSubscriptionSheet(),
+      builder: (_) => StoreSubscriptionSheet(source: source),
     );
   } catch (_) {
     messenger.showSnackBar(SnackBar(content: Text(l.errGeneratePayment)));
@@ -32,7 +35,8 @@ Future<void> openSubscriptionCheckout(
 }
 
 class StoreSubscriptionSheet extends ConsumerStatefulWidget {
-  const StoreSubscriptionSheet({super.key});
+  const StoreSubscriptionSheet({super.key, this.source = 'home'});
+  final String source;
   @override
   ConsumerState<StoreSubscriptionSheet> createState() =>
       _StoreSubscriptionSheetState();
@@ -43,6 +47,7 @@ class _StoreSubscriptionSheetState
   @override
   void initState() {
     super.initState();
+    AppTelemetry.instance.event('paywall_viewed', {'source': widget.source});
     Future.microtask(() {
       if (mounted) ref.read(storeBillingProvider.notifier).initialize();
     });
@@ -161,7 +166,7 @@ Future<void> showSubscriptionRequiredDialog(
         ElevatedButton(
           onPressed: () {
             Navigator.of(dialogContext).pop();
-            openSubscriptionCheckout(context, ref);
+            openSubscriptionCheckout(context, ref, source: 'subscription_required');
           },
           child: Text(l.subscriptionButton),
         ),

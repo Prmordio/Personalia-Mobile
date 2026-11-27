@@ -2061,4 +2061,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get offlineBanner =>
       'Estás sin conexión. El entrenamiento sigue y se sincroniza cuando vuelva la conexión.';
+
+  @override
+  String get liveActivityHintMessage =>
+      'Activa las Actividades en Vivo para ver el cronómetro en la pantalla bloqueada y en la Dynamic Island.';
+
+  @override
+  String get liveActivityHintDismiss => 'No mostrar de nuevo';
 }

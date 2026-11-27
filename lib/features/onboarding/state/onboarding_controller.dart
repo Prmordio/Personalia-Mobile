@@ -540,7 +540,10 @@ class OnboardingController extends StateNotifier<OnboardingState> {
         preferredGymTime: state.preferredGymTime,
       );
       state = state.copyWith(loading: false, step: OnboardingStep.freeTrial);
-      AppTelemetry.instance.event('onboarding_completed');
+      AppTelemetry.instance.event('onboarding_completed', {
+        'training_focus': state.trainingFocus,
+        'days_per_week': state.trainingDaysPerWeek,
+      });
       return true;
     } on OnboardingValidationException catch (e) {
       state = state.copyWith(

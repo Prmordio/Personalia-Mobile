@@ -47,7 +47,7 @@ class BiometricLoginService {
     try {
       final jwt = await _authApi.loginWithBiometric(credential.credentialId, credential.token);
       await _tokenStorage.save(jwt);
-      AppTelemetry.instance.event('login');
+      AppTelemetry.instance.event('login', {'method': 'biometric'});
       _refresh.value++;
       return BiometricLoginResult.success;
     } on DioException catch (e) {

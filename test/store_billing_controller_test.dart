@@ -90,8 +90,12 @@ void main() {
   late StoreBillingController controller;
   late bool verified;
   late List<String> reported;
+  late List<String?> details;
+  late List<String> events;
   setUp(() async {
     reported = [];
+    details = [];
+    events = [];
     store = _Store();
     backend = _Backend();
     verified = false;
@@ -101,7 +105,11 @@ void main() {
       dio,
       () => verified = true,
       store: store,
-      reportError: (_, _, operation) => reported.add(operation),
+      reportError: (_, _, operation, {detail}) {
+        reported.add(operation);
+        details.add(detail);
+      },
+      trackEvent: (name, params) => events.add('$name $params'),
     );
     await controller.initialize();
   });
@@ -128,9 +136,15 @@ void main() {
     );
     await controller.buy(store.product);
     expect(controller.state.error, 'storeUnavailable');
+    // Reason estável para filtrar no Crashlytics; a mensagem da loja vai à parte.
     expect(reported, [
-      'store_billing_buy_launch_storekit_duplicate_product_object: '
-          'There is a pending transaction for the same product identifier.',
+      'store_billing_buy_launch_storekit_duplicate_product_object',
+    ]);
+    expect(details, [
+      'There is a pending transaction for the same product identifier.',
+    ]);
+    expect(events, [
+      'purchase_failed {stage: buy_launch, code: storekit_duplicate_product_object}',
     ]);
   });
   test('reports the store code of a failed purchase', () async {
@@ -153,9 +167,8 @@ void main() {
     ]);
     await controller.pendingVerification;
     expect(controller.state.error, 'storeUnavailable');
-    expect(reported, [
-      'store_billing_purchase_storekit2_purchase_failed: failed',
-    ]);
+    expect(reported, ['store_billing_purchase_storekit2_purchase_failed']);
+    expect(details, ['failed']);
   });
   test('finishes a purchase the backend definitively rejected', () async {
     backend.verifyStatus = 409;
@@ -166,6 +179,7 @@ void main() {
     expect(controller.state.error, 'storeVerificationFailed');
     expect(controller.state.canPurchase, true);
     expect(reported, ['store_billing_verify_http_409']);
+    expect(details, [null]);
   });
   test('keeps the purchase pending when the session expired', () async {
     backend.verifyStatus = 401;
@@ -190,11 +204,25 @@ void main() {
       expect(store.completed, 1);
       expect(verified, true);
       expect(controller.state.success, true);
+      expect(events, [
+        'purchase_completed {product: monthly, valid: true}',
+      ]);
     },
   );
+  test('tracks a cancelled purchase without reporting an error', () async {
+    store.events.add([purchase()..status = PurchaseStatus.canceled]);
+    await controller.pendingVerification;
+    expect(reported, isEmpty);
+    expect(events, [
+      'purchase_cancelled {product: monthly}',
+    ]);
+  });
   test('binds the store purchase to the authenticated account', () async {
     await controller.buy(store.product);
     expect(store.account, 'owner');
+    expect(events, [
+      'purchase_started {product: monthly}',
+    ]);
   });
   test('rechecks existing access before another subscription', () async {
     backend.canPurchase = false;

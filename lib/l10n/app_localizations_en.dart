@@ -2053,4 +2053,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get offlineBanner =>
       'You\'re offline. Your workout keeps going and syncs when you\'re back online.';
+
+  @override
+  String get liveActivityHintMessage =>
+      'Turn on Live Activities to see the rest timer on your Lock Screen and Dynamic Island.';
+
+  @override
+  String get liveActivityHintDismiss => 'Don\'t show again';
 }

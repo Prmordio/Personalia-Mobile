@@ -23,6 +23,8 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_controller.dart';
 import 'core/billing/store_billing_controller.dart';
 import 'core/telemetry/app_telemetry.dart';
+import 'core/telemetry/user_telemetry_sync.dart';
+import 'core/widgets/maintenance_banner.dart';
 import 'features/onboarding/data/onboarding_api.dart';
 import 'firebase_options.dart';
 import 'features/workout/state/workout_live_activity.dart';
@@ -30,6 +32,7 @@ import 'features/workout/state/active_workout_session.dart';
 import 'features/workout/state/rest_timer_controller.dart';
 
 Future<void> main() async {
+  AppTelemetry.instance.markLaunch();
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: PersonaliaApp()));
 }
@@ -63,6 +66,7 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
   late final ValueNotifier<int> _billingAuth;
   final _startupCancelled = Completer<void>();
   bool _notificationsReady = false;
+  bool _firebaseReady = false;
   Timer? _workoutSyncTimer;
   String? _restoredWorkoutOwner;
 
@@ -159,6 +163,7 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
       await alarm;
       return;
     }
+    _firebaseReady = true;
     await Future.wait([
       runStartupTask(
         'app_check',
@@ -176,6 +181,14 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
         cancelled: _startupCancelled.future,
       ),
     ]);
+    if (mounted) {
+      // Rota inicial (mostrada antes do Firebase) e identidade da sessão.
+      final router = ref.read(_routerProvider);
+      AppTelemetry.instance.screen(
+        router.routerDelegate.currentConfiguration.uri.path,
+      );
+      unawaited(ref.read(userTelemetrySyncProvider).sync());
+    }
     await alarm;
   }
 
@@ -217,6 +230,7 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
     _workoutSyncTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _billingAuth.removeListener(_syncStoreBilling);
+    _billingAuth.removeListener(_syncUserTelemetry);
     super.dispose();
   }
 
@@ -255,6 +269,14 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
         unawaited(FcmService.instance.registerToken(api.register));
       }
     }, fireImmediately: true);
+    // Login/logout: user id, user properties e tópico do plano (Analytics/Crashlytics/FCM).
+    _billingAuth.addListener(_syncUserTelemetry);
+  }
+
+  void _syncUserTelemetry() {
+    if (_firebaseReady && mounted) {
+      unawaited(ref.read(userTelemetrySyncProvider).sync());
+    }
   }
 
   @override
@@ -263,6 +285,9 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
       _,
       session,
     ) {
+      // Contexto dos crashes: aconteceu durante um treino em andamento?
+      AppTelemetry.instance.setKey('workout_active', session != null);
+      AppTelemetry.instance.suppressInAppMessages(session != null);
       if (session != null) {
         ref
             .read(workoutSessionCacheProvider)
@@ -344,7 +369,9 @@ class _PersonaliaAppState extends ConsumerState<PersonaliaApp>
           }
         });
         return UpdateGate(
-          child: OfflineBanner(child: child ?? const SizedBox.shrink()),
+          child: MaintenanceBanner(
+            child: OfflineBanner(child: child ?? const SizedBox.shrink()),
+          ),
         );
       },
       routerConfig: router,

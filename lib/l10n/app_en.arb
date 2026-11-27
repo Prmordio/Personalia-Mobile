@@ -848,5 +848,7 @@
   "updateRecommendedBody": "Update to get the latest improvements and fixes.",
   "updateNow": "Update",
   "updateLater": "Not now",
-  "offlineBanner": "You're offline. Your workout keeps going and syncs when you're back online."
+  "offlineBanner": "You're offline. Your workout keeps going and syncs when you're back online.",
+  "liveActivityHintMessage": "Turn on Live Activities to see the rest timer on your Lock Screen and Dynamic Island.",
+  "liveActivityHintDismiss": "Don't show again"
 }
