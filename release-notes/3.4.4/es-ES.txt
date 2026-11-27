@@ -1,0 +1,4 @@
+- Cronómetro en la pantalla bloqueada: la app avisa cuando las Actividades en Vivo están desactivadas y te lleva directo a Ajustes para activarlas.
+- Las notificaciones abren la pantalla correcta (entrenamiento del día, informes o inicio).
+- Avisos en la app cuando algún servicio esté inestable.
+- Correcciones y mejoras de estabilidad y rendimiento.

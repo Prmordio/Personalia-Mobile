@@ -1,0 +1,4 @@
+- Cronômetro na tela de bloqueio: o app avisa quando as Atividades ao Vivo estão desligadas e leva direto aos Ajustes para ativar.
+- Notificações abrem direto na tela certa (treino do dia, relatórios ou início).
+- Avisos no app quando algum serviço estiver instável.
+- Correções e melhorias de estabilidade e desempenho.

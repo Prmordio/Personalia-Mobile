@@ -1,0 +1,4 @@
+- Lock Screen timer: the app now lets you know when Live Activities are turned off and takes you straight to Settings to turn them on.
+- Notifications open the right screen (today's workout, reports or home).
+- In-app notices when a service is experiencing issues.
+- Bug fixes, stability and performance improvements.
